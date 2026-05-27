@@ -234,7 +234,7 @@ export const adminListUsers = createServerFn({ method: "GET" })
     await assertAdmin(context.userId);
     const { data: profiles, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, email, phone, created_at")
+      .select("id, full_name, email, phone, created_at, is_banned")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     const ids = (profiles ?? []).map(p => p.id);
@@ -250,4 +250,244 @@ export const adminListUsers = createServerFn({ method: "GET" })
       stats.set(b.user_id, s);
     });
     return (profiles ?? []).map(p => ({ ...p, stats: stats.get(p.id) ?? { count: 0, spent: 0 } }));
+  });
+
+export const adminBookingsVolume = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { days?: number } | undefined) => z.object({ days: z.number().int().min(7).max(365).default(30) }).parse(i ?? {}))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const start = daysAgoISO(data.days - 1);
+    const { data: rows } = await supabaseAdmin
+      .from("bookings")
+      .select("booking_date")
+      .gte("booking_date", start);
+    const map = new Map<string, number>();
+    for (let i = 0; i < data.days; i++) map.set(daysAgoISO(data.days - 1 - i), 0);
+    rows?.forEach(r => map.set(r.booking_date, (map.get(r.booking_date) ?? 0) + 1));
+    return Array.from(map.entries()).map(([date, count]) => ({ date, count }));
+  });
+
+export const adminMonthlyRevenue = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { year?: number } | undefined) => z.object({ year: z.number().int().min(2020).max(2100).default(new Date().getFullYear()) }).parse(i ?? {}))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const start = `${data.year}-01-01`;
+    const end = `${data.year}-12-31`;
+    const { data: rows } = await supabaseAdmin
+      .from("bookings")
+      .select("booking_date, total_price, status")
+      .gte("booking_date", start)
+      .lte("booking_date", end)
+      .eq("status", "confirmed");
+    const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, label: new Date(data.year, i).toLocaleString("en", { month: "short" }), revenue: 0 }));
+    rows?.forEach(r => {
+      const m = new Date(r.booking_date).getMonth();
+      months[m].revenue += r.total_price ?? 0;
+    });
+    const best = months.reduce((a, b) => (b.revenue > a.revenue ? b : a), months[0]);
+    return { months, bestMonth: best };
+  });
+
+export const adminUserGrowth = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { days?: number } | undefined) => z.object({ days: z.number().int().min(30).max(365).default(90) }).parse(i ?? {}))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const start = daysAgoISO(data.days);
+    const { data: rows } = await supabaseAdmin
+      .from("profiles")
+      .select("created_at")
+      .gte("created_at", start + "T00:00:00Z")
+      .order("created_at");
+    let cumulative = 0;
+    const map = new Map<string, number>();
+    for (let i = 0; i < data.days; i++) map.set(daysAgoISO(data.days - 1 - i), 0);
+    rows?.forEach(r => {
+      const d = r.created_at.slice(0, 10);
+      map.set(d, (map.get(d) ?? 0) + 1);
+    });
+    return Array.from(map.entries()).map(([date, signups]) => {
+      cumulative += signups;
+      return { date, signups, total: cumulative };
+    });
+  });
+
+export const adminCancellationTrend = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { days?: number } | undefined) => z.object({ days: z.number().int().min(7).max(90).default(30) }).parse(i ?? {}))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const start = daysAgoISO(data.days - 1);
+    const { data: rows } = await supabaseAdmin
+      .from("bookings")
+      .select("booking_date, status")
+      .gte("booking_date", start);
+    const map = new Map<string, { total: number; cancelled: number }>();
+    for (let i = 0; i < data.days; i++) map.set(daysAgoISO(data.days - 1 - i), { total: 0, cancelled: 0 });
+    rows?.forEach(r => {
+      const cur = map.get(r.booking_date)!;
+      cur.total += 1;
+      if (r.status === "cancelled") cur.cancelled += 1;
+      map.set(r.booking_date, cur);
+    });
+    return Array.from(map.entries()).map(([date, v]) => ({
+      date,
+      rate: v.total ? Math.round((v.cancelled / v.total) * 1000) / 10 : 0,
+    }));
+  });
+
+export const adminRevenueByVenue = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data } = await supabaseAdmin
+      .from("bookings")
+      .select("total_price, status, venue:venues(name)")
+      .eq("status", "confirmed");
+    const map = new Map<string, number>();
+    (data ?? []).forEach((b: any) => {
+      const name = b.venue?.name ?? "Unknown";
+      map.set(name, (map.get(name) ?? 0) + (b.total_price ?? 0));
+    });
+    return Array.from(map.entries())
+      .map(([name, revenue]) => ({ name, revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+  });
+
+export const adminListPayments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { status?: string } | undefined) =>
+    z.object({ status: z.enum(["all", "success", "cancelled", "pending"]).default("all") }).parse(i ?? {}),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    let q = supabaseAdmin
+      .from("bookings")
+      .select("id, booking_date, total_price, status, created_at, user_id, venue:venues(name)")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (data.status !== "all") {
+      const map: Record<string, string> = { success: "confirmed", cancelled: "cancelled", pending: "pending" };
+      q = q.eq("status", map[data.status]);
+    }
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const userIds = Array.from(new Set((rows ?? []).map((r: any) => r.user_id)));
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", userIds.length ? userIds : ["00000000-0000-0000-0000-000000000000"]);
+    const pmap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+    return (rows ?? []).map((r: any) => ({
+      id: r.id,
+      booking_id: r.id,
+      user: pmap.get(r.user_id)?.full_name || pmap.get(r.user_id)?.email || "—",
+      venue: r.venue?.name ?? "—",
+      amount: r.total_price,
+      method: "card",
+      status: r.status === "confirmed" ? "success" : r.status,
+      date: r.created_at,
+    }));
+  });
+
+export const adminPaymentsSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const monthStart = todayISO().slice(0, 7) + "-01";
+    const { data: rows } = await supabaseAdmin
+      .from("bookings")
+      .select("total_price, status")
+      .gte("booking_date", monthStart);
+    let collected = 0;
+    let refunded = 0;
+    (rows ?? []).forEach(r => {
+      if (r.status === "confirmed") collected += r.total_price ?? 0;
+      if (r.status === "cancelled") refunded += r.total_price ?? 0;
+    });
+    return { collected, refunded, net: collected - refunded };
+  });
+
+export const adminGetSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data, error } = await supabaseAdmin.from("site_settings").select("key, value").order("key");
+    if (error) throw new Error(error.message);
+    return Object.fromEntries((data ?? []).map(r => [r.key, r.value]));
+  });
+
+export const adminUpdateSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: Record<string, string>) => z.record(z.string(), z.string()).parse(i))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    for (const [key, value] of Object.entries(data)) {
+      const { error } = await supabaseAdmin
+        .from("site_settings")
+        .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const adminSendNotification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { title: string; message: string; target_type?: string; channel?: string }) =>
+    z.object({
+      title: z.string().min(1).max(120),
+      message: z.string().min(1).max(2000),
+      target_type: z.enum(["all", "sport", "user"]).default("all"),
+      channel: z.enum(["in-app", "email", "sms"]).default("in-app"),
+    }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { data: users } = await supabaseAdmin.from("profiles").select("id");
+    const inserts = (users ?? []).map(u => ({
+      user_id: u.id,
+      title: data.title,
+      message: data.message,
+      type: "offer",
+    }));
+    if (inserts.length) {
+      const { error } = await supabaseAdmin.from("notifications").insert(inserts);
+      if (error) throw new Error(error.message);
+    }
+    await supabaseAdmin.from("admin_notification_log").insert({
+      sent_by: context.userId,
+      title: data.title,
+      message: data.message,
+      target_type: data.target_type,
+      channel: data.channel,
+      delivery_count: inserts.length,
+    });
+    return { ok: true, count: inserts.length };
+  });
+
+export const adminNotificationLog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data, error } = await supabaseAdmin
+      .from("admin_notification_log")
+      .select("*")
+      .order("sent_at", { ascending: false })
+      .limit(30);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const adminBanUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { id: string; banned: boolean }) =>
+    z.object({ id: z.string().uuid(), banned: z.boolean() }).parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin.from("profiles").update({ is_banned: data.banned }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

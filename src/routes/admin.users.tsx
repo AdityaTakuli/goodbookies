@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo } from "react";
-import { adminListUsers } from "@/lib/admin.functions";
+import { adminListUsers, adminBanUser } from "@/lib/admin.functions";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/admin/users")({
@@ -11,8 +13,21 @@ export const Route = createFileRoute("/admin/users")({
 
 function AdminUsers() {
   const listFn = useServerFn(adminListUsers);
+  const banFn = useServerFn(adminBanUser);
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => listFn() });
   const [q, setQ] = useState("");
+
+  const toggleBan = async (id: string, banned: boolean) => {
+    if (!confirm(banned ? "Ban this user?" : "Unban this user?")) return;
+    try {
+      await banFn({ data: { id, banned } });
+      toast.success(banned ? "User banned" : "User unbanned");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -47,6 +62,7 @@ function AdminUsers() {
                 <th className="pb-2 font-medium">Joined</th>
                 <th className="pb-2 font-medium text-right">Bookings</th>
                 <th className="pb-2 font-medium text-right">Spent</th>
+                <th className="pb-2 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -58,6 +74,11 @@ function AdminUsers() {
                   <td className="py-3 text-muted-foreground">{u.created_at?.slice(0, 10)}</td>
                   <td className="py-3 text-right">{u.stats.count}</td>
                   <td className="py-3 text-right font-semibold text-primary">₹{u.stats.spent.toLocaleString()}</td>
+                  <td className="py-3 text-right">
+                    <Button size="sm" variant="outline" onClick={() => toggleBan(u.id, !u.is_banned)}>
+                      {u.is_banned ? "Unban" : "Ban"}
+                    </Button>
+                  </td>
                 </tr>
               ))}
               {!isLoading && filtered.length === 0 && (

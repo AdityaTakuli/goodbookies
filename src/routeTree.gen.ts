@@ -11,17 +11,30 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SportsRouteImport } from './routes/sports'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
+import { Route as OwnerRegisterRouteImport } from './routes/owner.register'
+import { Route as OwnerLoginRouteImport } from './routes/owner.login'
 import { Route as BookingSuccessRouteImport } from './routes/booking.success'
 import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSportsRouteImport } from './routes/admin.sports'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as AdminOwnerRequestsRouteImport } from './routes/admin.owner-requests'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AccountProfileRouteImport } from './routes/account.profile'
+import { Route as AccountPaymentsRouteImport } from './routes/account.payments'
+import { Route as AccountNotificationsRouteImport } from './routes/account.notifications'
 
 const SportsRoute = SportsRouteImport.update({
   id: '/sports',
@@ -31,6 +44,11 @@ const SportsRoute = SportsRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerRoute = OwnerRouteImport.update({
+  id: '/owner',
+  path: '/owner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -48,6 +66,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -58,10 +81,25 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AccountIndexRoute = AccountIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AccountRoute,
+} as any)
 const VenuesSlugRoute = VenuesSlugRouteImport.update({
   id: '/venues/$slug',
   path: '/venues/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerRegisterRoute = OwnerRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => OwnerRoute,
+} as any)
+const OwnerLoginRoute = OwnerLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => OwnerRoute,
 } as any)
 const BookingSuccessRoute = BookingSuccessRouteImport.update({
   id: '/booking/success',
@@ -83,109 +121,227 @@ const AdminSportsRoute = AdminSportsRouteImport.update({
   path: '/sports',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOwnerRequestsRoute = AdminOwnerRequestsRouteImport.update({
+  id: '/owner-requests',
+  path: '/owner-requests',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBookingsRoute = AdminBookingsRouteImport.update({
   id: '/bookings',
   path: '/bookings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AccountProfileRoute = AccountProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AccountRoute,
+} as any)
+const AccountPaymentsRoute = AccountPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AccountRoute,
+} as any)
+const AccountNotificationsRoute = AccountNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AccountRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/owner': typeof OwnerRouteWithChildren
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/account/notifications': typeof AccountNotificationsRoute
+  '/account/payments': typeof AccountPaymentsRoute
+  '/account/profile': typeof AccountProfileRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/owner-requests': typeof AdminOwnerRequestsRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/sports': typeof AdminSportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/booking/success': typeof BookingSuccessRoute
+  '/owner/login': typeof OwnerLoginRoute
+  '/owner/register': typeof OwnerRegisterRoute
   '/venues/$slug': typeof VenuesSlugRoute
+  '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/owner': typeof OwnerRouteWithChildren
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/account/notifications': typeof AccountNotificationsRoute
+  '/account/payments': typeof AccountPaymentsRoute
+  '/account/profile': typeof AccountProfileRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/owner-requests': typeof AdminOwnerRequestsRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/sports': typeof AdminSportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/booking/success': typeof BookingSuccessRoute
+  '/owner/login': typeof OwnerLoginRoute
+  '/owner/register': typeof OwnerRegisterRoute
   '/venues/$slug': typeof VenuesSlugRoute
+  '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/owner': typeof OwnerRouteWithChildren
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/account/notifications': typeof AccountNotificationsRoute
+  '/account/payments': typeof AccountPaymentsRoute
+  '/account/profile': typeof AccountProfileRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/owner-requests': typeof AdminOwnerRequestsRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/sports': typeof AdminSportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/booking/success': typeof BookingSuccessRoute
+  '/owner/login': typeof OwnerLoginRoute
+  '/owner/register': typeof OwnerRegisterRoute
   '/venues/$slug': typeof VenuesSlugRoute
+  '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/admin'
     | '/dashboard'
     | '/login'
+    | '/owner'
     | '/signup'
     | '/sports'
+    | '/account/notifications'
+    | '/account/payments'
+    | '/account/profile'
+    | '/admin/analytics'
     | '/admin/bookings'
+    | '/admin/notifications'
+    | '/admin/owner-requests'
+    | '/admin/payments'
+    | '/admin/settings'
     | '/admin/sports'
     | '/admin/users'
     | '/admin/venues'
     | '/booking/success'
+    | '/owner/login'
+    | '/owner/register'
     | '/venues/$slug'
+    | '/account/'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
     | '/login'
+    | '/owner'
     | '/signup'
     | '/sports'
+    | '/account/notifications'
+    | '/account/payments'
+    | '/account/profile'
+    | '/admin/analytics'
     | '/admin/bookings'
+    | '/admin/notifications'
+    | '/admin/owner-requests'
+    | '/admin/payments'
+    | '/admin/settings'
     | '/admin/sports'
     | '/admin/users'
     | '/admin/venues'
     | '/booking/success'
+    | '/owner/login'
+    | '/owner/register'
     | '/venues/$slug'
+    | '/account'
     | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/admin'
     | '/dashboard'
     | '/login'
+    | '/owner'
     | '/signup'
     | '/sports'
+    | '/account/notifications'
+    | '/account/payments'
+    | '/account/profile'
+    | '/admin/analytics'
     | '/admin/bookings'
+    | '/admin/notifications'
+    | '/admin/owner-requests'
+    | '/admin/payments'
+    | '/admin/settings'
     | '/admin/sports'
     | '/admin/users'
     | '/admin/venues'
     | '/booking/success'
+    | '/owner/login'
+    | '/owner/register'
     | '/venues/$slug'
+    | '/account/'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  OwnerRoute: typeof OwnerRouteWithChildren
   SignupRoute: typeof SignupRoute
   SportsRoute: typeof SportsRoute
   BookingSuccessRoute: typeof BookingSuccessRoute
@@ -206,6 +362,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner': {
+      id: '/owner'
+      path: '/owner'
+      fullPath: '/owner'
+      preLoaderRoute: typeof OwnerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -229,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -243,12 +413,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/account/': {
+      id: '/account/'
+      path: '/'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof AccountRoute
+    }
     '/venues/$slug': {
       id: '/venues/$slug'
       path: '/venues/$slug'
       fullPath: '/venues/$slug'
       preLoaderRoute: typeof VenuesSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/owner/register': {
+      id: '/owner/register'
+      path: '/register'
+      fullPath: '/owner/register'
+      preLoaderRoute: typeof OwnerRegisterRouteImport
+      parentRoute: typeof OwnerRoute
+    }
+    '/owner/login': {
+      id: '/owner/login'
+      path: '/login'
+      fullPath: '/owner/login'
+      preLoaderRoute: typeof OwnerLoginRouteImport
+      parentRoute: typeof OwnerRoute
     }
     '/booking/success': {
       id: '/booking/success'
@@ -278,6 +469,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSportsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/owner-requests': {
+      id: '/admin/owner-requests'
+      path: '/owner-requests'
+      fullPath: '/admin/owner-requests'
+      preLoaderRoute: typeof AdminOwnerRequestsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/bookings': {
       id: '/admin/bookings'
       path: '/bookings'
@@ -285,11 +504,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBookingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/account/profile': {
+      id: '/account/profile'
+      path: '/profile'
+      fullPath: '/account/profile'
+      preLoaderRoute: typeof AccountProfileRouteImport
+      parentRoute: typeof AccountRoute
+    }
+    '/account/payments': {
+      id: '/account/payments'
+      path: '/payments'
+      fullPath: '/account/payments'
+      preLoaderRoute: typeof AccountPaymentsRouteImport
+      parentRoute: typeof AccountRoute
+    }
+    '/account/notifications': {
+      id: '/account/notifications'
+      path: '/notifications'
+      fullPath: '/account/notifications'
+      preLoaderRoute: typeof AccountNotificationsRouteImport
+      parentRoute: typeof AccountRoute
+    }
   }
 }
 
+interface AccountRouteChildren {
+  AccountNotificationsRoute: typeof AccountNotificationsRoute
+  AccountPaymentsRoute: typeof AccountPaymentsRoute
+  AccountProfileRoute: typeof AccountProfileRoute
+  AccountIndexRoute: typeof AccountIndexRoute
+}
+
+const AccountRouteChildren: AccountRouteChildren = {
+  AccountNotificationsRoute: AccountNotificationsRoute,
+  AccountPaymentsRoute: AccountPaymentsRoute,
+  AccountProfileRoute: AccountProfileRoute,
+  AccountIndexRoute: AccountIndexRoute,
+}
+
+const AccountRouteWithChildren =
+  AccountRoute._addFileChildren(AccountRouteChildren)
+
 interface AdminRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
+  AdminOwnerRequestsRoute: typeof AdminOwnerRequestsRoute
+  AdminPaymentsRoute: typeof AdminPaymentsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   AdminSportsRoute: typeof AdminSportsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminVenuesRoute: typeof AdminVenuesRoute
@@ -297,7 +566,12 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBookingsRoute: AdminBookingsRoute,
+  AdminNotificationsRoute: AdminNotificationsRoute,
+  AdminOwnerRequestsRoute: AdminOwnerRequestsRoute,
+  AdminPaymentsRoute: AdminPaymentsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   AdminSportsRoute: AdminSportsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminVenuesRoute: AdminVenuesRoute,
@@ -306,11 +580,25 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface OwnerRouteChildren {
+  OwnerLoginRoute: typeof OwnerLoginRoute
+  OwnerRegisterRoute: typeof OwnerRegisterRoute
+}
+
+const OwnerRouteChildren: OwnerRouteChildren = {
+  OwnerLoginRoute: OwnerLoginRoute,
+  OwnerRegisterRoute: OwnerRegisterRoute,
+}
+
+const OwnerRouteWithChildren = OwnerRoute._addFileChildren(OwnerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  OwnerRoute: OwnerRouteWithChildren,
   SignupRoute: SignupRoute,
   SportsRoute: SportsRoute,
   BookingSuccessRoute: BookingSuccessRoute,
@@ -319,3 +607,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

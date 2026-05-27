@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 export function Footer() {
   return (
     <footer className="mt-24 border-t border-border/60 bg-background">
@@ -21,11 +23,18 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <h4 className="text-sm font-semibold">Company</h4>
+          <h4 className="text-sm font-semibold">Partner</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li>About</li>
-            <li>Contact</li>
-            <li>Terms</li>
+            <li>
+              <Link to="/owner/register" className="transition-colors hover:text-primary">
+                List your venue
+              </Link>
+            </li>
+            <li>
+              <Link to="/owner/login" className="transition-colors hover:text-primary">
+                Owner login
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

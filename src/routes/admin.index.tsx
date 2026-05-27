@@ -4,9 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell, Legend,
+  PieChart, Pie, Cell, Legend, BarChart, Bar,
 } from "recharts";
-import { adminSummary, adminRevenueSeries, adminBookingsBySport, adminTopVenues, adminListBookings } from "@/lib/admin.functions";
+import { adminSummary, adminRevenueSeries, adminBookingsBySport, adminTopVenues, adminListBookings, adminBookingsVolume } from "@/lib/admin.functions";
 import { CalendarCheck, IndianRupee, Building2, UserPlus, XCircle, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
@@ -34,9 +34,11 @@ function AdminOverview() {
   const pieFn = useServerFn(adminBookingsBySport);
   const topFn = useServerFn(adminTopVenues);
   const recentFn = useServerFn(adminListBookings);
+  const volFn = useServerFn(adminBookingsVolume);
 
   const { data: sum } = useQuery({ queryKey: ["admin-sum"], queryFn: () => sumFn() });
   const { data: rev } = useQuery({ queryKey: ["admin-rev", range], queryFn: () => revFn({ data: { days: range } }) });
+  const { data: volume } = useQuery({ queryKey: ["admin-vol", range], queryFn: () => volFn({ data: { days: range } }) });
   const { data: pie } = useQuery({ queryKey: ["admin-pie"], queryFn: () => pieFn() });
   const { data: top } = useQuery({ queryKey: ["admin-top"], queryFn: () => topFn() });
   const { data: recent } = useQuery({ queryKey: ["admin-recent"], queryFn: () => recentFn({ data: { limit: 10, status: "all" } }) });
@@ -99,6 +101,21 @@ function AdminOverview() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border/60 bg-card p-5">
+        <h2 className="font-display text-lg font-semibold">Bookings volume</h2>
+        <div className="mt-4 h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={volume ?? []}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11} tickFormatter={(d) => d.slice(5)} />
+              <YAxis stroke="var(--muted-foreground)" fontSize={11} allowDecimals={false} />
+              <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} />
+              <Bar dataKey="count" fill="var(--chart-3)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

@@ -115,6 +115,14 @@ export const createBooking = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message.includes("bookings_no_double_book") ? "One of those slots was just booked. Pick another." : error.message);
+
+    await supabaseAdmin.from("notifications").insert({
+      user_id: context.userId,
+      title: "Booking confirmed",
+      message: `Your slot on ${data.date} is confirmed. See you on the turf!`,
+      type: "booking",
+    });
+
     return { bookingId: booking.id, total };
   });
 

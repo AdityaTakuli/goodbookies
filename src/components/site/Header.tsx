@@ -5,13 +5,14 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
 
   const nav = [
     { to: "/", label: "Home" },
     { to: "/sports", label: "Sports" },
     ...(user ? [{ to: "/dashboard", label: "My Bookings" }] : []),
+    ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
   ];
 
   return (

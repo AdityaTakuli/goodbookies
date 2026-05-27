@@ -13,9 +13,15 @@ import { Route as SportsRouteImport } from './routes/sports'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
 import { Route as BookingSuccessRouteImport } from './routes/booking.success'
+import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminSportsRouteImport } from './routes/admin.sports'
+import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 
 const SportsRoute = SportsRouteImport.update({
   id: '/sports',
@@ -37,10 +43,20 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const VenuesSlugRoute = VenuesSlugRouteImport.update({
   id: '/venues/$slug',
@@ -52,15 +68,41 @@ const BookingSuccessRoute = BookingSuccessRouteImport.update({
   path: '/booking/success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminVenuesRoute = AdminVenuesRouteImport.update({
+  id: '/venues',
+  path: '/venues',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSportsRoute = AdminSportsRouteImport.update({
+  id: '/sports',
+  path: '/sports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBookingsRoute = AdminBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/sports': typeof AdminSportsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/venues': typeof AdminVenuesRoute
   '/booking/success': typeof BookingSuccessRoute
   '/venues/$slug': typeof VenuesSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,29 +110,46 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/sports': typeof AdminSportsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/venues': typeof AdminVenuesRoute
   '/booking/success': typeof BookingSuccessRoute
   '/venues/$slug': typeof VenuesSlugRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/sports': typeof AdminSportsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/venues': typeof AdminVenuesRoute
   '/booking/success': typeof BookingSuccessRoute
   '/venues/$slug': typeof VenuesSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/dashboard'
     | '/login'
     | '/signup'
     | '/sports'
+    | '/admin/bookings'
+    | '/admin/sports'
+    | '/admin/users'
+    | '/admin/venues'
     | '/booking/success'
     | '/venues/$slug'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -98,21 +157,33 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/sports'
+    | '/admin/bookings'
+    | '/admin/sports'
+    | '/admin/users'
+    | '/admin/venues'
     | '/booking/success'
     | '/venues/$slug'
+    | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/dashboard'
     | '/login'
     | '/signup'
     | '/sports'
+    | '/admin/bookings'
+    | '/admin/sports'
+    | '/admin/users'
+    | '/admin/venues'
     | '/booking/success'
     | '/venues/$slug'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
@@ -151,12 +222,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/venues/$slug': {
       id: '/venues/$slug'
@@ -172,11 +257,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookingSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/venues': {
+      id: '/admin/venues'
+      path: '/venues'
+      fullPath: '/admin/venues'
+      preLoaderRoute: typeof AdminVenuesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sports': {
+      id: '/admin/sports'
+      path: '/sports'
+      fullPath: '/admin/sports'
+      preLoaderRoute: typeof AdminSportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bookings': {
+      id: '/admin/bookings'
+      path: '/bookings'
+      fullPath: '/admin/bookings'
+      preLoaderRoute: typeof AdminBookingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminBookingsRoute: typeof AdminBookingsRoute
+  AdminSportsRoute: typeof AdminSportsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminVenuesRoute: typeof AdminVenuesRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminBookingsRoute: AdminBookingsRoute,
+  AdminSportsRoute: AdminSportsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminVenuesRoute: AdminVenuesRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
@@ -187,13 +319,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

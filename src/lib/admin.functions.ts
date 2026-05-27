@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { toCsv } from "@/lib/services/export";
+import { refundRazorpayPayment } from "@/lib/services/razorpay";
 
 async function assertAdmin(userId: string) {
   const { data, error } = await supabaseAdmin
@@ -478,6 +480,37 @@ export const adminNotificationLog = createServerFn({ method: "GET" })
       .limit(30);
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+export const adminRefundPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { bookingId: string }) => z.object({ bookingId: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context.userId);
+    const { data: booking } = await supabaseAdmin.from("bookings").select("payment_id, status").eq("id", data.bookingId).maybeSingle();
+    if (!booking?.payment_id) throw new Error("No payment linked");
+    const { data: pay } = await supabaseAdmin.from("payments").select("razorpay_payment_id, amount").eq("id", booking.payment_id).maybeSingle();
+    if (pay?.razorpay_payment_id) await refundRazorpayPayment(pay.razorpay_payment_id, pay.amount * 100);
+    await supabaseAdmin.from("payments").update({ status: "refunded" }).eq("id", booking.payment_id);
+    await supabaseAdmin.from("bookings").update({ status: "cancelled" }).eq("id", data.bookingId);
+    return { ok: true };
+  });
+
+export const adminExportAnalyticsCsv = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const start = daysAgoISO(29);
+    const { data: rows } = await supabaseAdmin
+      .from("bookings")
+      .select("booking_date, total_price, status")
+      .gte("booking_date", start)
+      .eq("status", "confirmed");
+    const map = new Map<string, number>();
+    for (let i = 0; i < 30; i++) map.set(daysAgoISO(29 - i), 0);
+    rows?.forEach((r) => map.set(r.booking_date, (map.get(r.booking_date) ?? 0) + (r.total_price ?? 0)));
+    const csvRows = Array.from(map.entries()).map(([date, revenue]) => ({ date, revenue }));
+    return { csv: toCsv(csvRows), filename: `admin-analytics-${todayISO()}.csv` };
   });
 
 export const adminBanUser = createServerFn({ method: "POST" })

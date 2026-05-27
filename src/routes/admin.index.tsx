@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import { adminSummary, adminRevenueSeries, adminBookingsBySport, adminTopVenues, adminListBookings, adminBookingsVolume } from "@/lib/admin.functions";
 import { CalendarCheck, IndianRupee, Building2, UserPlus, XCircle, TrendingUp } from "lucide-react";
+import { StatusBadge } from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminOverview,
@@ -182,12 +183,4 @@ function AdminOverview() {
       </div>
     </div>
   );
-}
-
-export function StatusBadge({ status }: { status: string }) {
-  const cls =
-    status === "confirmed" ? "bg-primary/15 text-primary"
-    : status === "cancelled" ? "bg-destructive/15 text-destructive"
-    : "bg-muted text-muted-foreground";
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{status}</span>;
 }

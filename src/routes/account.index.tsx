@@ -8,7 +8,7 @@ import { listMyBookings } from "@/lib/booking.functions";
 import { cancelMyBooking } from "@/lib/account.functions";
 import { resolveVenueImage } from "@/lib/images";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "./admin.index";
+import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/account/")({

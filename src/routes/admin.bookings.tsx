@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { adminListBookings, adminCancelBooking } from "@/lib/admin.functions";
-import { StatusBadge } from "./admin.index";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 

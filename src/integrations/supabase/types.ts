@@ -21,6 +21,7 @@ export type Database = {
           end_hour: number
           id: string
           player_count: number
+          player_names: string[]
           start_hour: number
           status: string
           total_price: number
@@ -33,6 +34,7 @@ export type Database = {
           end_hour: number
           id?: string
           player_count?: number
+          player_names?: string[]
           start_hour: number
           status?: string
           total_price: number
@@ -45,6 +47,7 @@ export type Database = {
           end_hour?: number
           id?: string
           player_count?: number
+          player_names?: string[]
           start_hour?: number
           status?: string
           total_price?: number

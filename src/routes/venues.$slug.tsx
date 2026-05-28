@@ -1,7 +1,7 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Star, Clock, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +37,7 @@ function VenuePage() {
   const [date, setDate] = useState(todayISO());
   const [selected, setSelected] = useState<number[]>([]);
   const [playerCount, setPlayerCount] = useState(1);
+  const [playerNames, setPlayerNames] = useState<string[]>([""]);
   const [submitting, setSubmitting] = useState(false);
 
   const slotsQuery = useQuery({
@@ -51,6 +52,15 @@ function VenuePage() {
   const total = venue.price_per_hour * selected.length;
   const maxPlayersAllowed = Math.max(1, Number(venue.max_players_allowed ?? 1));
   const perPersonPrice = total > 0 ? Math.ceil(total / maxPlayersAllowed) : 0;
+  const selectedSplitPrice = total > 0 ? Math.ceil(total / playerCount) : 0;
+  const capacityPercent = Math.round((playerCount / maxPlayersAllowed) * 100);
+
+  useEffect(() => {
+    setPlayerNames((prev) => {
+      const next = Array.from({ length: playerCount }, (_, i) => prev[i] ?? "");
+      return next;
+    });
+  }, [playerCount]);
 
   const toggle = (h: number) => {
     setSelected((prev) => (prev.includes(h) ? prev.filter((x) => x !== h) : [...prev, h]));
@@ -67,6 +77,16 @@ function VenuePage() {
       toast.error("Please select consecutive hours only");
       return;
     }
+    const trimmedNames = playerNames.map((name) => name.trim());
+    if (trimmedNames.some((name) => !name)) {
+      toast.error("Please enter all player names");
+      return;
+    }
+    const uniqueNames = new Set(trimmedNames.map((name) => name.toLowerCase()));
+    if (uniqueNames.size !== trimmedNames.length) {
+      toast.error("Each player name should be unique");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await bookFn({
@@ -76,6 +96,7 @@ function VenuePage() {
           startHour: sortedSel[0],
           endHour: sortedSel[sortedSel.length - 1] + 1,
           playerCount,
+          playerNames: trimmedNames,
         },
       });
       navigate({ to: "/booking/success", search: { id: res.bookingId } });
@@ -109,6 +130,10 @@ function VenuePage() {
               <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-primary text-primary" /> {venue.rating}</span>
               <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {venue.opening_hour}:00 – {venue.closing_hour}:00</span>
             </div>
+            <p className="mt-2 text-sm font-semibold text-primary">
+              <IndianRupee className="mb-0.5 mr-1 inline h-4 w-4" />
+              {venue.price_per_hour.toLocaleString()} per hour
+            </p>
             {venue.description && <p className="mt-4 text-muted-foreground">{venue.description}</p>}
             <div className="mt-4 flex flex-wrap gap-2">
               {venue.amenities?.map((a) => (
@@ -145,6 +170,33 @@ function VenuePage() {
             <p className="mt-2 text-xs text-muted-foreground">
               Max allowed on this turf: {maxPlayersAllowed}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Capacity filled: {playerCount}/{maxPlayersAllowed} ({capacityPercent}%)
+            </p>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full bg-primary" style={{ width: `${capacityPercent}%` }} />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-card p-6">
+            <label className="text-sm font-semibold">Player names</label>
+            <div className="mt-3 grid gap-2">
+              {playerNames.map((name, idx) => (
+                <input
+                  key={idx}
+                  value={name}
+                  placeholder={`Player ${idx + 1} name`}
+                  onChange={(e) =>
+                    setPlayerNames((prev) => {
+                      const next = [...prev];
+                      next[idx] = e.target.value;
+                      return next;
+                    })
+                  }
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                />
+              ))}
+            </div>
           </div>
 
           <div>
@@ -163,20 +215,18 @@ function VenuePage() {
           <motion.div layout className="sticky bottom-4 rounded-2xl border border-primary/40 bg-card p-5 shadow-[var(--shadow-glow)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Total</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">You Pay</p>
                 <p className="flex items-center font-display text-3xl font-bold">
                   <IndianRupee className="h-6 w-6" />{total.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground">{selected.length} hour{selected.length === 1 ? "" : "s"} selected</p>
                 <p className="text-xs text-muted-foreground">
-                  For {playerCount} player{playerCount === 1 ? "" : "s"}:{" "}
-                  <IndianRupee className="mb-0.5 inline h-3 w-3" />
-                  {total.toLocaleString()} total (hourly pricing)
+                  For {playerCount} player{playerCount === 1 ? "" : "s"}, this is the total booking amount.
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Split per person for selected players:{" "}
+                  Per person (selected {playerCount}):{" "}
                   <IndianRupee className="mb-0.5 inline h-3 w-3" />
-                  {Math.ceil(total / playerCount).toLocaleString()}
+                  {selectedSplitPrice.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Split per person at full turf capacity ({maxPlayersAllowed}):{" "}

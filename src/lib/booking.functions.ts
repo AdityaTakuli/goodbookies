@@ -139,15 +139,21 @@ export const getSlots = createServerFn({ method: "GET" })
 
 export const createBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { venueId: string; date: string; startHour: number; endHour: number; playerCount?: number; couponCode?: string }) =>
+  .inputValidator((input: { venueId: string; date: string; startHour: number; endHour: number; playerCount?: number; playerNames?: string[]; couponCode?: string }) =>
     z.object({
       venueId: z.string().uuid(),
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       startHour: z.number().int().min(0).max(23),
       endHour: z.number().int().min(1).max(24),
       playerCount: z.number().int().min(1).max(100).default(1),
+      playerNames: z.array(z.string().trim().min(1).max(60)).default([]),
       couponCode: z.string().optional(),
-    }).refine((v) => v.endHour > v.startHour, { message: "endHour must be > startHour" }).parse(input),
+    })
+      .refine((v) => v.endHour > v.startHour, { message: "endHour must be > startHour" })
+      .refine((v) => v.playerNames.length === v.playerCount, {
+        message: "Please provide one player name per selected player",
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { data: venue, error: vErr } = await supabaseAdmin
@@ -160,6 +166,14 @@ export const createBooking = createServerFn({ method: "POST" })
     if (vErr || !venue) throw new Error("Venue not found");
     if (data.playerCount > (venue.max_players_allowed ?? 1)) {
       throw new Error(`Only ${venue.max_players_allowed} players are allowed for this turf`);
+    }
+    const normalizedNames = data.playerNames.map((name) => name.trim()).filter(Boolean);
+    const uniqueNames = new Set(normalizedNames.map((name) => name.toLowerCase()));
+    if (normalizedNames.length !== data.playerCount) {
+      throw new Error("Please provide one player name per selected player");
+    }
+    if (uniqueNames.size !== normalizedNames.length) {
+      throw new Error("Each player name must be unique");
     }
 
     const pricing = await loadVenuePricing(data.venueId);
@@ -209,6 +223,7 @@ export const createBooking = createServerFn({ method: "POST" })
         start_hour: data.startHour,
         end_hour: data.endHour,
         player_count: data.playerCount,
+        player_names: normalizedNames,
         total_price: total,
         status,
         coupon_code: data.couponCode?.toUpperCase() ?? null,
@@ -250,7 +265,7 @@ export const listMyBookings = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("bookings")
-      .select("id, booking_date, start_hour, end_hour, player_count, total_price, status, venue:venues(name, slug, image_url, city, max_players_allowed, sport:sports(name, icon))")
+      .select("id, booking_date, start_hour, end_hour, player_count, player_names, total_price, status, venue:venues(name, slug, image_url, city, max_players_allowed, sport:sports(name, icon))")
       .order("booking_date", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];

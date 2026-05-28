@@ -131,18 +131,17 @@ function VenuePage() {
           </div>
           <div className="rounded-2xl border border-border/60 bg-card p-6">
             <label className="text-sm font-semibold">Players in this booking</label>
-            <input
-              type="number"
-              min={1}
-              max={maxPlayersAllowed}
+            <select
               value={playerCount}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                if (Number.isNaN(next)) return;
-                setPlayerCount(Math.min(maxPlayersAllowed, Math.max(1, next)));
-              }}
-              className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-            />
+              onChange={(e) => setPlayerCount(Number(e.target.value))}
+              className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+            >
+              {Array.from({ length: maxPlayersAllowed }, (_, i) => i + 1).map((count) => (
+                <option key={count} value={count}>
+                  {count} player{count === 1 ? "" : "s"}
+                </option>
+              ))}
+            </select>
             <p className="mt-2 text-xs text-muted-foreground">
               Max allowed on this turf: {maxPlayersAllowed}
             </p>
@@ -170,7 +169,19 @@ function VenuePage() {
                 </p>
                 <p className="text-xs text-muted-foreground">{selected.length} hour{selected.length === 1 ? "" : "s"} selected</p>
                 <p className="text-xs text-muted-foreground">
-                  Per person (based on max players): <IndianRupee className="mb-0.5 inline h-3 w-3" />{perPersonPrice.toLocaleString()}
+                  For {playerCount} player{playerCount === 1 ? "" : "s"}:{" "}
+                  <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                  {total.toLocaleString()} total (hourly pricing)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Split per person for selected players:{" "}
+                  <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                  {Math.ceil(total / playerCount).toLocaleString()}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Split per person at full turf capacity ({maxPlayersAllowed}):{" "}
+                  <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                  {perPersonPrice.toLocaleString()}
                 </p>
               </div>
               <Button size="lg" disabled={selected.length === 0 || submitting} onClick={handleBook} className="glow-primary">

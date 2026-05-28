@@ -53,6 +53,7 @@ function VenuePage() {
   const maxPlayersAllowed = Math.max(1, Number(venue.max_players_allowed ?? 1));
   const perPersonPrice = total > 0 ? Math.ceil(total / maxPlayersAllowed) : 0;
   const selectedSplitPrice = total > 0 ? Math.ceil(total / playerCount) : 0;
+  const payableForSelectedPlayers = perPersonPrice * playerCount;
   const capacityPercent = Math.round((playerCount / maxPlayersAllowed) * 100);
 
   useEffect(() => {
@@ -215,13 +216,13 @@ function VenuePage() {
           <motion.div layout className="sticky bottom-4 rounded-2xl border border-primary/40 bg-card p-5 shadow-[var(--shadow-glow)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">You Pay</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">You Pay (for {playerCount} players)</p>
                 <p className="flex items-center font-display text-3xl font-bold">
-                  <IndianRupee className="h-6 w-6" />{total.toLocaleString()}
+                  <IndianRupee className="h-6 w-6" />{payableForSelectedPlayers.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground">{selected.length} hour{selected.length === 1 ? "" : "s"} selected</p>
                 <p className="text-xs text-muted-foreground">
-                  For {playerCount} player{playerCount === 1 ? "" : "s"}, this is the total booking amount.
+                  Full booking total for turf: <IndianRupee className="mb-0.5 inline h-3 w-3" />{total.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Per person (selected {playerCount}):{" "}

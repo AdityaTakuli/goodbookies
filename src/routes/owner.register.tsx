@@ -44,9 +44,9 @@ function OwnerRegister() {
   if (done) {
     return (
       <div className="container mx-auto max-w-md px-4 py-24 text-center">
-        <h1 className="font-display text-3xl font-bold">Application received</h1>
-        <p className="mt-3 text-muted-foreground">We'll email you when your partner account is approved.</p>
-        <Link to="/" className="mt-6 inline-block text-sm text-primary hover:underline">← Back home</Link>
+        <h1 className="font-display text-3xl font-bold">Partner account created</h1>
+        <p className="mt-3 text-muted-foreground">Your partner account is approved instantly. Continue to owner login.</p>
+        <Link to="/owner/login" className="mt-6 inline-block text-sm text-primary hover:underline">Go to owner login →</Link>
       </div>
     );
   }
@@ -54,7 +54,7 @@ function OwnerRegister() {
   return (
     <div className="container mx-auto max-w-lg px-4 py-12">
       <h1 className="font-display text-4xl font-bold">List your venue</h1>
-      <p className="mt-2 text-muted-foreground">Partner with Good Bookies. Applications are reviewed within 2–3 business days.</p>
+      <p className="mt-2 text-muted-foreground">Partner with Good Bookies. Registration is approved instantly.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-2xl border border-border/60 bg-card p-6">
         <Field label="Full name"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
         <Field label="Email"><Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
@@ -67,9 +67,9 @@ function OwnerRegister() {
           <input type="checkbox" checked={form.agreed} onChange={(e) => setForm({ ...form, agreed: e.target.checked })} />
           I agree to the Terms & Conditions
         </label>
-        <Button type="submit" className="w-full">Submit application</Button>
+        <Button type="submit" className="w-full">Create partner account</Button>
         <p className="text-center text-sm text-muted-foreground">
-          Already approved? <Link to="/owner/login" className="text-primary hover:underline">Owner login</Link>
+          Already have an account? <Link to="/owner/login" className="text-primary hover:underline">Owner login</Link>
         </p>
       </form>
     </div>

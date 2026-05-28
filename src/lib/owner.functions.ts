@@ -84,13 +84,22 @@ export const registerOwner = createServerFn({ method: "POST" })
       phone: data.phone,
       business_name: data.business_name ?? null,
       city: data.city,
-      status: "pending",
+      status: "approved",
+      approved_at: new Date().toISOString(),
     });
     if (ownerErr) {
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
       throw new Error(ownerErr.message);
     }
-    return { ok: true, message: "Application submitted. You'll receive an email once approved." };
+    const { error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .upsert({ user_id: authUser.user.id, role: "owner" }, { onConflict: "user_id,role" });
+    if (roleErr) {
+      await supabaseAdmin.from("owners").delete().eq("id", authUser.user.id);
+      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
+      throw new Error(roleErr.message);
+    }
+    return { ok: true, message: "Partner account created and approved. You can log in now." };
   });
 
 export const getOwnerStatus = createServerFn({ method: "GET" })

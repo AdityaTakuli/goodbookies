@@ -1,0 +1,11 @@
+{
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/render?path=$1"
+    }
+  ]
+}

@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 export function Header() {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, isOwner } = useAuth();
   const [open, setOpen] = useState(false);
 
   const nav = [
@@ -13,6 +13,7 @@ export function Header() {
     { to: "/sports", label: "Sports" },
     ...(user ? [{ to: "/account", label: "My Account" }] : []),
     ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
+    ...(isOwner ? [{ to: "/owner", label: "Partner" }] : []),
   ];
 
   return (

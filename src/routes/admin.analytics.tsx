@@ -6,8 +6,9 @@ import {
 } from "recharts";
 import { Trophy } from "lucide-react";
 import {
-  adminMonthlyRevenue, adminUserGrowth, adminCancellationTrend, adminRevenueByVenue,
+  adminMonthlyRevenue, adminUserGrowth, adminCancellationTrend, adminRevenueByVenue, adminExportAnalyticsCsv,
 } from "@/lib/admin.functions";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin/analytics")({
   component: AdminAnalytics,
@@ -18,6 +19,7 @@ function AdminAnalytics() {
   const growthFn = useServerFn(adminUserGrowth);
   const cancelFn = useServerFn(adminCancellationTrend);
   const venueFn = useServerFn(adminRevenueByVenue);
+  const exportFn = useServerFn(adminExportAnalyticsCsv);
 
   const { data: monthly } = useQuery({ queryKey: ["admin-monthly-rev"], queryFn: () => monthlyFn() });
   const { data: growth } = useQuery({ queryKey: ["admin-user-growth"], queryFn: () => growthFn({ data: { days: 90 } }) });
@@ -28,9 +30,18 @@ function AdminAnalytics() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-3xl font-bold">Analytics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Deep-dive platform metrics.</p>
+      <div className="flex flex-wrap justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-bold">Analytics</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Deep-dive platform metrics.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={async () => {
+          const { csv, filename } = await exportFn();
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+          a.download = filename;
+          a.click();
+        }}>Export CSV</Button>
       </div>
 
       {monthly?.bestMonth && monthly.bestMonth.revenue > 0 && (

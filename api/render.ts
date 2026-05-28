@@ -28,14 +28,23 @@ function getRequestUrl(request: Request): URL {
 }
 
 export default async function handler(request: Request): Promise<Response> {
-  const server = await getServerEntry();
-  const url = getRequestUrl(request);
-  const rewrittenPath = url.searchParams.get("path");
+  try {
+    const server = await getServerEntry();
+    const url = getRequestUrl(request);
+    const rewrittenPath = url.searchParams.get("path");
 
-  if (rewrittenPath != null) {
-    url.pathname = "/" + rewrittenPath.replace(/^\/+/, "");
-    url.searchParams.delete("path");
+    if (rewrittenPath != null) {
+      const normalizedPath = rewrittenPath.replace(/^\/+/, "");
+      url.pathname = normalizedPath.length > 0 ? `/${normalizedPath}` : "/";
+      url.searchParams.delete("path");
+    }
+
+    return await server.fetch(new Request(url.toString(), request), {}, {});
+  } catch (error) {
+    console.error("[api/render] invocation failed", error);
+    return new Response("Internal Server Error", {
+      status: 500,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
   }
-
-  return server.fetch(new Request(url.toString(), request), {}, {});
 }

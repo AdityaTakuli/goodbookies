@@ -56,6 +56,10 @@ function VenuePage() {
   const selectedSplitPrice = total > 0 ? Math.ceil(total / playerCount) : 0;
   const payableForSelectedPlayers = perPersonPrice * playerCount;
   const capacityPercent = Math.round((playerCount / maxPlayersAllowed) * 100);
+  const emptySpotsNow = (slotsQuery.data ?? []).reduce(
+    (sum, slot) => sum + Math.max(0, Number(slot.remaining_capacity ?? 0)),
+    0,
+  );
 
   useEffect(() => {
     setPlayerNames((prev) => {
@@ -207,7 +211,10 @@ function VenuePage() {
           </div>
 
           <div>
-            <h2 className="mb-3 font-display text-xl font-semibold">Available slots</h2>
+            <h2 className="mb-1 font-display text-xl font-semibold">Available slots</h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Live empty spots left today: {emptySpotsNow}
+            </p>
             {slotsQuery.isLoading ? (
               <div className="rounded-2xl border border-border/60 bg-card p-10 text-center text-muted-foreground">Loading the pitch…</div>
             ) : (

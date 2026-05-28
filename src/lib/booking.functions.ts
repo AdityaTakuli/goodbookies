@@ -228,7 +228,7 @@ export const createBooking = createServerFn({ method: "POST" })
       coupon: coupon ? { discount_type: coupon.discount_type, discount_value: coupon.discount_value } : null,
     });
 
-    const status = venue.confirmation_mode === "manual" ? "pending" : "confirmed";
+    const status = "confirmed";
     const order = await createRazorpayOrder(total * 100, `bk_${Date.now()}`);
     const { data: payment, error: payErr } = await supabaseAdmin
       .from("payments")
@@ -269,10 +269,8 @@ export const createBooking = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("notifications").insert({
       user_id: context.userId,
-      title: status === "confirmed" ? "Booking confirmed" : "Booking pending",
-      message: status === "confirmed"
-        ? `Your slot on ${data.date} is confirmed. See you on the turf!`
-        : `Your booking awaits venue confirmation.`,
+      title: "Booking confirmed",
+      message: `Your slot on ${data.date} is confirmed. See you on the turf!`,
       type: "booking",
     });
 
@@ -280,7 +278,7 @@ export const createBooking = createServerFn({ method: "POST" })
       await supabaseAdmin.from("notifications").insert({
         user_id: venue.owner_id,
         title: "New booking",
-        message: `New ${status} booking on ${data.date}.`,
+        message: `New confirmed booking on ${data.date}.`,
         type: "booking",
       });
     }

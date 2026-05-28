@@ -5,13 +5,33 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { calculateBookingTotal, loadVenuePricing } from "@/lib/pricing";
 import { createRazorpayOrder } from "@/lib/services/razorpay";
 
+const defaultSports = [
+  { name: "Football", slug: "football", icon: "⚽", is_active: true },
+  { name: "Cricket", slug: "cricket", icon: "🏏", is_active: true },
+  { name: "Badminton", slug: "badminton", icon: "🏸", is_active: true },
+  { name: "Basketball", slug: "basketball", icon: "🏀", is_active: true },
+];
+
 export const listSports = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
+  let { data, error } = await supabaseAdmin
     .from("sports")
     .select("id, name, slug, icon")
     .eq("is_active", true)
     .order("name");
   if (error) throw new Error(error.message);
+  if (!data?.length) {
+    const { error: seedErr } = await supabaseAdmin
+      .from("sports")
+      .upsert(defaultSports, { onConflict: "slug" });
+    if (seedErr) throw new Error(seedErr.message);
+    const seeded = await supabaseAdmin
+      .from("sports")
+      .select("id, name, slug, icon")
+      .eq("is_active", true)
+      .order("name");
+    if (seeded.error) throw new Error(seeded.error.message);
+    data = seeded.data;
+  }
   return data ?? [];
 });
 

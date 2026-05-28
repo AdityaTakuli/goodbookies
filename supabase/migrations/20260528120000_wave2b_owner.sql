@@ -120,17 +120,37 @@ ALTER TABLE public.bookings
   ADD COLUMN IF NOT EXISTS coupon_code text,
   ADD COLUMN IF NOT EXISTS payment_id uuid REFERENCES public.payments(id);
 
--- Owner can read bookings for their venues (via server); add policy for owner select
-CREATE POLICY "Owners view venue bookings" ON public.bookings
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.venues v
-      WHERE v.id = bookings.venue_id AND v.owner_id = auth.uid()
-    )
-  );
+-- Owner policies (idempotent for reruns)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'bookings'
+      AND policyname = 'Owners view venue bookings'
+  ) THEN
+    CREATE POLICY "Owners view venue bookings" ON public.bookings
+      FOR SELECT TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.venues v
+          WHERE v.id = bookings.venue_id AND v.owner_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
-CREATE POLICY "Owners manage own venues" ON public.venues
-  FOR ALL TO authenticated
-  USING (owner_id = auth.uid() OR public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (owner_id = auth.uid() OR public.has_role(auth.uid(), 'admin'));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'venues'
+      AND policyname = 'Owners manage own venues'
+  ) THEN
+    CREATE POLICY "Owners manage own venues" ON public.venues
+      FOR ALL TO authenticated
+      USING (owner_id = auth.uid() OR public.has_role(auth.uid(), 'admin'))
+      WITH CHECK (owner_id = auth.uid() OR public.has_role(auth.uid(), 'admin'));
+  END IF;
+END $$;

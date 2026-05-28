@@ -36,6 +36,7 @@ function VenuePage() {
 
   const [date, setDate] = useState(todayISO());
   const [selected, setSelected] = useState<number[]>([]);
+  const [playerCount, setPlayerCount] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
   const slotsQuery = useQuery({
@@ -48,6 +49,8 @@ function VenuePage() {
   const sortedSel = [...selected].sort((a, b) => a - b);
   const isContiguous = sortedSel.every((h, i) => i === 0 || h === sortedSel[i - 1] + 1);
   const total = venue.price_per_hour * selected.length;
+  const maxPlayersAllowed = Math.max(1, Number(venue.max_players_allowed ?? 1));
+  const perPersonPrice = total > 0 ? Math.ceil(total / maxPlayersAllowed) : 0;
 
   const toggle = (h: number) => {
     setSelected((prev) => (prev.includes(h) ? prev.filter((x) => x !== h) : [...prev, h]));
@@ -72,6 +75,7 @@ function VenuePage() {
           date,
           startHour: sortedSel[0],
           endHour: sortedSel[sortedSel.length - 1] + 1,
+          playerCount,
         },
       });
       navigate({ to: "/booking/success", search: { id: res.bookingId } });
@@ -125,6 +129,24 @@ function VenuePage() {
               className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
+          <div className="rounded-2xl border border-border/60 bg-card p-6">
+            <label className="text-sm font-semibold">Players in this booking</label>
+            <input
+              type="number"
+              min={1}
+              max={maxPlayersAllowed}
+              value={playerCount}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                if (Number.isNaN(next)) return;
+                setPlayerCount(Math.min(maxPlayersAllowed, Math.max(1, next)));
+              }}
+              className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Max allowed on this turf: {maxPlayersAllowed}
+            </p>
+          </div>
 
           <div>
             <h2 className="mb-3 font-display text-xl font-semibold">Available slots</h2>
@@ -147,6 +169,9 @@ function VenuePage() {
                   <IndianRupee className="h-6 w-6" />{total.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground">{selected.length} hour{selected.length === 1 ? "" : "s"} selected</p>
+                <p className="text-xs text-muted-foreground">
+                  Per person (based on max players): <IndianRupee className="mb-0.5 inline h-3 w-3" />{perPersonPrice.toLocaleString()}
+                </p>
               </div>
               <Button size="lg" disabled={selected.length === 0 || submitting} onClick={handleBook} className="glow-primary">
                 {submitting ? "Booking…" : "Book Now"}

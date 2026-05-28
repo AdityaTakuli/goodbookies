@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           end_hour: number
           id: string
+          player_count: number
           start_hour: number
           status: string
           total_price: number
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string
           end_hour: number
           id?: string
+          player_count?: number
           start_hour: number
           status?: string
           total_price: number
@@ -42,6 +44,7 @@ export type Database = {
           created_at?: string
           end_hour?: number
           id?: string
+          player_count?: number
           start_hour?: number
           status?: string
           total_price?: number
@@ -144,6 +147,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          max_players_allowed: number
           name: string
           opening_hour: number
           price_per_hour: number
@@ -162,6 +166,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          max_players_allowed?: number
           name: string
           opening_hour?: number
           price_per_hour: number
@@ -180,6 +185,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          max_players_allowed?: number
           name?: string
           opening_hour?: number
           price_per_hour?: number

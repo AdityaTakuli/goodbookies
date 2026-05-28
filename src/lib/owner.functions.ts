@@ -46,6 +46,7 @@ const venueSchema = z.object({
   opening_hour: z.number().int().min(0).max(23),
   closing_hour: z.number().int().min(1).max(24),
   slot_duration_minutes: z.number().int().min(30).max(240).default(60),
+  max_players_allowed: z.number().int().min(1).max(100).default(10),
   venue_type: z.string().optional(),
   state: z.string().optional().nullable(),
   pin_code: z.string().optional().nullable(),

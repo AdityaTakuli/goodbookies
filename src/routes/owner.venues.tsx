@@ -37,6 +37,7 @@ function OwnerVenues() {
   const empty = () => ({
     name: "", slug: "", sport_id: sports?.[0]?.id ?? "", city: "", address: "",
     description: "", image_url: "", price_per_hour: 500, opening_hour: 6, closing_hour: 22,
+    max_players_allowed: 10,
     confirmation_mode: "instant" as const, advance_booking_days: 30,
   });
 
@@ -87,6 +88,20 @@ function OwnerVenues() {
                   <F label="City"><Input value={editing.values.city} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, city: e.target.value } })} /></F>
                   <F label="₹/hr"><Input type="number" value={editing.values.price_per_hour} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, price_per_hour: Number(e.target.value) } })} /></F>
                 </div>
+                <F label="Max players allowed">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={editing.values.max_players_allowed ?? 10}
+                    onChange={(e) =>
+                      setEditing({
+                        ...editing,
+                        values: { ...editing.values, max_players_allowed: Number(e.target.value) || 1 },
+                      })
+                    }
+                  />
+                </F>
                 <F label="Address"><Input value={editing.values.address} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, address: e.target.value } })} /></F>
                 <F label="Image URL"><Input value={editing.values.image_url ?? ""} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, image_url: e.target.value } })} /></F>
                 <F label="Description"><Textarea rows={2} value={editing.values.description ?? ""} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, description: e.target.value } })} /></F>

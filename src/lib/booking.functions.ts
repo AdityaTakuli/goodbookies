@@ -62,7 +62,7 @@ export const getVenue = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: venue, error } = await supabaseAdmin
       .from("venues")
-      .select("id, name, slug, description, address, city, image_url, price_per_hour, opening_hour, closing_hour, slot_duration_minutes, amenities, rating, sport:sports(name, slug, icon)")
+      .select("id, name, slug, description, address, city, image_url, price_per_hour, opening_hour, closing_hour, slot_duration_minutes, max_players_allowed, amenities, rating, sport:sports(name, slug, icon)")
       .eq("slug", data.slug)
       .eq("is_active", true)
       .eq("approval_status", "approved")
@@ -139,24 +139,28 @@ export const getSlots = createServerFn({ method: "GET" })
 
 export const createBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { venueId: string; date: string; startHour: number; endHour: number; couponCode?: string }) =>
+  .inputValidator((input: { venueId: string; date: string; startHour: number; endHour: number; playerCount?: number; couponCode?: string }) =>
     z.object({
       venueId: z.string().uuid(),
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       startHour: z.number().int().min(0).max(23),
       endHour: z.number().int().min(1).max(24),
+      playerCount: z.number().int().min(1).max(100).default(1),
       couponCode: z.string().optional(),
     }).refine((v) => v.endHour > v.startHour, { message: "endHour must be > startHour" }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { data: venue, error: vErr } = await supabaseAdmin
       .from("venues")
-      .select("price_per_hour, confirmation_mode, owner_id")
+      .select("price_per_hour, confirmation_mode, owner_id, max_players_allowed")
       .eq("id", data.venueId)
       .eq("is_active", true)
       .eq("approval_status", "approved")
       .maybeSingle();
     if (vErr || !venue) throw new Error("Venue not found");
+    if (data.playerCount > (venue.max_players_allowed ?? 1)) {
+      throw new Error(`Only ${venue.max_players_allowed} players are allowed for this turf`);
+    }
 
     const pricing = await loadVenuePricing(data.venueId);
     let coupon = null;
@@ -204,6 +208,7 @@ export const createBooking = createServerFn({ method: "POST" })
         booking_date: data.date,
         start_hour: data.startHour,
         end_hour: data.endHour,
+        player_count: data.playerCount,
         total_price: total,
         status,
         coupon_code: data.couponCode?.toUpperCase() ?? null,
@@ -245,7 +250,7 @@ export const listMyBookings = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("bookings")
-      .select("id, booking_date, start_hour, end_hour, total_price, status, venue:venues(name, slug, image_url, city, sport:sports(name, icon))")
+      .select("id, booking_date, start_hour, end_hour, player_count, total_price, status, venue:venues(name, slug, image_url, city, max_players_allowed, sport:sports(name, icon))")
       .order("booking_date", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];

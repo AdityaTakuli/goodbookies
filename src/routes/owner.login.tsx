@@ -24,10 +24,15 @@ function OwnerLogin() {
     if (error) { toast.error(error.message); return; }
     try {
       const owner = await statusFn();
-      if (!owner) { toast.error("No owner account found"); await supabase.auth.signOut(); return; }
-      if (owner.status === "pending") { toast.error("Your application is still pending approval"); await supabase.auth.signOut(); return; }
-      if (owner.status === "rejected") { toast.error(owner.rejection_reason ?? "Application was not approved"); await supabase.auth.signOut(); return; }
-      if (owner.status === "suspended") { toast.error("Account suspended"); await supabase.auth.signOut(); return; }
+      if (!owner) {
+        toast.message("Logged in. Create a partner application to access owner features.");
+      } else if (owner.status === "pending") {
+        toast.message("Logged in. Your partner application is pending approval.");
+      } else if (owner.status === "rejected") {
+        toast.message(owner.rejection_reason ?? "Logged in. Your application was not approved.");
+      } else if (owner.status === "suspended") {
+        toast.message("Logged in. Your partner account is suspended.");
+      }
       navigate({ to: "/owner" });
     } catch (err: any) {
       toast.error(err.message);

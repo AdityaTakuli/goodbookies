@@ -17,9 +17,19 @@ export const config = {
   runtime: "nodejs",
 };
 
+function getRequestUrl(request: Request): URL {
+  try {
+    return new URL(request.url);
+  } catch {
+    const protocol = request.headers.get("x-forwarded-proto") ?? "https";
+    const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "localhost";
+    return new URL(request.url, `${protocol}://${host}`);
+  }
+}
+
 export default async function handler(request: Request): Promise<Response> {
   const server = await getServerEntry();
-  const url = new URL(request.url);
+  const url = getRequestUrl(request);
   const rewrittenPath = url.searchParams.get("path");
 
   if (rewrittenPath != null) {

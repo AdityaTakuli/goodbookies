@@ -29,6 +29,11 @@ function OwnerLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isPublicOwnerAuthPath =
+    pathname === "/owner/login" ||
+    pathname === "/owner/login/" ||
+    pathname === "/owner/register" ||
+    pathname === "/owner/register/";
   const statusFn = useServerFn(getOwnerStatus);
   const { data: owner, isLoading: ownerLoading } = useQuery({
     queryKey: ["owner-status", user?.id],
@@ -37,11 +42,21 @@ function OwnerLayout() {
   });
 
   useEffect(() => {
+    if (isPublicOwnerAuthPath) return;
     if (!loading && !user) navigate({ to: "/owner/login" });
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate, isPublicOwnerAuthPath]);
 
-  if (loading || ownerLoading || !user) {
+  // Let /owner/login and /owner/register render without owner gating.
+  if (isPublicOwnerAuthPath) {
+    return <Outlet />;
+  }
+
+  if (loading || ownerLoading) {
     return <div className="container mx-auto px-4 py-16 text-muted-foreground">Loading…</div>;
+  }
+
+  if (!user) {
+    return null;
   }
 
   if (owner?.status !== "approved") {

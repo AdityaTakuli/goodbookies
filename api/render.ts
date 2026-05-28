@@ -6,6 +6,7 @@ let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
+    // @ts-ignore Build output module has no type declarations on Vercel.
     serverEntryPromise = import("../dist/server/index.js").then(
       (m) => ((m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry)),
     );

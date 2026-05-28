@@ -63,9 +63,14 @@ function OwnerRegister() {
         <Field label="City"><Input required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></Field>
         <Field label="Password"><Input type="password" required minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></Field>
         <Field label="Confirm password"><Input type="password" required value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} /></Field>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={form.agreed} onChange={(e) => setForm({ ...form, agreed: e.target.checked })} />
-          I agree to the Terms & Conditions
+        <label className="flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm">
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-primary"
+            checked={form.agreed}
+            onChange={(e) => setForm({ ...form, agreed: e.target.checked })}
+          />
+          <span>I agree to the Terms &amp; Conditions</span>
         </label>
         <Button type="submit" className="w-full">Create partner account</Button>
         <p className="text-center text-sm text-muted-foreground">

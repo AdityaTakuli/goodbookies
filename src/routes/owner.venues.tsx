@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ownerListVenues, ownerUpsertVenue, ownerDeleteVenue } from "@/lib/owner.functions";
 import { listSports } from "@/lib/booking.functions";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,13 @@ function OwnerVenues() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
 
+  useEffect(() => {
+    if (!editing || editing.values.sport_id || !sports?.length) return;
+    setEditing((prev: any) =>
+      prev ? { ...prev, values: { ...prev.values, sport_id: sports[0].id } } : prev,
+    );
+  }, [sports, editing]);
+
   const empty = () => ({
     name: "", slug: "", sport_id: sports?.[0]?.id ?? "", city: "", address: "",
     description: "", image_url: "", price_per_hour: 500, opening_hour: 6, closing_hour: 22,
@@ -35,8 +42,18 @@ function OwnerVenues() {
 
   const save = async () => {
     if (!editing) return;
+    if (!editing.values.sport_id) {
+      toast.error("Please select a sport.");
+      return;
+    }
+    const values = {
+      ...editing.values,
+      slug: String(editing.values.slug ?? "").trim().toLowerCase(),
+      image_url: editing.values.image_url?.trim() ? editing.values.image_url.trim() : null,
+      description: editing.values.description?.trim() ? editing.values.description.trim() : null,
+    };
     try {
-      await upsertFn({ data: { id: editing.id, values: editing.values } });
+      await upsertFn({ data: { id: editing.id, values } });
       toast.success(editing.id ? "Updated — pending re-approval if major change" : "Submitted for approval");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["owner-venues"] });
@@ -62,6 +79,7 @@ function OwnerVenues() {
                 <F label="Slug"><Input value={editing.values.slug} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, slug: e.target.value } })} /></F>
                 <F label="Sport">
                   <select className="h-10 w-full rounded-md border border-input bg-input px-3 text-sm" value={editing.values.sport_id} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, sport_id: e.target.value } })}>
+                    <option value="" disabled>Select a sport</option>
                     {sports?.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </F>

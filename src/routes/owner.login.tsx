@@ -41,14 +41,14 @@ function OwnerLogin() {
 
   return (
     <div className="container mx-auto max-w-md px-4 py-12">
-      <h1 className="font-display text-4xl font-bold">Owner login</h1>
+      <h1 className="font-display text-4xl font-bold">Owner Login</h1>
       <p className="mt-2 text-muted-foreground">Access your venue partner dashboard.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-2xl border border-border/60 bg-card p-6">
         <div className="grid gap-1.5"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         <div className="grid gap-1.5"><Label>Password</Label><Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></div>
         <Button type="submit" className="w-full">Log in</Button>
         <p className="text-center text-sm text-muted-foreground">
-          New partner? <Link to="/owner/register" className="text-primary hover:underline">Register</Link>
+          Need a partner account? <Link to="/owner/register" className="text-primary hover:underline">Register</Link>
         </p>
       </form>
     </div>

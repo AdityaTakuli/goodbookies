@@ -54,7 +54,7 @@ function OwnerVenues() {
     };
     try {
       await upsertFn({ data: { id: editing.id, values } });
-      toast.success(editing.id ? "Updated — pending re-approval if major change" : "Submitted for approval");
+      toast.success(editing.id ? "Venue updated" : "Venue created");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["owner-venues"] });
     } catch (e: any) { toast.error(e.message); }

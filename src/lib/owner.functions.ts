@@ -234,8 +234,9 @@ export const ownerUpsertVenue = createServerFn({ method: "POST" })
     const payload = {
       ...data.values,
       owner_id: context.userId,
-      approval_status: data.id ? undefined : "pending",
-      is_active: data.id ? data.values.is_active : false,
+      approval_status: "approved",
+      is_active: data.values.is_active ?? true,
+      rejection_reason: null,
     };
     if (data.id) {
       await assertOwnerVenue(context.userId, data.id);

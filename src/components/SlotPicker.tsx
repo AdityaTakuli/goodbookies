@@ -1,7 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-export type Slot = { hour: number; available: boolean };
+export type Slot = {
+  hour: number;
+  available: boolean;
+  remaining_capacity?: number;
+  total_capacity?: number;
+};
 
 function fmt(h: number) {
   const ampm = h < 12 ? "AM" : "PM";
@@ -46,7 +51,10 @@ export function SlotPicker({
                   isSelected && "border-primary bg-primary text-primary-foreground glow-primary",
                 )}
               >
-                {fmt(slot.hour)}
+                <div>{fmt(slot.hour)}</div>
+                <div className="mt-1 text-[10px] opacity-80">
+                  {slot.remaining_capacity ?? 0} left
+                </div>
                 {isSelected && (
                   <motion.span
                     layoutId="slot-ripple"

@@ -41,8 +41,9 @@ function VenuePage() {
   const [submitting, setSubmitting] = useState(false);
 
   const slotsQuery = useQuery({
-    queryKey: ["slots", venue!.id, date],
-    queryFn: () => getSlots({ data: { venueId: venue!.id, date } }),
+    queryKey: ["slots", venue!.id, date, playerCount],
+    queryFn: () => getSlots({ data: { venueId: venue!.id, date, playerCount } }),
+    refetchInterval: 5000,
   });
 
   if (!venue) return null;
@@ -62,6 +63,11 @@ function VenuePage() {
       return next;
     });
   }, [playerCount]);
+
+  useEffect(() => {
+    const availableSet = new Set((slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.hour));
+    setSelected((prev) => prev.filter((h) => availableSet.has(h)));
+  }, [slotsQuery.data]);
 
   const toggle = (h: number) => {
     setSelected((prev) => (prev.includes(h) ? prev.filter((x) => x !== h) : [...prev, h]));

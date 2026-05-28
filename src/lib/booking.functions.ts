@@ -72,16 +72,17 @@ export const getVenue = createServerFn({ method: "GET" })
   });
 
 export const getSlots = createServerFn({ method: "GET" })
-  .inputValidator((input: { venueId: string; date: string }) =>
+  .inputValidator((input: { venueId: string; date: string; playerCount?: number }) =>
     z.object({
       venueId: z.string().uuid(),
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      playerCount: z.number().int().min(1).max(100).default(1),
     }).parse(input),
   )
   .handler(async ({ data }) => {
     const { data: venue } = await supabaseAdmin
       .from("venues")
-      .select("opening_hour, closing_hour, operating_days, holiday_dates")
+      .select("opening_hour, closing_hour, operating_days, holiday_dates, max_players_allowed")
       .eq("id", data.venueId)
       .maybeSingle();
     if (!venue) throw new Error("Venue not found");
@@ -96,16 +97,18 @@ export const getSlots = createServerFn({ method: "GET" })
     const [{ data: bookings }, { data: blocks }] = await Promise.all([
       supabaseAdmin
         .from("bookings")
-        .select("start_hour, end_hour, status")
+        .select("start_hour, end_hour, status, player_count")
         .eq("venue_id", data.venueId)
         .eq("booking_date", data.date)
         .in("status", ["confirmed", "pending"]),
       supabaseAdmin.from("slot_blocks").select("*").eq("venue_id", data.venueId),
     ]);
 
-    const booked = new Set<number>();
+    const bookedPlayersByHour = new Map<number, number>();
     bookings?.forEach((b) => {
-      for (let h = b.start_hour; h < b.end_hour; h++) booked.add(h);
+      for (let h = b.start_hour; h < b.end_hour; h++) {
+        bookedPlayersByHour.set(h, (bookedPlayersByHour.get(h) ?? 0) + (b.player_count ?? 1));
+      }
     });
 
     const isBlocked = (hour: number) => {
@@ -124,14 +127,22 @@ export const getSlots = createServerFn({ method: "GET" })
       return false;
     };
 
-    const slots: { hour: number; available: boolean; status?: string }[] = [];
+    const slots: { hour: number; available: boolean; status?: string; remaining_capacity: number; booked_players: number; total_capacity: number }[] = [];
+    const totalCapacity = Math.max(1, Number(venue.max_players_allowed ?? 1));
+    const requestedPlayers = Math.max(1, data.playerCount ?? 1);
     for (let h = venue.opening_hour; h < venue.closing_hour; h++) {
       const blocked = isBlocked(h);
-      const taken = booked.has(h);
+      const bookedPlayers = Math.max(0, bookedPlayersByHour.get(h) ?? 0);
+      const remainingCapacity = Math.max(0, totalCapacity - bookedPlayers);
+      const full = remainingCapacity <= 0;
+      const enoughForSelection = remainingCapacity >= requestedPlayers;
       slots.push({
         hour: h,
-        available: !blocked && !taken,
-        status: blocked ? "blocked" : taken ? "booked" : "available",
+        available: !blocked && enoughForSelection,
+        status: blocked ? "blocked" : full ? "booked" : "available",
+        remaining_capacity: remainingCapacity,
+        booked_players: bookedPlayers,
+        total_capacity: totalCapacity,
       });
     }
     return slots;
@@ -174,6 +185,23 @@ export const createBooking = createServerFn({ method: "POST" })
     }
     if (uniqueNames.size !== normalizedNames.length) {
       throw new Error("Each player name must be unique");
+    }
+    const { data: overlaps, error: overlapErr } = await supabaseAdmin
+      .from("bookings")
+      .select("start_hour, end_hour, player_count")
+      .eq("venue_id", data.venueId)
+      .eq("booking_date", data.date)
+      .in("status", ["confirmed", "pending"]);
+    if (overlapErr) throw new Error(overlapErr.message);
+    const maxCapacity = Math.max(1, Number(venue.max_players_allowed ?? 1));
+    for (let h = data.startHour; h < data.endHour; h++) {
+      const used = (overlaps ?? []).reduce((sum, b) => {
+        if (h >= b.start_hour && h < b.end_hour) return sum + (b.player_count ?? 1);
+        return sum;
+      }, 0);
+      if (used + data.playerCount > maxCapacity) {
+        throw new Error(`Not enough capacity at ${h}:00. Please pick another slot.`);
+      }
     }
 
     const pricing = await loadVenuePricing(data.venueId);

@@ -5,15 +5,15 @@
     },
     {
       "src": "/assets/(.*)",
-      "dest": "/dist/client/assets/$1"
+      "dest": "/client/assets/$1"
     },
     {
       "src": "/favicon.ico",
-      "dest": "/dist/client/favicon.ico"
+      "dest": "/client/favicon.ico"
     },
     {
       "src": "/favicon.png",
-      "dest": "/dist/client/favicon.png"
+      "dest": "/client/favicon.png"
     },
     {
       "src": "/(.*)",

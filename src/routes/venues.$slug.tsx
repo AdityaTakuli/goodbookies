@@ -1,5 +1,5 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
-import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -32,6 +32,7 @@ function VenuePage() {
   const { data: venue } = useSuspenseQuery(venueQO(slug));
   const { user } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const bookFn = useServerFn(createBooking);
 
   const [date, setDate] = useState(todayISO());
@@ -52,10 +53,19 @@ function VenuePage() {
   const isContiguous = sortedSel.every((h, i) => i === 0 || h === sortedSel[i - 1] + 1);
   const total = venue.price_per_hour * selected.length;
   const maxPlayersAllowed = Math.max(1, Number(venue.max_players_allowed ?? 1));
+  const slotByHour = new Map((slotsQuery.data ?? []).map((s) => [s.hour, s]));
+  const minRemainingOnSelection = sortedSel.length
+    ? Math.min(...sortedSel.map((h) => slotByHour.get(h)?.remaining_capacity ?? maxPlayersAllowed))
+    : maxPlayersAllowed;
+  const maxSelectablePlayers = Math.max(1, Math.min(maxPlayersAllowed, minRemainingOnSelection));
+  const alreadyBookedOnSelection = sortedSel.length
+    ? Math.max(...sortedSel.map((h) => slotByHour.get(h)?.booked_players ?? 0))
+    : 0;
   const perPersonPrice = total > 0 ? Math.ceil(total / maxPlayersAllowed) : 0;
   const selectedSplitPrice = total > 0 ? Math.ceil(total / playerCount) : 0;
   const payableForSelectedPlayers = perPersonPrice * playerCount;
-  const capacityPercent = Math.round((playerCount / maxPlayersAllowed) * 100);
+  const capacityAfterBooking = alreadyBookedOnSelection + playerCount;
+  const capacityPercent = Math.round((capacityAfterBooking / maxPlayersAllowed) * 100);
   const emptySpotsNow = (slotsQuery.data ?? []).reduce(
     (sum, slot) => sum + Math.max(0, Number(slot.remaining_capacity ?? 0)),
     0,
@@ -67,6 +77,12 @@ function VenuePage() {
       return next;
     });
   }, [playerCount]);
+
+  useEffect(() => {
+    if (playerCount > maxSelectablePlayers) {
+      setPlayerCount(maxSelectablePlayers);
+    }
+  }, [maxSelectablePlayers, playerCount]);
 
   useEffect(() => {
     const availableSet = new Set((slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.hour));
@@ -110,6 +126,7 @@ function VenuePage() {
           playerNames: trimmedNames,
         },
       });
+      await qc.invalidateQueries({ queryKey: ["slots", venue!.id, date] });
       navigate({ to: "/booking/success", search: { id: res.bookingId } });
     } catch (e: any) {
       toast.error(e.message ?? "Booking failed");
@@ -172,7 +189,7 @@ function VenuePage() {
               onChange={(e) => setPlayerCount(Number(e.target.value))}
               className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
             >
-              {Array.from({ length: maxPlayersAllowed }, (_, i) => i + 1).map((count) => (
+              {Array.from({ length: maxSelectablePlayers }, (_, i) => i + 1).map((count) => (
                 <option key={count} value={count}>
                   {count} player{count === 1 ? "" : "s"}
                 </option>
@@ -180,9 +197,12 @@ function VenuePage() {
             </select>
             <p className="mt-2 text-xs text-muted-foreground">
               Max allowed on this turf: {maxPlayersAllowed}
+              {sortedSel.length > 0 && ` · ${minRemainingOnSelection} spot${minRemainingOnSelection === 1 ? "" : "s"} left on selected slot`}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Capacity filled: {playerCount}/{maxPlayersAllowed} ({capacityPercent}%)
+              {sortedSel.length > 0
+                ? `Capacity on selected slot: ${alreadyBookedOnSelection} booked + ${playerCount} yours = ${capacityAfterBooking}/${maxPlayersAllowed}`
+                : `Select a time slot to see live capacity`}
             </p>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div className="h-full bg-primary" style={{ width: `${capacityPercent}%` }} />

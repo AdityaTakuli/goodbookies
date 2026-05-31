@@ -139,7 +139,7 @@ export const getSlots = createServerFn({ method: "GET" })
       slots.push({
         hour: h,
         available: !blocked && enoughForSelection,
-        status: blocked ? "blocked" : full ? "booked" : "available",
+        status: blocked ? "blocked" : full ? "booked" : bookedPlayers > 0 ? "partial" : "available",
         remaining_capacity: remainingCapacity,
         booked_players: bookedPlayers,
         total_capacity: totalCapacity,

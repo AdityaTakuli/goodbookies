@@ -4,7 +4,9 @@ import { cn } from "@/lib/utils";
 export type Slot = {
   hour: number;
   available: boolean;
+  status?: string;
   remaining_capacity?: number;
+  booked_players?: number;
   total_capacity?: number;
 };
 
@@ -34,6 +36,8 @@ export function SlotPicker({
         <AnimatePresence>
           {slots.map((slot) => {
             const isSelected = selected.includes(slot.hour);
+            const isFull = slot.status === "booked" || (slot.remaining_capacity ?? 0) <= 0;
+            const isPartial = !isFull && (slot.booked_players ?? 0) > 0;
             return (
               <motion.button
                 key={slot.hour}
@@ -46,14 +50,15 @@ export function SlotPicker({
                 whileTap={slot.available ? { scale: 0.95 } : {}}
                 className={cn(
                   "relative rounded-xl border px-2 py-3 text-sm font-medium transition-colors",
-                  !slot.available && "cursor-not-allowed border-border/40 bg-muted/40 text-muted-foreground line-through",
-                  slot.available && !isSelected && "border-primary/30 bg-background/60 text-foreground hover:border-primary hover:bg-primary/10",
+                  isFull && "cursor-not-allowed border-border/40 bg-muted/40 text-muted-foreground line-through",
+                  isPartial && slot.available && !isSelected && "border-amber-500/40 bg-amber-500/10 text-foreground hover:border-amber-500",
+                  !isFull && !isPartial && slot.available && !isSelected && "border-primary/30 bg-background/60 text-foreground hover:border-primary hover:bg-primary/10",
                   isSelected && "border-primary bg-primary text-primary-foreground glow-primary",
                 )}
               >
                 <div>{fmt(slot.hour)}</div>
                 <div className="mt-1 text-[10px] opacity-80">
-                  {slot.remaining_capacity ?? 0} left
+                  {slot.remaining_capacity ?? 0}/{slot.total_capacity ?? 0} left
                 </div>
                 {isSelected && (
                   <motion.span

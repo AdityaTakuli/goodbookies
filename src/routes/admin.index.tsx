@@ -7,6 +7,7 @@ import {
   PieChart, Pie, Cell, Legend, BarChart, Bar,
 } from "recharts";
 import { adminSummary, adminRevenueSeries, adminBookingsBySport, adminTopVenues, adminListBookings, adminBookingsVolume } from "@/lib/admin.functions";
+import { formatBookingPlayerNames } from "@/lib/booking-display";
 import { CalendarCheck, IndianRupee, Building2, UserPlus, XCircle, TrendingUp } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 
@@ -157,7 +158,8 @@ function AdminOverview() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="pb-2 font-medium">User</th>
+                <th className="pb-2 font-medium">Booked by</th>
+                <th className="pb-2 font-medium">Players</th>
                 <th className="pb-2 font-medium">Venue</th>
                 <th className="pb-2 font-medium">Slot</th>
                 <th className="pb-2 font-medium text-right">Amount</th>
@@ -168,6 +170,7 @@ function AdminOverview() {
               {(recent ?? []).slice(0, 10).map((b: any) => (
                 <tr key={b.id} className="border-b border-border/30 last:border-0">
                   <td className="py-3">{b.profile?.full_name || b.profile?.email || "—"}</td>
+                  <td className="py-3 text-muted-foreground">{formatBookingPlayerNames(b)}</td>
                   <td className="py-3">{b.venue?.name}</td>
                   <td className="py-3 text-muted-foreground">{b.booking_date} · {b.start_hour}:00–{b.end_hour}:00</td>
                   <td className="py-3 text-right font-semibold">₹{b.total_price}</td>
@@ -175,7 +178,7 @@ function AdminOverview() {
                 </tr>
               ))}
               {(!recent || recent.length === 0) && (
-                <tr><td colSpan={5} className="py-6 text-center text-sm text-muted-foreground">No bookings yet.</td></tr>
+                <tr><td colSpan={6} className="py-6 text-center text-sm text-muted-foreground">No bookings yet.</td></tr>
               )}
             </tbody>
           </table>

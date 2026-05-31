@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { adminListBookings, adminCancelBooking } from "@/lib/admin.functions";
+import { bookingPlayerCount, formatBookingPlayerNames } from "@/lib/booking-display";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -60,7 +61,8 @@ function AdminBookings() {
             <thead>
               <tr className="border-b border-border/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <th className="pb-2 font-medium">ID</th>
-                <th className="pb-2 font-medium">User</th>
+                <th className="pb-2 font-medium">Booked by</th>
+                <th className="pb-2 font-medium">Players</th>
                 <th className="pb-2 font-medium">Venue</th>
                 <th className="pb-2 font-medium">Sport</th>
                 <th className="pb-2 font-medium">Slot</th>
@@ -74,6 +76,10 @@ function AdminBookings() {
                 <tr key={b.id} className="border-b border-border/30 last:border-0">
                   <td className="py-3 font-mono text-xs text-muted-foreground">{b.id.slice(0, 8)}</td>
                   <td className="py-3">{b.profile?.full_name || b.profile?.email || "—"}</td>
+                  <td className="py-3">
+                    <p>{formatBookingPlayerNames(b)}</p>
+                    <p className="text-xs text-muted-foreground">{bookingPlayerCount(b)} player{bookingPlayerCount(b) === 1 ? "" : "s"}</p>
+                  </td>
                   <td className="py-3">{b.venue?.name}</td>
                   <td className="py-3 text-muted-foreground">{b.venue?.sport?.name}</td>
                   <td className="py-3 text-muted-foreground">{b.booking_date} · {b.start_hour}:00–{b.end_hour}:00</td>
@@ -87,7 +93,7 @@ function AdminBookings() {
                 </tr>
               ))}
               {!isLoading && (data ?? []).length === 0 && (
-                <tr><td colSpan={8} className="py-6 text-center text-sm text-muted-foreground">No bookings.</td></tr>
+                <tr><td colSpan={9} className="py-6 text-center text-sm text-muted-foreground">No bookings.</td></tr>
               )}
             </tbody>
           </table>

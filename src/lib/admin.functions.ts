@@ -119,7 +119,7 @@ export const adminListBookings = createServerFn({ method: "GET" })
     await assertAdmin(context.userId);
     let q = supabaseAdmin
       .from("bookings")
-      .select("id, booking_date, start_hour, end_hour, total_price, status, user_id, venue:venues(name, slug, sport:sports(name, slug))")
+      .select("id, booking_date, start_hour, end_hour, total_price, status, user_id, player_count, player_names, venue:venues(name, slug, sport:sports(name, slug))")
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (data.status !== "all") q = q.eq("status", data.status);

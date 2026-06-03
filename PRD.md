@@ -1,8 +1,8 @@
 # Good Bookies — Product Requirements Document (PRD)
 
-**Version:** 2.0 (as-built)  
-**Last updated:** May 2026  
-**Product:** Sports turf / venue booking marketplace
+**Version:** 2.1 (Open Lobbies & Slot Queries Update)  
+**Last updated:** June 2026  
+**Product:** Sports turf / venue booking marketplace with capacity matchmaking
 
 ---
 

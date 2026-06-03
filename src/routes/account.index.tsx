@@ -3,8 +3,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, Users } from "lucide-react";
 import { listMyBookings } from "@/lib/booking.functions";
+import {
+  acceptLobbyQuery,
+  declineLobbyQuery,
+  listMyLobbyQueries,
+  listPendingQueriesForHost,
+} from "@/lib/lobby.functions";
 import { cancelMyBooking } from "@/lib/account.functions";
 import { resolveVenueImage } from "@/lib/images";
 import { Button } from "@/components/ui/button";
@@ -15,15 +21,38 @@ export const Route = createFileRoute("/account/")({
   component: AccountBookings,
 });
 
+const queryStatusLabel: Record<string, string> = {
+  pending: "Pending host approval",
+  accepted: "Approved — ready to play",
+  rejected: "Rejected",
+  expired: "Expired / full",
+};
+
 function AccountBookings() {
   const listFn = useServerFn(listMyBookings);
   const cancelFn = useServerFn(cancelMyBooking);
+  const hostQueriesFn = useServerFn(listPendingQueriesForHost);
+  const myQueriesFn = useServerFn(listMyLobbyQueries);
+  const acceptFn = useServerFn(acceptLobbyQuery);
+  const declineFn = useServerFn(declineLobbyQuery);
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["my-bookings"],
     queryFn: () => listFn(),
+  });
+
+  const { data: hostQueries } = useQuery({
+    queryKey: ["host-lobby-queries"],
+    queryFn: () => hostQueriesFn(),
+    refetchInterval: 5000,
+  });
+
+  const { data: sentQueries } = useQuery({
+    queryKey: ["my-lobby-queries"],
+    queryFn: () => myQueriesFn(),
+    refetchInterval: 5000,
   });
 
   const { upcoming, past, cancelled } = useMemo(() => {
@@ -49,12 +78,88 @@ function AccountBookings() {
     }
   };
 
+  const onAccept = async (queryId: string) => {
+    try {
+      await acceptFn({ data: { queryId } });
+      toast.success("Player added to your match");
+      qc.invalidateQueries({ queryKey: ["host-lobby-queries"] });
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+      qc.invalidateQueries({ queryKey: ["open-lobbies"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const onDecline = async (queryId: string) => {
+    try {
+      await declineFn({ data: { queryId } });
+      toast.success("Request declined");
+      qc.invalidateQueries({ queryKey: ["host-lobby-queries"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const pendingSent = (sentQueries ?? []).filter((q) => q.status === "pending" || q.status === "accepted");
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="font-display text-3xl font-bold">My bookings</h1>
         <p className="mt-1 text-sm text-muted-foreground">{bookings?.length ?? 0} total</p>
       </div>
+
+      {(hostQueries?.length ?? 0) > 0 && (
+        <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
+          <h2 className="font-display text-lg font-semibold">Join requests on your matches</h2>
+          <div className="mt-4 space-y-4">
+            {hostQueries!.map((q: any) => {
+              const seeker = q.seeker?.full_name || q.seeker?.email || "A player";
+              const names = (q.player_names ?? []).join(", ");
+              const b = q.booking;
+              return (
+                <div key={q.id} className="rounded-xl border border-border/60 bg-card p-4">
+                  <p className="text-sm">
+                    <span className="font-semibold">{seeker}</span> wants to join your{" "}
+                    <span className="font-semibold">{b?.start_hour}:00</span> game on{" "}
+                    <span className="font-semibold">{b?.booking_date}</span> with{" "}
+                    <span className="font-semibold">{q.player_count}</span> player{q.player_count === 1 ? "" : "s"}
+                    {names ? ` (${names})` : ""}.
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{b?.venue?.name}</p>
+                  <div className="mt-3 flex gap-2">
+                    <Button size="sm" onClick={() => onAccept(q.id)}>Accept</Button>
+                    <Button size="sm" variant="outline" onClick={() => onDecline(q.id)}>Reject</Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {pendingSent.length > 0 && (
+        <section>
+          <h2 className="font-display text-lg font-semibold">Sent join requests</h2>
+          <div className="mt-4 grid gap-3">
+            {pendingSent.map((q: any) => (
+              <div key={q.id} className="rounded-xl border border-border/60 bg-card p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold">{(q.booking as any)?.venue?.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(q.booking as any)?.booking_date} · {(q.booking as any)?.start_hour}:00 · {q.player_count} players
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium">
+                    {queryStatusLabel[q.status] ?? q.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {isLoading && <p className="text-muted-foreground">Loading…</p>}
 
@@ -106,10 +211,14 @@ function BookingSection({
               <div className="flex items-center gap-2">
                 <span>{(b.venue as any)?.sport?.icon}</span>
                 <h3 className="font-display text-lg font-semibold">{(b.venue as any)?.name}</h3>
+                {b.is_open_lobby && (
+                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">Open lobby</span>
+                )}
               </div>
               <div className="mt-1 flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{(b.venue as any)?.city}</span>
                 <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{b.booking_date} · {b.start_hour}:00 – {b.end_hour}:00</span>
+                <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{b.player_count} players</span>
               </div>
             </div>
             <div className="flex flex-col items-end gap-2">

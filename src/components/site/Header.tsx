@@ -11,6 +11,7 @@ export function Header() {
   const nav = [
     { to: "/", label: "Home" },
     { to: "/sports", label: "Sports" },
+    { to: "/lobbies", label: "Open Lobbies" },
     ...(user ? [{ to: "/account", label: "My Account" }] : []),
     ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
     ...(isOwner ? [{ to: "/owner", label: "Partner" }] : []),

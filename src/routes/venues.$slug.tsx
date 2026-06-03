@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { getVenue, getSlots, createBooking } from "@/lib/booking.functions";
 import { SlotPicker } from "@/components/SlotPicker";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveVenueImage } from "@/lib/images";
 
@@ -39,6 +40,7 @@ function VenuePage() {
   const [selected, setSelected] = useState<number[]>([]);
   const [playerCount, setPlayerCount] = useState(1);
   const [playerNames, setPlayerNames] = useState<string[]>([""]);
+  const [isOpenLobby, setIsOpenLobby] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const slotsQuery = useQuery({
@@ -124,6 +126,7 @@ function VenuePage() {
           endHour: sortedSel[sortedSel.length - 1] + 1,
           playerCount,
           playerNames: trimmedNames,
+          isOpenLobby: isOpenLobby && playerCount < maxPlayersAllowed,
         },
       });
       await qc.invalidateQueries({ queryKey: ["slots", venue!.id, date] });
@@ -207,6 +210,21 @@ function VenuePage() {
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div className="h-full bg-primary" style={{ width: `${capacityPercent}%` }} />
             </div>
+            {playerCount < maxPlayersAllowed && (
+              <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 p-3">
+                <Checkbox
+                  checked={isOpenLobby}
+                  onCheckedChange={(v) => setIsOpenLobby(v === true)}
+                  className="mt-0.5"
+                />
+                <span className="text-sm">
+                  <span className="font-semibold">Open this match to the public</span>
+                  <span className="mt-0.5 block text-muted-foreground">
+                    Let other players request to fill remaining spots on your slot.
+                  </span>
+                </span>
+              </label>
+            )}
           </div>
 
           <div className="rounded-2xl border border-border/60 bg-card p-6">

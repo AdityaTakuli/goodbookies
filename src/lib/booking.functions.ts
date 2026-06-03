@@ -97,7 +97,7 @@ export const getSlots = createServerFn({ method: "GET" })
     const [{ data: bookings }, { data: blocks }] = await Promise.all([
       supabaseAdmin
         .from("bookings")
-        .select("start_hour, end_hour, status, player_count")
+        .select("id, start_hour, end_hour, status, player_count, is_open_lobby")
         .eq("venue_id", data.venueId)
         .eq("booking_date", data.date)
         .in("status", ["confirmed", "pending"]),
@@ -127,8 +127,27 @@ export const getSlots = createServerFn({ method: "GET" })
       return false;
     };
 
-    const slots: { hour: number; available: boolean; status?: string; remaining_capacity: number; booked_players: number; total_capacity: number }[] = [];
     const totalCapacity = Math.max(1, Number(venue.max_players_allowed ?? 1));
+
+    const openLobbyByHour = new Map<number, { bookingId: string; isOpen: boolean }>();
+    bookings?.forEach((b) => {
+      if (!b.is_open_lobby) return;
+      for (let h = b.start_hour; h < b.end_hour; h++) {
+        const rem = totalCapacity - (bookedPlayersByHour.get(h) ?? 0);
+        if (rem > 0) openLobbyByHour.set(h, { bookingId: b.id, isOpen: true });
+      }
+    });
+
+    const slots: {
+      hour: number;
+      available: boolean;
+      status?: string;
+      remaining_capacity: number;
+      booked_players: number;
+      total_capacity: number;
+      open_lobby_booking_id?: string | null;
+      is_private_game?: boolean;
+    }[] = [];
     const requestedPlayers = Math.max(1, data.playerCount ?? 1);
     for (let h = venue.opening_hour; h < venue.closing_hour; h++) {
       const blocked = isBlocked(h);
@@ -136,6 +155,7 @@ export const getSlots = createServerFn({ method: "GET" })
       const remainingCapacity = Math.max(0, totalCapacity - bookedPlayers);
       const full = remainingCapacity <= 0;
       const enoughForSelection = remainingCapacity >= requestedPlayers;
+      const hasPartialPrivate = bookedPlayers > 0 && !openLobbyByHour.has(h);
       slots.push({
         hour: h,
         available: !blocked && enoughForSelection,
@@ -143,6 +163,8 @@ export const getSlots = createServerFn({ method: "GET" })
         remaining_capacity: remainingCapacity,
         booked_players: bookedPlayers,
         total_capacity: totalCapacity,
+        open_lobby_booking_id: openLobbyByHour.get(h)?.bookingId ?? null,
+        is_private_game: hasPartialPrivate,
       });
     }
     return slots;
@@ -150,7 +172,7 @@ export const getSlots = createServerFn({ method: "GET" })
 
 export const createBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { venueId: string; date: string; startHour: number; endHour: number; playerCount?: number; playerNames?: string[]; couponCode?: string }) =>
+  .inputValidator((input: { venueId: string; date: string; startHour: number; endHour: number; playerCount?: number; playerNames?: string[]; isOpenLobby?: boolean; couponCode?: string }) =>
     z.object({
       venueId: z.string().uuid(),
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -158,6 +180,7 @@ export const createBooking = createServerFn({ method: "POST" })
       endHour: z.number().int().min(1).max(24),
       playerCount: z.number().int().min(1).max(100).default(1),
       playerNames: z.array(z.string().trim().min(1).max(60)).default([]),
+      isOpenLobby: z.boolean().default(false),
       couponCode: z.string().optional(),
     })
       .refine((v) => v.endHour > v.startHour, { message: "endHour must be > startHour" })
@@ -228,13 +251,18 @@ export const createBooking = createServerFn({ method: "POST" })
       coupon: coupon ? { discount_type: coupon.discount_type, discount_value: coupon.discount_value } : null,
     });
 
+    const maxCap = Math.max(1, Number(venue.max_players_allowed ?? 1));
+    const openLobby = data.isOpenLobby && data.playerCount < maxCap;
+    const perPerson = total > 0 ? Math.ceil(total / maxCap) : 0;
+    const chargeAmount = perPerson * data.playerCount;
+
     const status = "confirmed";
-    const order = await createRazorpayOrder(total * 100, `bk_${Date.now()}`);
+    const order = await createRazorpayOrder(chargeAmount * 100, `bk_${Date.now()}`);
     const { data: payment, error: payErr } = await supabaseAdmin
       .from("payments")
       .insert({
         user_id: context.userId,
-        amount: total,
+        amount: chargeAmount,
         razorpay_order_id: order.id,
         status: process.env.RAZORPAY_KEY_ID ? "created" : "success",
       })
@@ -252,6 +280,7 @@ export const createBooking = createServerFn({ method: "POST" })
         end_hour: data.endHour,
         player_count: data.playerCount,
         player_names: normalizedNames,
+        is_open_lobby: openLobby,
         total_price: total,
         status,
         coupon_code: data.couponCode?.toUpperCase() ?? null,
@@ -283,7 +312,7 @@ export const createBooking = createServerFn({ method: "POST" })
       });
     }
 
-    return { bookingId: booking.id, total, razorpayOrderId: order.id, status };
+    return { bookingId: booking.id, total: chargeAmount, fullTotal: total, razorpayOrderId: order.id, status, isOpenLobby: openLobby };
   });
 
 export const listMyBookings = createServerFn({ method: "GET" })
@@ -291,7 +320,7 @@ export const listMyBookings = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("bookings")
-      .select("id, booking_date, start_hour, end_hour, player_count, player_names, total_price, status, venue:venues(name, slug, image_url, city, max_players_allowed, sport:sports(name, icon))")
+      .select("id, booking_date, start_hour, end_hour, player_count, player_names, is_open_lobby, total_price, status, venue:venues(name, slug, image_url, city, max_players_allowed, sport:sports(name, icon))")
       .order("booking_date", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];

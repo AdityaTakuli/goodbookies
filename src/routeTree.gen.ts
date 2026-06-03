@@ -13,6 +13,7 @@ import { Route as SportsRouteImport } from './routes/sports'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LobbiesRouteImport } from './routes/lobbies'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
@@ -64,6 +65,11 @@ const OwnerRoute = OwnerRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LobbiesRoute = LobbiesRouteImport.update({
+  id: '/lobbies',
+  path: '/lobbies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -232,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/lobbies': typeof LobbiesRoute
   '/login': typeof LoginRoute
   '/owner': typeof OwnerRouteWithChildren
   '/signup': typeof SignupRoute
@@ -268,6 +275,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/lobbies': typeof LobbiesRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/lobbies': typeof LobbiesRoute
   '/login': typeof LoginRoute
   '/owner': typeof OwnerRouteWithChildren
   '/signup': typeof SignupRoute
@@ -346,6 +355,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/dashboard'
+    | '/lobbies'
     | '/login'
     | '/owner'
     | '/signup'
@@ -382,6 +392,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard'
+    | '/lobbies'
     | '/login'
     | '/signup'
     | '/sports'
@@ -419,6 +430,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/dashboard'
+    | '/lobbies'
     | '/login'
     | '/owner'
     | '/signup'
@@ -458,6 +470,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   DashboardRoute: typeof DashboardRoute
+  LobbiesRoute: typeof LobbiesRoute
   LoginRoute: typeof LoginRoute
   OwnerRoute: typeof OwnerRouteWithChildren
   SignupRoute: typeof SignupRoute
@@ -494,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lobbies': {
+      id: '/lobbies'
+      path: '/lobbies'
+      fullPath: '/lobbies'
+      preLoaderRoute: typeof LobbiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -805,6 +825,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   DashboardRoute: DashboardRoute,
+  LobbiesRoute: LobbiesRoute,
   LoginRoute: LoginRoute,
   OwnerRoute: OwnerRouteWithChildren,
   SignupRoute: SignupRoute,

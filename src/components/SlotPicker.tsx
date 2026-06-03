@@ -8,6 +8,8 @@ export type Slot = {
   remaining_capacity?: number;
   booked_players?: number;
   total_capacity?: number;
+  open_lobby_booking_id?: string | null;
+  is_private_game?: boolean;
 };
 
 function fmt(h: number) {
@@ -37,7 +39,9 @@ export function SlotPicker({
           {slots.map((slot) => {
             const isSelected = selected.includes(slot.hour);
             const isFull = slot.status === "booked" || (slot.remaining_capacity ?? 0) <= 0;
+            const isVacant = !isFull && (slot.booked_players ?? 0) === 0;
             const isPartial = !isFull && (slot.booked_players ?? 0) > 0;
+            const hasOpenLobby = Boolean(slot.open_lobby_booking_id);
             return (
               <motion.button
                 key={slot.hour}
@@ -52,14 +56,25 @@ export function SlotPicker({
                   "relative rounded-xl border px-2 py-3 text-sm font-medium transition-colors",
                   isFull && "cursor-not-allowed border-border/40 bg-muted/40 text-muted-foreground line-through",
                   isPartial && slot.available && !isSelected && "border-amber-500/40 bg-amber-500/10 text-foreground hover:border-amber-500",
-                  !isFull && !isPartial && slot.available && !isSelected && "border-primary/30 bg-background/60 text-foreground hover:border-primary hover:bg-primary/10",
+                  isVacant && slot.available && !isSelected && "border-emerald-500/40 bg-emerald-500/10 text-foreground hover:border-emerald-500",
+                  !isFull && !isPartial && !isVacant && slot.available && !isSelected && "border-primary/30 bg-background/60 text-foreground hover:border-primary hover:bg-primary/10",
                   isSelected && "border-primary bg-primary text-primary-foreground glow-primary",
                 )}
               >
                 <div>{fmt(slot.hour)}</div>
                 <div className="mt-1 text-[10px] opacity-80">
-                  {slot.remaining_capacity ?? 0}/{slot.total_capacity ?? 0} left
+                  {isFull
+                    ? "Full"
+                    : isVacant
+                      ? "Vacant"
+                      : `${slot.remaining_capacity ?? 0}/${slot.total_capacity ?? 0} left`}
                 </div>
+                {hasOpenLobby && !isFull && (
+                  <div className="mt-0.5 text-[9px] font-semibold text-primary">Join match</div>
+                )}
+                {slot.is_private_game && isPartial && (
+                  <div className="mt-0.5 text-[9px] text-muted-foreground">Private</div>
+                )}
                 {isSelected && (
                   <motion.span
                     layoutId="slot-ripple"

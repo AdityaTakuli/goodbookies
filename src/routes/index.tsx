@@ -36,10 +36,10 @@ function Index() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/sports">
-                <Button size="lg" className="glow-primary">Book a slot</Button>
+                <Button size="lg" className="glow-primary">Book a fresh turf</Button>
               </Link>
-              <Link to="/sports">
-                <Button size="lg" variant="outline">Browse venues</Button>
+              <Link to="/lobbies">
+                <Button size="lg" variant="outline">Join an open match</Button>
               </Link>
             </div>
           </motion.div>

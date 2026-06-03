@@ -16,6 +16,10 @@
       "dest": "/client/favicon.png"
     },
     {
+      "src": "/api/mobile/(.*)",
+      "dest": "/api/mobile/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/render?path=$1"
     }

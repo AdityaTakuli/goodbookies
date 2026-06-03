@@ -1,0 +1,5 @@
+-- schema_dump.sql
+-- Generate with: ./scripts/dump-schema.sh
+-- Requires: npx supabase login  (or SUPABASE_ACCESS_TOKEN)
+--
+-- After generation, commit or paste this file in chat for full schema review.

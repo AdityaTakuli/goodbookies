@@ -1,517 +1,425 @@
 # Good Bookies — Product Requirements Document (PRD)
 
-**Version:** 2.1 (Open Lobbies & Slot Queries Update)  
+**Version:** 3.0 (Mobile App & Full Route/API Reference)  
 **Last updated:** June 2026  
-**Product:** Sports turf / venue booking marketplace with capacity matchmaking
+**Product:** Sports turf / venue booking marketplace with capacity matchmaking and open lobbies
 
 ---
 
 ## 1) Product Summary
 
-Good Bookies is a web application where **players** discover sports venues and book hourly slots, **partners (owners)** manage turfs/pricing/bookings, and **admins** govern the platform.
+Good Bookies is a marketplace where **players** discover venues, book hourly slots (solo or group), open **public match lobbies**, and join others’ games. **Owners** manage turfs, pricing, slots, and revenue. **Admins** govern the platform.
 
-**Core value**
-- **Players:** Find a turf, pick a date/time, choose how many players, enter player names, pay, and get instant confirmation.
-- **Owners:** List venues, control slots/pricing, view analytics and payouts.
-- **Admin:** Platform-wide bookings, users, venues, sports, payments, analytics, and settings.
+**Brand:** “Book the pitch. Fill the match.”
 
-**Brand positioning:** “Book the pitch. Play the match.” — floodlit turfs, cricket nets, indoor courts, real-time slot availability.
+| Persona | Core jobs |
+|---------|-----------|
+| **Player** | Browse sports → venue → pick date/slots/players → pay → manage bookings; discover/join open lobbies |
+| **Owner** | Register → manage venues → block slots → pricing/coupons → bookings → analytics → payouts |
+| **Admin** | KPIs → bookings/venues/users/payments → approvals → settings → broadcasts |
 
 ---
 
 ## 2) User Roles & Access
 
-| Role | How assigned | Login route | Gated areas |
-|------|--------------|-------------|-------------|
+| Role | Assignment | Web login | Gated areas |
+|------|------------|-----------|-------------|
 | **Player** | Default on signup | `/login`, `/signup` | `/account/*` |
-| **Owner (Partner)** | `owners` row + `user_roles.role = owner` | `/owner/login`, `/owner/register` | `/owner/*` (requires `owners.status = approved`) |
+| **Owner** | `owners` row + `user_roles.role = owner` | `/owner/login`, `/owner/register` | `/owner/*` (layout expects `owners.status = approved`) |
 | **Admin** | `user_roles.role = admin` | `/login` | `/admin/*` |
 
-**Current access policy (important)**
-- **Owner registration:** Auto-approved (`status = approved`, owner role assigned immediately).
-- **Owner login:** Works for all valid credentials; dashboard still requires `approved` status in layout.
-- **Venue creation by owner:** Auto-approved and active (`approval_status = approved`, `is_active = true`).
-- **Bookings:** Always saved as **`confirmed`** (manual confirmation mode is ignored in code).
-- **Discovery:** Only venues with `is_active = true` AND `approval_status = approved` appear to players.
+**Policies (as-built)**
+- Owner + venue creation: **auto-approved** in dev (`approved`, `is_active`, `approval_status = approved`).
+- New bookings: always **`confirmed`** (`confirmation_mode` on venue ignored).
+- Discovery: `venues.is_active = true` AND `approval_status = approved`.
+- Capacity: multiple bookings per hour until `max_players_allowed` filled (`bookings_no_double_book` index must be dropped).
 
 ---
 
 ## 3) System Architecture
 
-### 3.1 Tech stack
-
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 19, TypeScript, Tailwind CSS 4, shadcn/ui (Radix), Framer Motion |
+| Web UI | React 19, TypeScript, Tailwind 4, shadcn/ui, Framer Motion |
 | Routing / SSR | TanStack Router, TanStack Start, TanStack Query |
 | Validation | Zod |
-| Charts | Recharts |
-| Backend logic | TanStack `createServerFn` (server functions) |
-| Database & Auth | Supabase (PostgreSQL + Auth + RLS) |
-| Payments | Razorpay (order create + refund) |
-| Email | Custom email service (owner approval emails) |
-| Deployment | Vercel (Node.js serverless + static assets) |
+| Backend | TanStack `createServerFn` (RPC over HTTPS) |
+| DB & Auth | Supabase (PostgreSQL, Auth JWT, RLS) |
+| Payments | Razorpay (orders, refunds; dev stub without keys) |
+| Hosting | Vercel — static assets + `/api/render` Node SSR |
 
-### 3.2 Deployment architecture (Vercel)
+**Env vars (mobile + web)**
+- Client: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (or anon key)
+- Server only: `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`
+
+---
+
+## 4) Database Schema (Production)
+
+### Core
+
+| Table | Key columns |
+|-------|-------------|
+| `profiles` | `id`, `full_name`, `email`, `phone`, `is_banned` |
+| `user_roles` | `user_id`, `role` (`admin`, `user`, `owner`) |
+| `sports` | `name`, `slug`, `icon`, `is_active` |
+| `venues` | `slug`, `sport_id`, `owner_id`, `city`, `price_per_hour`, `opening_hour`, `closing_hour`, **`max_players_allowed`**, `operating_days[]`, `holiday_dates[]`, `approval_status`, `is_active` |
+| `bookings` | `user_id`, `venue_id`, `booking_date`, `start_hour`, `end_hour`, **`player_count`**, **`player_names[]`**, **`is_open_lobby`**, `total_price`, `status`, `payment_id` |
+| `lobby_queries` | `booking_id`, `seeker_id`, `player_count`, `player_names[]`, `status` (`pending`/`accepted`/`rejected`/`expired`), `payment_id` |
+| `payments` | `amount`, `razorpay_order_id`, `status`, `booking_id`, `user_id` |
+| `notifications` | `user_id`, `title`, `message`, `type`, `is_read` |
+
+### Owner / pricing
+
+`owners`, `slot_blocks`, `venue_peak_pricing`, `venue_day_pricing`, `venue_date_pricing`, `venue_duration_discounts`, `coupons`, `owner_payout_details`, `payouts`
+
+### Admin
+
+`site_settings`, `admin_notification_log`
+
+---
+
+## 5) Business Rules
+
+### 5.1 Capacity & pricing
+
+- `remaining_capacity(hour) = max_players_allowed − Σ player_count` (bookings `confirmed` + `pending` overlapping hour).
+- **Payable (host booking):** `ceil(full_hourly_total / max_players_allowed) × player_count`.
+- **Payable (lobby join):** same formula × seeker `player_count` after host accepts.
+- Slot UI: **Vacant** (0 booked), **Partial** (amber, `X/Y left`), **Full** (blocked).
+- Poll slots every **5s** on venue detail and open lobbies list.
+
+### 5.2 Open lobbies
+
+- Host enables `is_open_lobby` when `player_count < max_players_allowed`.
+- Seeker: `submitLobbyQuery` → `pending` → host `acceptLobbyQuery` / `declineLobbyQuery`.
+- On accept: merge `player_names`, increment `player_count`; if full, expire other `pending` queries.
+- List: `listOpenLobbies` where `is_open_lobby = true` and `player_count < max`.
+
+### 5.3 Booking status
+
+| Status | Capacity | Notes |
+|--------|----------|-------|
+| `confirmed` | Counts | Default for all new bookings |
+| `pending` | Counts | Legacy manual flow |
+| `cancelled` | Released | Player/owner/admin cancel |
+
+---
+
+## 6) Mobile App Development Guide
+
+### 6.1 Recommended stack
+
+| Layer | Suggestion |
+|-------|------------|
+| App | React Native (Expo) or Flutter |
+| Auth | `@supabase/supabase-js` — email/password, session refresh |
+| API | Call **same server functions** as web (see §8) OR add a REST wrapper later |
+| Payments | Razorpay native SDK — use `razorpayOrderId` from `createBooking` / `submitLobbyQuery` |
+| Realtime (optional) | Supabase Realtime on `bookings` / `lobby_queries` for live lobby updates |
+
+### 6.2 Authentication flow
+
+1. `supabase.auth.signUp` / `signInWithPassword` → store `session.access_token`.
+2. Attach to every protected API call: `Authorization: Bearer <access_token>`.
+3. Role flags (client-side, same as web):
+   - **Admin:** `user_roles` where `role = 'admin'`.
+   - **Owner:** `owners` where `id = user.id` and `status = 'approved'`.
+4. Block banned users: `profiles.is_banned = true` → `getMyProfile` throws.
+
+**Owner registration:** use server fn `registerOwner` (creates auth user server-side); then login via `signInWithPassword`.
+
+### 6.3 Calling backend APIs from mobile
+
+Web app uses **TanStack Start server functions** (`createServerFn`). Mobile should:
+
+1. **Preferred (short term):** Proxy through your deployed web origin — inspect browser Network tab on production for the RPC URL pattern TanStack emits (POST + JSON body with function id + `data` payload). Send the same request with `Authorization: Bearer <jwt>`.
+2. **Alternative:** Duplicate critical endpoints as **Supabase Edge Functions** or a **REST layer** (not in repo today).
+3. **Do not** use service role key in the mobile app.
+
+**Public (no JWT):** `listSports`, `listVenues`, `getVenue`, `getSlots`, `listOpenLobbies`  
+**Authenticated:** everything else in §8 marked `Auth`
+
+### 6.4 Mobile navigation map (suggested)
 
 ```
-Browser
-   │
-   ▼
-Vercel Edge / CDN
-   ├── /assets/*, /favicon.*  →  static files from /client (filesystem)
-   └── all other routes       →  /api/render (Node.js serverless)
-                                    │
-                                    ▼
-                              dist/server/index.js (TanStack SSR bundle)
-                                    │
-                    ┌───────────────┼───────────────┐
-                    ▼               ▼               ▼
-              Server Functions   Supabase Admin   Razorpay API
-              (booking, owner,   (PostgreSQL)     (payments)
-               admin, account)
+App
+├── Auth Stack (guest)
+│   ├── Welcome          ← web /
+│   ├── Login            ← /login
+│   ├── Signup           ← /signup
+│   ├── Owner Login      ← /owner/login
+│   └── Owner Register   ← /owner/register
+├── Player Tabs (player)
+│   ├── Home             ← /
+│   ├── Sports           ← /sports
+│   ├── Open Lobbies     ← /lobbies
+│   └── Account          ← /account/*
+├── Booking Flow (modal/stack)
+│   ├── Venue Detail     ← /venues/:slug
+│   └── Booking Success  ← /booking/success?id=
+└── Partner / Admin (role-gated stacks)
+    ├── Owner *          ← /owner/*
+    └── Admin *          ← /admin/*
 ```
 
-**`vercel.json` routing**
-1. Serve static filesystem first.
-2. Map `/assets/*` → `/client/assets/*`.
-3. Catch-all `/(.*)` → `/api/render?path=$1` for SSR.
+### 6.5 Mobile screen checklist by priority
 
-**`api/render.ts`**
-- Node.js runtime (not Edge).
-- Loads built SSR bundle from `dist/server/index.js`.
-- Converts Vercel `IncomingMessage` → Web `Request` for TanStack server entry.
+**P0 — Player MVP**
+- [ ] Sports list + venue list + filters
+- [ ] Venue detail: date, player count, names, slot grid, price breakdown, book
+- [ ] Open lobbies list + join request modal
+- [ ] My bookings + host join requests + sent requests
+- [ ] Profile, notifications, payment history
+- [ ] Login/signup + Razorpay checkout
 
-### 3.3 Request / data flow (booking)
+**P1 — Owner**
+- [ ] Dashboard KPIs + charts
+- [ ] Venues CRUD, slot blocks, pricing tabs, coupons
+- [ ] Bookings list, payouts, settings
 
+**P2 — Admin**
+- [ ] Full admin console (usually web-only; optional on tablet)
+
+---
+
+## 7) Complete Web Route & Feature Catalog
+
+> Use **Route** as path on web. **Mobile screen** is the suggested app equivalent. **APIs** are server functions (§8).
+
+### 7.1 Public routes
+
+| Route | Auth | Mobile screen | Features | APIs |
+|-------|------|---------------|----------|------|
+| `/` | — | Home | Hero, sports grid, CTAs “Book turf” / “Join match” | `listSports` |
+| `/sports` | — | Venue list | Filter by `?sport=slug`; venue cards (image, city, price, rating) | `listSports`, `listVenues` |
+| `/venues/$slug` | —* | Venue detail | Date picker; player count; name inputs; open-lobby checkbox; slot grid (5s poll); price card; Book Now → login if guest | `getVenue`, `getSlots`, `createBooking` |
+| `/lobbies` | —* | Open matches | Filter sport + date; capacity bar; “Request to join” modal | `listSports`, `listOpenLobbies`, `submitLobbyQuery` |
+| `/login` | — | Login | Email/password; `?redirect=` deep link | Supabase Auth |
+| `/signup` | — | Signup | Email, password, name → profile | Supabase Auth |
+| `/owner/login` | — | Owner login | Partner branding; status hints | Supabase Auth |
+| `/owner/register` | — | Owner signup | Business fields; auto-approve | `registerOwner` |
+| `/booking/success` | — | Confirmation | `?id=bookingId`; links to bookings / sports | — |
+| `/dashboard` | — | — | **Redirects to `/account`** | — |
+
+\*Guest can browse; book/join requires auth.
+
+### 7.2 Player account (`/account`)
+
+| Route | Auth | Mobile screen | Features | APIs |
+|-------|------|---------------|----------|------|
+| `/account` | Player | My bookings | Upcoming / Past / Cancelled; open-lobby badge; **host:** pending join requests Accept/Reject; **seeker:** sent requests status; Cancel booking; Re-book | `listMyBookings`, `listPendingQueriesForHost`, `listMyLobbyQueries`, `acceptLobbyQuery`, `declineLobbyQuery`, `cancelMyBooking` |
+| `/account/profile` | Player | Profile | Edit name, phone | `getMyProfile`, `updateMyProfile` |
+| `/account/notifications` | Player | Notifications | In-app list; mark all read | `listMyNotifications`, `markNotificationsRead` |
+| `/account/payments` | Player | Payment history | Booking-linked payment rows | `listMyPayments` |
+
+### 7.3 Owner portal (`/owner`)
+
+| Route | Auth | Features | APIs |
+|-------|------|----------|------|
+| `/owner` | Owner | KPIs (today/month bookings, revenue, venues, pending, cancellations); revenue + volume charts (7/30/90d); recent bookings | `ownerSummary`, `ownerRevenueSeries`, `ownerBookingsVolume` |
+| `/owner/venues` | Owner | List/create/edit venues; `max_players_allowed`; soft delete; auto-approve | `ownerListVenues`, `ownerUpsertVenue`, `ownerDeleteVenue` |
+| `/owner/slots` | Owner | Calendar; block/unblock slots (date or recurring weekday) | `ownerListSlots`, `ownerBlockSlot`, `ownerUnblockSlot` |
+| `/owner/pricing` | Owner | Peak / day / date pricing; duration discounts; coupons CRUD | `ownerGetPricing`, `ownerSavePeakPricing`, `ownerSaveDayPricing`, `ownerAddDatePricing`, `ownerSaveDurationDiscounts`, `ownerListCoupons`, `ownerUpsertCoupon`, `ownerDeleteCoupon` |
+| `/owner/bookings` | Owner | All venue bookings; legacy confirm/reject | `ownerListBookings`, `ownerConfirmBooking`, `ownerRejectBooking` |
+| `/owner/analytics` | Owner | Revenue, volume, peak hours; CSV export | `ownerRevenueSeries`, `ownerBookingsVolume`, `ownerPeakHours`, `ownerExportAnalyticsCsv` |
+| `/owner/payouts` | Owner | Commission, pending balance, history, bank details | `ownerGetPayouts`, `ownerSavePayoutDetails` |
+| `/owner/settings` | Owner | Owner profile update | `ownerUpdateProfile`, `getOwnerStatus` |
+
+Layout gate: logged in + `getOwnerStatus.status === 'approved'` (except login/register paths).
+
+### 7.4 Admin portal (`/admin`)
+
+| Route | Auth | Features | APIs |
+|-------|------|----------|------|
+| `/admin` | Admin | Platform KPIs; charts; recent bookings | `adminSummary`, `adminRevenueSeries`, `adminBookingsBySport`, `adminTopVenues`, `adminListBookings` |
+| `/admin/bookings` | Admin | All bookings; cancel; player names column | `adminListBookings`, `adminCancelBooking` |
+| `/admin/venues` | Admin | CRUD venues; activate/deactivate | `adminListVenues`, `adminUpsertVenue`, `adminDeleteVenue` |
+| `/admin/sports` | Admin | CRUD sports | `adminListSports`, `adminUpsertSport` |
+| `/admin/users` | Admin | Users + spend; ban/unban | `adminListUsers`, `adminBanUser` |
+| `/admin/payments` | Admin | Ledger; summary; refund | `adminListPayments`, `adminPaymentsSummary`, `adminRefundPayment` |
+| `/admin/analytics` | Admin | Extended charts; CSV | `adminMonthlyRevenue`, `adminUserGrowth`, `adminCancellationTrend`, `adminRevenueByVenue`, `adminBookingsVolume`, `adminExportAnalyticsCsv` |
+| `/admin/notifications` | Admin | Broadcast + audit log | `adminSendNotification`, `adminNotificationLog` |
+| `/admin/owner-requests` | Admin | Approve/reject pending owners | `adminListOwnerRequests`, `adminReviewOwnerRequest` |
+| `/admin/venue-approvals` | Admin | Approve/reject pending venues | `adminListVenueApprovals`, `adminReviewVenue` |
+| `/admin/owners` | Admin | Manage owners; commission override; suspend | `adminListOwners`, `adminUpdateOwner` |
+| `/admin/settings` | Admin | `site_settings` key-value | `adminGetSettings`, `adminUpdateSettings` |
+
+---
+
+## 8) Server Functions — Full API Reference
+
+**Auth legend:** `—` public · `JWT` requires `Authorization: Bearer <supabase_access_token>`
+
+### 8.1 `booking.functions.ts`
+
+| Function | HTTP | Auth | Input (`data`) | Output / behavior |
+|----------|------|------|----------------|-------------------|
+| `listSports` | GET | — | — | `{ id, name, slug, icon }[]`; seeds defaults if empty |
+| `listVenues` | GET | — | `{ sport?: string }` | Approved active venues + sport join |
+| `getVenue` | GET | — | `{ slug: string }` | Single venue + sport |
+| `getSlots` | GET | — | `{ venueId, date: YYYY-MM-DD, playerCount?: number }` | `[{ hour, available, status, remaining_capacity, booked_players, total_capacity, open_lobby_booking_id?, is_private_game? }]` |
+| `createBooking` | POST | JWT | `{ venueId, date, startHour, endHour, playerCount, playerNames[], isOpenLobby?, couponCode? }` | Capacity check; pricing; Razorpay order; `{ bookingId, total, fullTotal, razorpayOrderId, status, isOpenLobby }` |
+| `listMyBookings` | POST | JWT | — | Bookings + venue + `is_open_lobby` |
+
+### 8.2 `lobby.functions.ts`
+
+| Function | HTTP | Auth | Input | Output |
+|----------|------|------|-------|--------|
+| `listOpenLobbies` | GET | — | `{ sport?, date? }` | Open bookings + host profile + `spots_open` |
+| `submitLobbyQuery` | POST | JWT | `{ bookingId, playerCount, playerNames[] }` | `{ queryId, amount }` + notify host |
+| `acceptLobbyQuery` | POST | JWT | `{ queryId }` | Merge players; payment success; expire others if full |
+| `declineLobbyQuery` | POST | JWT | `{ queryId }` | Reject + cancel payment hold |
+| `listPendingQueriesForHost` | GET | JWT | — | Pending queries on host’s open bookings + seeker profile |
+| `listMyLobbyQueries` | GET | JWT | — | Seeker’s queries + booking/venue |
+
+### 8.3 `account.functions.ts`
+
+| Function | HTTP | Auth | Input | Output |
+|----------|------|------|-------|--------|
+| `getMyProfile` | GET | JWT | — | Profile row; fails if banned |
+| `updateMyProfile` | POST | JWT | `{ full_name?, phone? }` | `{ ok: true }` |
+| `cancelMyBooking` | POST | JWT | `{ id }` | Respects `site_settings.cancellation_hours` |
+| `listMyNotifications` | GET | JWT | — | Last 50 notifications |
+| `markNotificationsRead` | POST | JWT | — | Mark all unread read |
+| `listMyPayments` | GET | JWT | — | Derived payment history from bookings |
+
+### 8.4 `owner.functions.ts`
+
+| Function | HTTP | Auth | Input (summary) |
+|----------|------|------|-----------------|
+| `registerOwner` | POST | — | `{ name, email, phone, password, city, business_name? }` |
+| `getOwnerStatus` | GET | JWT | — |
+| `ownerSummary` | GET | JWT | — |
+| `ownerRevenueSeries` | GET | JWT | `{ days: 7\|30\|90 }` |
+| `ownerBookingsVolume` | GET | JWT | `{ days }` |
+| `ownerPeakHours` | GET | JWT | — |
+| `ownerListVenues` | GET | JWT | — |
+| `ownerUpsertVenue` | POST | JWT | Venue payload + optional `id` |
+| `ownerDeleteVenue` | POST | JWT | `{ id }` |
+| `ownerListSlots` | GET | JWT | `{ venueId, month? }` |
+| `ownerBlockSlot` | POST | JWT | Block window + recurring flags |
+| `ownerUnblockSlot` | POST | JWT | `{ id, venueId }` |
+| `ownerGetPricing` | GET | JWT | `{ venueId }` |
+| `ownerSavePeakPricing` | POST | JWT | `{ venueId, rules[] }` |
+| `ownerSaveDayPricing` | POST | JWT | `{ venueId, rules[] }` |
+| `ownerAddDatePricing` | POST | JWT | `{ venueId, date, price_override }` |
+| `ownerSaveDurationDiscounts` | POST | JWT | `{ venueId, rules[] }` |
+| `ownerListCoupons` | GET | JWT | — |
+| `ownerUpsertCoupon` | POST | JWT | Coupon fields |
+| `ownerDeleteCoupon` | POST | JWT | `{ id }` |
+| `ownerListBookings` | GET | JWT | Filters optional |
+| `ownerConfirmBooking` | POST | JWT | `{ id }` |
+| `ownerRejectBooking` | POST | JWT | `{ id }` + refund path |
+| `ownerGetPayouts` | GET | JWT | — |
+| `ownerSavePayoutDetails` | POST | JWT | Bank fields |
+| `ownerUpdateProfile` | POST | JWT | Owner profile fields |
+| `ownerExportAnalyticsCsv` | GET | JWT | CSV string |
+| `adminListOwnerRequests` | GET | JWT (admin) | — |
+| `adminReviewOwnerRequest` | POST | JWT (admin) | `{ id, approved, reason? }` |
+| `adminListVenueApprovals` | GET | JWT (admin) | — |
+| `adminReviewVenue` | POST | JWT (admin) | `{ id, approved, reason? }` |
+| `adminListOwners` | GET | JWT (admin) | — |
+| `adminUpdateOwner` | POST | JWT (admin) | Status / commission |
+
+### 8.5 `admin.functions.ts`
+
+| Function | HTTP | Auth | Purpose |
+|----------|------|------|---------|
+| `adminSummary` | GET | Admin | Dashboard KPIs |
+| `adminRevenueSeries` | GET | Admin | Revenue chart |
+| `adminBookingsBySport` | GET | Admin | Pie data |
+| `adminTopVenues` | GET | Admin | Top venues |
+| `adminListBookings` | GET | Admin | All bookings + players |
+| `adminCancelBooking` | POST | Admin | `{ id }` |
+| `adminListVenues` | GET | Admin | — |
+| `adminUpsertVenue` | POST | Admin | Venue CRUD |
+| `adminDeleteVenue` | POST | Admin | `{ id }` |
+| `adminListSports` | GET | Admin | — |
+| `adminUpsertSport` | POST | Admin | Sport CRUD |
+| `adminListUsers` | GET | Admin | CRM list |
+| `adminBookingsVolume` | GET | Admin | Chart |
+| `adminMonthlyRevenue` | GET | Admin | Chart |
+| `adminUserGrowth` | GET | Admin | Chart |
+| `adminCancellationTrend` | GET | Admin | Chart |
+| `adminRevenueByVenue` | GET | Admin | Chart |
+| `adminListPayments` | GET | Admin | Ledger |
+| `adminPaymentsSummary` | GET | Admin | Totals |
+| `adminGetSettings` | GET | Admin | Key-value settings |
+| `adminUpdateSettings` | POST | Admin | `{ settings: Record }` |
+| `adminSendNotification` | POST | Admin | Broadcast |
+| `adminNotificationLog` | GET | Admin | Audit |
+| `adminRefundPayment` | POST | Admin | `{ bookingId }` |
+| `adminExportAnalyticsCsv` | GET | Admin | CSV |
+| `adminBanUser` | POST | Admin | `{ id, banned }` |
+
+### 8.6 Pricing (`pricing.ts` — internal)
+
+`loadVenuePricing(venueId)` + `calculateBookingTotal(...)` — used by `createBooking`; mobile should rely on `createBooking` response totals, not reimplement unless duplicating rules in §9.
+
+---
+
+## 9) Pricing Precedence
+
+1. `venues.price_per_hour`
+2. Date override (`venue_date_pricing`)
+3. Day-of-week override (`venue_day_pricing`)
+4. Per-hour peak surcharge (`venue_peak_pricing`)
+5. Duration discount on subtotal (`venue_duration_discounts`)
+6. Coupon (`coupons`)
+7. Display: `perPerson = ceil(total / max_players_allowed)`; charge = `perPerson × player_count`
+
+---
+
+## 10) Key User Flows (for mobile UX)
+
+### Flow A — Book a turf
 ```
-Player UI (/venues/:slug)
-   → getVenue, getSlots (playerCount)
-   → createBooking (playerCount, playerNames)
-        → loadVenuePricing + calculateBookingTotal
-        → Razorpay order + payments row
-        → bookings row (confirmed, player_count, player_names)
-        → notifications (player + owner)
-   → redirect /booking/success?id=...
+Sports → Venues → Venue Detail → [Login] → Select date/hours/players/names
+→ [Optional: Open lobby] → createBooking → Razorpay → Success → My Bookings
 ```
 
-### 3.4 Environment dependencies
-
-- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (server)
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (client)
-- `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` (optional; without keys payment status defaults to success in dev)
-
----
-
-## 4) Database Schema (Key Tables)
-
-### Core marketplace
-
-| Table | Purpose | Key columns |
-|-------|---------|-------------|
-| `auth.users` | Supabase auth | id, email, metadata |
-| `profiles` | Player profile | full_name, email, phone, `is_banned` |
-| `user_roles` | RBAC | user_id, role (`admin`, `user`, `owner`) |
-| `sports` | Sport catalog | name, slug, icon, is_active |
-| `venues` | Turf listings | name, slug, sport_id, owner_id, city, address, price_per_hour, opening/closing_hour, amenities, rating, image_url, **`max_players_allowed`**, operating_days, holiday_dates, confirmation_mode, approval_status, is_active |
-| `bookings` | Slot reservations | user_id, venue_id, booking_date, start_hour, end_hour, total_price, status, **`player_count`**, **`player_names[]`**, coupon_code, payment_id |
-| `payments` | Payment ledger | booking_id, user_id, amount, razorpay_order_id, status |
-| `notifications` | In-app alerts | user_id, title, message, type, is_read |
-
-### Owner / partner
-
-| Table | Purpose |
-|-------|---------|
-| `owners` | Partner profile (status: pending/approved/rejected/suspended) |
-| `slot_blocks` | Owner-blocked hours (single date or recurring weekday) |
-| `venue_peak_pricing` | Peak-hour surcharges |
-| `venue_day_pricing` | Day-of-week price overrides |
-| `venue_date_pricing` | Date-specific price overrides |
-| `venue_duration_discounts` | Multi-hour discount rules |
-| `coupons` | Owner discount codes |
-| `owner_payout_details` | Bank account for payouts |
-| `payouts` | Payout history |
-
-### Admin / platform
-
-| Table | Purpose |
-|-------|---------|
-| `site_settings` | Key-value platform config (commission rate, contact, etc.) |
-| `admin_notification_log` | Audit log for broadcast notifications |
-
-### Capacity booking migrations (required in Supabase)
-
-- `venues.max_players_allowed` (default 10)
-- `bookings.player_count` (default 1)
-- `bookings.player_names` (text array)
-- Drop old `bookings_no_double_book` unique index (allows partial capacity per hour)
-
----
-
-## 5) Group Booking & Capacity Model (Current)
-
-### 5.1 Concepts
-
-- **`max_players_allowed`** (venue): Total player capacity per hour on the turf.
-- **`player_count`** (booking): How many players this booking reserves.
-- **`player_names`** (booking): Array of unique player names (one per player).
-- **Pricing:** Hourly rate is for the **full turf hour**, not per person.
-- **Payable display:** `(total_hourly_price / max_players_allowed) × selected_players`.
-
-### 5.2 Slot availability logic
-
-For each hour on a date:
-1. Skip if holiday or non-operating day.
-2. Sum `player_count` from all `confirmed` + `pending` bookings overlapping that hour.
-3. `remaining_capacity = max_players_allowed - booked_players`.
-4. Slot is **available** if `remaining_capacity >= requested player_count`.
-5. Slot shows **`X/Y left`** on the slot picker (partial fill = amber styling).
-6. Slots refresh every **5 seconds** on venue page.
-
-### 5.3 Booking validation
-
-- `player_count` cannot exceed venue `max_players_allowed`.
-- Each selected hour must have enough remaining capacity.
-- All player names required; names must be unique within the booking.
-- Booking status always **`confirmed`**.
-
----
-
-## 6) Page-by-Page Feature Inventory
-
-### 6.1 Global layout (`__root.tsx`)
-
-- Site header: Home, Sports, My Account (if logged in), Admin (if admin), Partner (if owner).
-- Sign in / Get started OR Sign out.
-- Mobile hamburger menu.
-- Footer with sports links and partner links.
-- Toast notifications (Sonner).
-- Custom 404 and error pages.
-
----
-
-### 6.2 Public pages
-
-#### `/` — Home
-- Hero image with gradient overlay.
-- Tagline: “Real-time slot availability”.
-- CTAs: “Book a slot”, “Browse venues”.
-- Sports grid (auto-seeded: Football, Cricket, Badminton, Basketball if DB empty).
-- Feature highlights (calendar, map, instant booking icons).
-
-#### `/sports` — Venue discovery
-- Lists all approved active venues.
-- Sport filter pills (All + each sport).
-- Venue cards: image, name, city, sport, price/hr, rating.
-- Empty state when no venues for sport.
-
-#### `/venues/$slug` — Venue detail & booking
-**Left column**
-- Venue hero image.
-- Sport badge, name, address, city, rating, hours.
-- **₹/hour** price display.
-- Description and amenity tags.
-
-**Right column — booking panel**
-- Date picker (today onward).
-- **Players dropdown** (1 … max allowed, capped by selected slot remaining capacity).
-- Capacity text: booked + your players = total/max.
-- **Player name inputs** (one field per selected player count).
-- **Slot picker grid** (hourly buttons with `X/Y left`, available/selected/booked/partial states).
-- Live “empty spots left today” counter.
-- Sticky **You Pay** card:
-  - Big price = payable for selected players.
-  - Full turf hourly total.
-  - Per-person splits.
-- **Book Now** (requires login; consecutive hours only).
-
-#### `/login` — Player login
-- Email + password.
-- Redirect support via `?redirect=`.
-- Link to signup.
-
-#### `/signup` — Player registration
-- Email, password, name.
-- Creates auth user + profile.
-
-#### `/owner/login` — Partner login
-- Separate owner auth entry.
-- Informational messages by owner status (no forced sign-out).
-
-#### `/owner/register` — Partner registration
-- Name, email, phone, password, city, business name, terms checkbox.
-- Creates auth user + **auto-approved** owner + owner role.
-- Redirect to owner login.
-
-#### `/booking/success` — Confirmation
-- Animated success state.
-- Booking ID display.
-- Links: View my bookings, Book again.
-
-#### `/dashboard` — Legacy redirect/alternate bookings entry (if used).
-
----
-
-### 6.3 Player account (`/account/*`)
-
-Layout sidebar: My Bookings, Profile, Notifications, Payment History.
-
-#### `/account` — My bookings
-- Sections: **Upcoming**, **Past**, **Cancelled**.
-- Each card: venue image, sport icon, name, city, date, time range, price, status badge.
-- **Cancel** on confirmed upcoming bookings.
-- **Re-book** link on past bookings.
-
-#### `/account/profile`
-- Edit full name, phone.
-- View/update profile fields.
-
-#### `/account/notifications`
-- List in-app notifications.
-- Mark as read.
-
-#### `/account/payments`
-- Payment history from linked bookings/payments.
-
----
-
-### 6.4 Owner / Partner portal (`/owner/*`)
-
-Requires approved owner. Sidebar: Overview, My Venues, Slots, Pricing & Offers, Bookings, Analytics, Payouts, Settings.
-
-#### `/owner` — Dashboard
-- KPIs: bookings today, revenue today/month, active venues, pending bookings, cancellations.
-- Revenue line chart (7/30/90 day range).
-- Bookings volume bar chart.
-- Recent bookings table.
-
-#### `/owner/venues` — Venue management
-- List owner venues with sport, city, price/hr, approval badge.
-- Add/Edit dialog: name, slug, sport, city, address, ₹/hr, **max players allowed**, image URL, description, confirmation mode.
-- New venues **auto-approved**.
-- Soft deactivate (delete) venue.
-
-#### `/owner/slots` — Slot calendar
-- Select venue + month.
-- View bookings and blocks on calendar.
-- Block slot (single date or recurring weekday).
-- Unblock slot.
-
-#### `/owner/pricing` — Pricing & offers
-Tabs per venue:
-- **Peak pricing** — time range + flat/percent surcharge.
-- **Day pricing** — override per weekday.
-- **Date pricing** — one-off date override.
-- **Duration discounts** — min hours → discount %.
-- **Coupons** — create/edit/delete codes (flat or percent).
-
-#### `/owner/bookings`
-- Filterable booking list for owner venues.
-- Confirm / Reject actions (legacy manual flow; new bookings arrive confirmed).
-- Refund on reject when payment exists.
-
-#### `/owner/analytics`
-- Revenue series, bookings volume, peak-hour heatmap.
-- CSV export.
-
-#### `/owner/payouts`
-- Payout summary with platform commission.
-- Pending payout calculation.
-- Payout history.
-- Save bank details (account holder, number, IFSC).
-
-#### `/owner/settings`
-- Update owner profile (name, phone, business name, city).
-
----
-
-### 6.5 Admin portal (`/admin/*`)
-
-Requires `admin` role. Sidebar: Overview, Bookings, Venues, Sports, Users, Payments, Analytics, Notifications, Owner requests, Venue approvals, Owners, Settings.
-
-#### `/admin` — Dashboard
-- KPIs: bookings today, revenue today/month, active venues, new users (7d), cancellations.
-- Revenue chart, booking volume, bookings-by-sport pie, top venues.
-- Recent bookings table.
-
-#### `/admin/bookings`
-- All platform bookings with filters.
-- Admin cancel booking.
-
-#### `/admin/venues`
-- CRUD all venues (admin override).
-- Activate/deactivate.
-
-#### `/admin/sports`
-- CRUD sports (name, slug, icon, active).
-
-#### `/admin/users`
-- User list with booking count and spend.
-- Ban / unban users.
-
-#### `/admin/payments`
-- Payment ledger.
-- Summary: collected, refunded, net.
-- Trigger refund.
-
-#### `/admin/analytics`
-- Extended charts: monthly revenue, user growth, cancellation trend, revenue by venue.
-- CSV export.
-
-#### `/admin/notifications`
-- Send broadcast in-app notification to users.
-- View notification audit log.
-
-#### `/admin/owner-requests`
-- List pending owner applications.
-- Approve / reject with reason + email.
-
-#### `/admin/venue-approvals`
-- List pending venues.
-- Approve / reject with reason.
-
-#### `/admin/owners`
-- List approved/rejected/suspended owners.
-- Update status, commission override.
-- Auto-deactivate venues on owner suspension.
-
-#### `/admin/settings`
-- Read/update `site_settings` (site name, contact, commission rate, cancellation hours, etc.).
-
----
-
-## 7) Server Functions (API Surface)
-
-### 7.1 Booking (`booking.functions.ts`)
-
-| Function | Method | Description |
-|----------|--------|-------------|
-| `listSports` | GET | Active sports; auto-seeds defaults if empty |
-| `listVenues` | GET | Approved active venues; optional sport filter |
-| `getVenue` | GET | Single venue by slug |
-| `getSlots` | GET | Hourly slots with capacity (`playerCount` param) |
-| `createBooking` | POST | Auth required; capacity check; pricing; payment; confirmed booking |
-| `listMyBookings` | GET | Player's bookings with venue + player_count/names |
-
-### 7.2 Owner (`owner.functions.ts`)
-
-Registration, dashboard KPIs, revenue/volume/peak analytics, venue CRUD, slot blocks, full pricing stack, coupons, booking confirm/reject, payouts, profile, CSV export, admin owner/venue review helpers.
-
-### 7.3 Admin (`admin.functions.ts`)
-
-Platform KPIs, all analytics endpoints, bookings/venues/sports/users CRUD, payments/refunds, settings, notifications broadcast, ban user, CSV export.
-
-### 7.4 Account (`account.functions.ts`)
-
-Profile get/update, cancel booking (with refund path), notifications list/mark read, payment history.
-
-### 7.5 Pricing engine (`pricing.ts`)
-
-- Base hourly rate.
-- Day-of-week override.
-- Date-specific override.
-- Peak-hour surcharge (flat or percent).
-- Duration discount (best matching min_hours).
-- Coupon (flat or percent).
-- Output: final `total_price` for booking window.
-
----
-
-## 8) Pricing Rules (Precedence)
-
-1. Start with `venues.price_per_hour`.
-2. Apply date override if exists for booking date.
-3. Else apply day-of-week override.
-4. For each hour, apply peak surcharge rules.
-5. Sum hours → apply best duration discount.
-6. Apply coupon if valid and venue-compatible.
-7. **Display split:** per-person at capacity = `ceil(total / max_players_allowed)`; payable for N players = per-person × N.
-
----
-
-## 9) Booking Lifecycle
-
-| Status | Meaning |
-|--------|---------|
-| `confirmed` | Active booking (default for all new bookings) |
-| `pending` | Legacy/manual mode (still counted in capacity) |
-| `cancelled` | Cancelled by player, owner, or admin |
-
-**Capacity counting:** `confirmed` + `pending` bookings reduce remaining slots.
-
----
-
-## 10) Integrations
-
-| Service | Usage |
-|---------|--------|
-| **Supabase Auth** | Signup, login, sessions, JWT |
-| **Supabase DB** | All relational data + RLS |
-| **Razorpay** | Payment orders, refunds |
-| **Email** | Owner application decision emails |
-| **Vercel** | Hosting, SSR, static assets |
-
----
-
-## 11) Non-Functional Requirements
-
-- Server-side auth middleware on protected server functions.
-- RLS on Supabase tables; `has_role()` for admin checks.
-- Responsive UI (mobile header menu, grid layouts).
-- Real-time slot polling (5s) on booking page.
-- CSV exports for owner/admin analytics.
-- Error toasts (Sonner) for user feedback.
-
----
-
-## 12) Known Gaps / Future Ideas
-
-### From product backlog (not built)
-- Equipment maintenance tracking (ball usage, avg life, replacement prediction).
-- Inventory management for turf equipment.
-- Full payout settlement automation.
-- Owner KYC workflow.
-- SMS / multi-channel notifications.
-- Subscription plans for owners.
-
-### Technical debt / cleanup candidates
-- Admin owner-request and venue-approval flows exist but owners/venues auto-approve in current code.
-- `confirmation_mode = manual` on venue is stored but ignored at booking time.
-- Supabase generated types may lag behind migrations (run type regen after DB push).
-- `/booking/success` links to `/dashboard` — verify route alias vs `/account`.
-
----
-
-## 13) BA Review Checklist
-
-- [ ] Confirm group booking UX: player count, names, capacity display, pricing formula.
-- [ ] Confirm auto-approve policy for owners and venues is intentional.
-- [ ] Confirm all bookings are instant confirmed (no pending player experience).
-- [ ] Validate capacity math: partial bookings until `max_players_allowed` filled.
-- [ ] Validate pricing precedence and coupon rules.
-- [ ] Confirm admin role assignment process (manual DB / seed).
-- [ ] Validate Razorpay production vs dev fallback behavior.
-- [ ] Confirm required Supabase migrations applied in production.
-- [ ] Review payout commission formula against `site_settings.platform_commission_rate`.
-
----
-
-## 14) Route Map (Quick Reference)
-
+### Flow B — Join open match
 ```
-/                          Home
-/sports                    Venue listing (+ ?sport=slug)
-/venues/:slug              Book venue
-/login, /signup            Player auth
-/owner/login, /owner/register
-/booking/success           Confirmation
+Open Lobbies → Card → Join modal (count + names) → submitLobbyQuery
+→ Host accepts on My Bookings → Seeker sees "Approved"
+```
 
-/account                   My bookings
+### Flow C — Host manages join requests
+```
+My Bookings → Incoming requests → Accept / Reject
+```
+
+### Flow D — Owner day
+```
+Owner Login → Dashboard → Venues / Slots / Pricing / Bookings / Payouts
+```
+
+---
+
+## 11) Route Trees (Quick Reference)
+
+### Public + player
+```
+/
+/sports                    ?sport=football|cricket|badminton|basketball
+/venues/:slug
+/lobbies
+/login, /signup
+/booking/success           ?id=<uuid>
+/dashboard                 → redirects /account
+
+/account
 /account/profile
 /account/notifications
 /account/payments
+```
 
-/owner                     Partner dashboard
+### Owner
+```
+/owner/login
+/owner/register
+/owner
 /owner/venues
 /owner/slots
 /owner/pricing
@@ -519,8 +427,11 @@ Profile get/update, cancel booking (with refund path), notifications list/mark r
 /owner/analytics
 /owner/payouts
 /owner/settings
+```
 
-/admin                     Admin dashboard
+### Admin
+```
+/admin
 /admin/bookings
 /admin/venues
 /admin/sports
@@ -536,4 +447,45 @@ Profile get/update, cancel booking (with refund path), notifications list/mark r
 
 ---
 
-*End of PRD*
+## 12) Integrations & NFR
+
+| Service | Usage |
+|---------|--------|
+| Supabase Auth | JWT sessions |
+| Supabase DB | All data; RLS on client reads |
+| Razorpay | Orders + refunds |
+| Email | Owner approval emails |
+| Vercel | Web hosting only |
+
+- Protected server functions validate JWT via `requireSupabaseAuth`.
+- Mobile: secure token storage (Keychain/Keystore).
+- Poll or Realtime for slot/lobby freshness.
+- Deep links: `goodbookies://venues/{slug}`, `?redirect=` parity with web.
+
+---
+
+## 13) Known Gaps / Mobile Backlog
+
+- No dedicated REST OpenAPI — server functions only (add BFF or Edge Functions for native).
+- Razorpay escrow/webhooks for lobby holds are simplified (dev auto-success without keys).
+- `confirmation_mode = manual` stored but ignored.
+- Owner/venue admin approval UIs exist but auto-approve in code.
+- Push notifications (FCM/APNs) not implemented — in-app only.
+- No reviews/ratings write API.
+- `/booking/success` still links “View bookings” → `/dashboard` (redirects to `/account`).
+
+---
+
+## 14) Verification Checklist
+
+- [ ] DB: `lobby_queries`, `is_open_lobby`, capacity columns; no `bookings_no_double_book` index
+- [ ] Mobile auth + Bearer on protected endpoints
+- [ ] Slot polling / capacity math under concurrent bookings
+- [ ] Open lobby: submit → accept → merged `player_names`
+- [ ] Razorpay production keys + mobile SDK checkout
+- [ ] Owner auto-approve policy confirmed for production
+- [ ] Admin role seeded for ops accounts
+
+---
+
+*End of PRD v3.0*

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { CalendarCheck, User, Bell, CreditCard } from "lucide-react";
+import { CalendarCheck, User, Bell, CreditCard, IdCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/account")({
@@ -11,6 +11,7 @@ export const Route = createFileRoute("/account")({
 const nav = [
   { to: "/account", label: "My Bookings", icon: CalendarCheck, exact: true },
   { to: "/account/profile", label: "Profile", icon: User },
+  { to: "/account/card", label: "My Player Card", icon: IdCard },
   { to: "/account/notifications", label: "Notifications", icon: Bell },
   { to: "/account/payments", label: "Payment History", icon: CreditCard },
 ];
@@ -29,16 +30,15 @@ function AccountLayout() {
     return <div className="container mx-auto px-4 py-16 text-muted-foreground">Loading…</div>;
   }
 
-  if (pathname === "/account/card") {
-    return (
-      <div className="container mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8">
-        <Outlet />
-      </div>
-    );
-  }
+  const isCardPage = pathname === "/account/card";
 
   return (
-    <div className="container mx-auto grid gap-6 px-4 py-8 md:grid-cols-[200px_1fr]">
+    <div
+      className={cn(
+        "container mx-auto grid gap-6 px-3 py-6 sm:px-4 sm:py-8",
+        isCardPage ? "max-w-7xl md:grid-cols-[200px_1fr]" : "md:grid-cols-[200px_1fr]",
+      )}
+    >
       <aside className="md:sticky md:top-20 md:self-start">
         <div className="rounded-2xl border border-border/60 bg-card p-3">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">My Account</p>

@@ -63,16 +63,16 @@ export function ShareCardButton({
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" className="gap-2" onClick={copyLink}>
+    <div className="grid w-full max-w-sm grid-cols-1 gap-2 sm:max-w-none sm:grid-cols-3 md:flex md:flex-wrap">
+      <Button type="button" variant="outline" className="h-11 w-full gap-2 sm:h-10 sm:w-auto" onClick={copyLink}>
         <Link2 className="h-4 w-4" />
         Copy link
       </Button>
-      <Button type="button" className="gap-2" onClick={downloadPng} disabled={busy}>
+      <Button type="button" className="h-11 w-full gap-2 sm:h-10 sm:w-auto" onClick={downloadPng} disabled={busy}>
         <Download className="h-4 w-4" />
         {busy ? "Generating…" : "Download PNG"}
       </Button>
-      <Button type="button" variant="secondary" className="gap-2" onClick={nativeShare}>
+      <Button type="button" variant="secondary" className="h-11 w-full gap-2 sm:h-10 sm:w-auto" onClick={nativeShare}>
         <Share2 className="h-4 w-4" />
         Share
       </Button>

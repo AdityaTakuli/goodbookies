@@ -72,7 +72,7 @@ export function CardBuilderStatsPanel({
 
       {sport === "football" && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
             <StatCard label="Goals" value={s.goals ?? 0} />
             <StatCard label="Matches" value={s.matches ?? 0} />
             <StatCard label="Position" value={card.position} />
@@ -108,7 +108,7 @@ export function CardBuilderStatsPanel({
       )}
 
       {sport === "cricket" && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
           <StatCard label="Runs" value={s.runs ?? 0} />
           <StatCard label="Wickets" value={s.wickets ?? 0} />
           <StatCard label="Catches" value={s.catches ?? 0} />
@@ -119,7 +119,7 @@ export function CardBuilderStatsPanel({
       )}
 
       {sport === "basketball" && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
           {(() => {
             const b = basketballDerived(s, matches);
             return (
@@ -137,7 +137,7 @@ export function CardBuilderStatsPanel({
       )}
 
       {sport === "badminton" && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
           <StatCard label="Matches played" value={s.matches ?? 0} />
           <StatCard label="Matches won" value={s.matches_won ?? 0} />
           <StatCard label="Win %" value={`${s.win_pct ?? 0}%`} />

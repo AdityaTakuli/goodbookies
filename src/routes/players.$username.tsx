@@ -58,28 +58,28 @@ function PublicPlayerPage() {
 
   return (
     <div className="min-h-screen bg-[#0B130E]">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-3 py-8 sm:px-4 sm:py-12">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-auto flex max-w-4xl flex-col gap-8"
+          className="mx-auto flex w-full max-w-4xl flex-col gap-6 sm:gap-8"
         >
           <div className="text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#10B981]">My Bookies · Player</p>
-            <h1 className="mt-2 font-display text-4xl font-bold text-white">{card.player.fullName}</h1>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#10B981] sm:text-xs sm:tracking-[0.25em]">My Bookies · Player</p>
+            <h1 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl md:text-4xl">{card.player.fullName}</h1>
             <p className="mt-1 text-white/60">@{card.player.username}</p>
             {card.player.bio && <p className="mx-auto mt-3 max-w-lg text-sm text-white/75">{card.player.bio}</p>}
           </div>
 
           {availableSports.length > 1 && (
-            <div className="flex flex-wrap justify-center gap-2">
+            <div className="-mx-1 flex justify-start gap-2 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] sm:mx-0 sm:justify-center sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
               {availableSports.map((slug) => (
                 <button
                   key={slug}
                   type="button"
                   onClick={() => setSport(slug)}
                   className={cn(
-                    "rounded-full px-4 py-2 text-sm font-semibold",
+                    "shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold sm:py-2",
                     activeSport === slug ? "bg-[#10B981] text-[#0B130E]" : "bg-[#142219] text-white/70",
                   )}
                 >
@@ -89,12 +89,12 @@ function PublicPlayerPage() {
             </div>
           )}
 
-          <div className="flex flex-col items-center gap-6">
-            <FutPlayerCard data={card} captureId="public-fut-card" />
+          <div className="flex w-full flex-col items-center gap-4 sm:gap-6">
+            <FutPlayerCard data={card} captureId="public-fut-card" className="w-full" />
             <ShareCardButton captureId="public-fut-card" publicPath={`/players/${username}?sport=${activeSport}`} />
           </div>
 
-          <section className="rounded-2xl border border-[#1E3A27] bg-[#142219] p-6">
+          <section className="rounded-xl border border-[#1E3A27] bg-[#142219] p-4 sm:rounded-2xl sm:p-6">
             <h2 className="font-display text-xl font-bold text-white">Match history</h2>
             <div className="mt-4">
               <MatchHistoryList matches={data.matches} sportFilter={activeSport} />

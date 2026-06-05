@@ -230,10 +230,10 @@ function MyBookiesDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold">My Bookies</h1>
+    <div className="space-y-5 sm:space-y-6 md:space-y-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-bold sm:text-3xl">My Bookies</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Build your multi-sport player card — stats are turf-verified, aesthetics are yours.
           </p>
@@ -250,14 +250,14 @@ function MyBookiesDashboard() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-1 flex gap-2 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
         {PLAYER_SPORT_SLUGS.map((slug) => (
           <button
             key={slug}
             type="button"
             onClick={() => setSport(slug)}
             className={cn(
-              "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+              "shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors sm:py-2",
               sport === slug ? "bg-primary text-primary-foreground" : "bg-[#142219] text-muted-foreground hover:text-foreground",
             )}
           >
@@ -266,25 +266,27 @@ function MyBookiesDashboard() {
         ))}
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[300px_1fr] xl:grid-cols-[320px_1fr]">
-        {/* Left: sticky live preview */}
-        <div className="lg:sticky lg:top-24 lg:self-start space-y-4">
-          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Live preview</p>
-          {preview && (
-            <>
-              <FutPlayerCard data={preview} captureId="dashboard-fut-card" />
-              {username && (
-                <ShareCardButton
-                  captureId="dashboard-fut-card"
-                  publicPath={`/players/${username.toLowerCase()}?sport=${sport}`}
-                />
-              )}
-            </>
-          )}
+      <div className="grid gap-5 md:grid-cols-[minmax(0,18.75rem)_1fr] md:gap-6 lg:grid-cols-[minmax(0,20rem)_1fr] lg:gap-8">
+        {/* Preview — top on mobile, sticky sidebar on tablet+ */}
+        <div className="order-1 md:sticky md:top-20 md:self-start lg:top-24">
+          <div className="space-y-3 sm:space-y-4">
+            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Live preview</p>
+            {preview && (
+              <div className="flex flex-col items-center gap-3 sm:gap-4">
+                <FutPlayerCard data={preview} captureId="dashboard-fut-card" className="w-full" />
+                {username && (
+                  <ShareCardButton
+                    captureId="dashboard-fut-card"
+                    publicPath={`/players/${username.toLowerCase()}?sport=${sport}`}
+                  />
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Right: configuration workspace */}
-        <div className="space-y-5">
+        {/* Configuration workspace */}
+        <div className="order-2 min-w-0 space-y-4 sm:space-y-5">
           <CardBuilderSection title="Identity">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <button
@@ -372,7 +374,7 @@ function MyBookiesDashboard() {
           </CardBuilderSection>
 
           <CardBuilderSection title="Position">
-            <PillGroup>
+            <PillGroup scroll>
               {config.positions.map((p) => (
                 <Pill key={p} selected={position === p} onClick={() => setPosition(p)}>
                   {p}
@@ -418,7 +420,7 @@ function MyBookiesDashboard() {
 
           <CardBuilderSection title="Card attributes">
             <p className="mb-3 text-xs text-muted-foreground">FIFA-style ratings — cosmetic only, separate from verified match stats.</p>
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
               {config.attributes.map((attr) => (
                 <div key={attr.key}>
                   <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{attr.key}</Label>
@@ -465,18 +467,20 @@ function MyBookiesDashboard() {
             </CardBuilderSection>
           )}
 
-          <label className="flex items-center justify-between rounded-2xl border border-[#1E3A27] bg-[#142219] p-4">
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-[#1E3A27] bg-[#142219] p-4 sm:rounded-2xl">
             <span className="text-sm font-medium">Show this sport card on public profile</span>
             <Switch checked={isPublic} onCheckedChange={setIsPublic} />
           </label>
 
-          <Button onClick={onSave} disabled={saving} className="glow-primary w-full sm:w-auto">
-            {saving ? "Saving…" : `Save ${config.name} card`}
-          </Button>
+          <div className="sticky bottom-3 z-10 -mx-1 rounded-xl border border-[#1E3A27]/80 bg-[#0B130E]/95 p-3 backdrop-blur-sm sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none md:static">
+            <Button onClick={onSave} disabled={saving} className="glow-primary h-11 w-full sm:h-10 md:w-auto">
+              {saving ? "Saving…" : `Save ${config.name} card`}
+            </Button>
+          </div>
         </div>
       </div>
 
-      <section className="rounded-2xl border border-[#1E3A27]/80 bg-[#142219] p-6">
+      <section className="rounded-xl border border-[#1E3A27]/80 bg-[#142219] p-4 sm:rounded-2xl sm:p-6">
         <h2 className="font-display text-lg font-semibold">Match history</h2>
         <p className="mt-1 text-sm text-muted-foreground">Verified scorelines from partner turfs</p>
         <div className="mt-4">

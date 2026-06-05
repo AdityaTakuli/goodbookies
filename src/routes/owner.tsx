@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getOwnerStatus } from "@/lib/owner.functions";
 import {
   LayoutDashboard, Building2, Calendar, IndianRupee, BarChart3,
-  CreditCard, Settings, Ticket, ShieldAlert,
+  CreditCard, Settings, Ticket, ShieldAlert, BadgeCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,7 @@ const nav = [
   { to: "/owner/slots", label: "Slots", icon: Calendar },
   { to: "/owner/pricing", label: "Pricing & Offers", icon: IndianRupee },
   { to: "/owner/bookings", label: "Bookings", icon: Ticket },
+  { to: "/owner/player-stats", label: "Verify Stats", icon: BadgeCheck },
   { to: "/owner/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/owner/payouts", label: "Payouts", icon: CreditCard },
   { to: "/owner/settings", label: "Settings", icon: Settings },

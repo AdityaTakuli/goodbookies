@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
@@ -59,6 +59,12 @@ function AccountProfile() {
           <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <Button onClick={onSave}>Save changes</Button>
+        <p className="text-sm text-muted-foreground">
+          Want a shareable player page?{" "}
+          <Link to="/account/card" className="font-medium text-primary hover:underline">
+            Open My Bookies dashboard →
+          </Link>
+        </p>
       </div>
     </div>
   );

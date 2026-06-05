@@ -1,4 +1,4 @@
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -32,7 +32,7 @@ function todayISO() {
 function VenuePage() {
   const { slug } = Route.useParams();
   const { data: venue } = useSuspenseQuery(venueQO(slug));
-  const { user } = useAuth();
+  const { user, isOwner } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const bookFn = useServerFn(createBooking);
@@ -51,6 +51,8 @@ function VenuePage() {
   });
 
   if (!venue) return null;
+
+  const isOwnVenue = Boolean(user && venue.owner_id && user.id === venue.owner_id);
 
   const sortedSel = [...selected].sort((a, b) => a - b);
   const isContiguous = sortedSel.every((h, i) => i === 0 || h === sortedSel[i - 1] + 1);
@@ -269,36 +271,51 @@ function VenuePage() {
             )}
           </div>
 
-          <motion.div layout className="sticky bottom-4 rounded-2xl border border-primary/40 bg-card p-5 shadow-[var(--shadow-glow)]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">You Pay (for {playerCount} players)</p>
-                <p className="flex items-center font-display text-3xl font-bold">
-                  <IndianRupee className="h-6 w-6" />{payableForSelectedPlayers.toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground">{selected.length} hour{selected.length === 1 ? "" : "s"} selected</p>
-                <p className="text-xs text-muted-foreground">
-                  Full booking total for turf: <IndianRupee className="mb-0.5 inline h-3 w-3" />{total.toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Per person (selected {playerCount}):{" "}
-                  <IndianRupee className="mb-0.5 inline h-3 w-3" />
-                  {selectedSplitPrice.toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Split per person at full turf capacity ({maxPlayersAllowed}):{" "}
-                  <IndianRupee className="mb-0.5 inline h-3 w-3" />
-                  {perPersonPrice.toLocaleString()}
-                </p>
-              </div>
-              <Button size="lg" disabled={selected.length === 0 || submitting} onClick={handleBook} className="glow-primary">
-                {submitting ? "Booking…" : "Book Now"}
-              </Button>
+          {isOwnVenue ? (
+            <div className="sticky bottom-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
+              <p className="font-semibold text-foreground">This is your turf</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Partners cannot book their own venue. Manage slots and bookings from{" "}
+                {isOwner ? (
+                  <Link to="/owner" className="font-medium text-primary hover:underline">Partner dashboard</Link>
+                ) : (
+                  "Partner dashboard"
+                )}
+                , or book a different turf as a player.
+              </p>
             </div>
-            {selected.length > 0 && !isContiguous && (
-              <p className="mt-3 text-xs text-destructive">Pick consecutive hours to book a continuous slot.</p>
-            )}
-          </motion.div>
+          ) : (
+            <motion.div layout className="sticky bottom-4 rounded-2xl border border-primary/40 bg-card p-5 shadow-[var(--shadow-glow)]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">You Pay (for {playerCount} players)</p>
+                  <p className="flex items-center font-display text-3xl font-bold">
+                    <IndianRupee className="h-6 w-6" />{payableForSelectedPlayers.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{selected.length} hour{selected.length === 1 ? "" : "s"} selected</p>
+                  <p className="text-xs text-muted-foreground">
+                    Full booking total for turf: <IndianRupee className="mb-0.5 inline h-3 w-3" />{total.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Per person (selected {playerCount}):{" "}
+                    <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                    {selectedSplitPrice.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Split per person at full turf capacity ({maxPlayersAllowed}):{" "}
+                    <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                    {perPersonPrice.toLocaleString()}
+                  </p>
+                </div>
+                <Button size="lg" disabled={selected.length === 0 || submitting} onClick={handleBook} className="glow-primary">
+                  {submitting ? "Booking…" : "Book Now"}
+                </Button>
+              </div>
+              {selected.length > 0 && !isContiguous && (
+                <p className="mt-3 text-xs text-destructive">Pick consecutive hours to book a continuous slot.</p>
+              )}
+            </motion.div>
+          )}
         </div>
       </div>
 

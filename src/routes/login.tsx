@@ -26,13 +26,13 @@ function LoginPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back!");
-    navigate({ to: redirect ?? "/dashboard" });
+    navigate({ to: redirect ?? "/account" });
   }
 
   return (
     <div className="container mx-auto flex max-w-md flex-col px-4 py-16">
       <h1 className="font-display text-3xl font-bold">Log in</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Welcome back to Good Bookies.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Log in to book turfs, manage My Bookies, or access Partner if you list venues.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div>
           <Label htmlFor="email">Email</Label>
@@ -46,6 +46,13 @@ function LoginPage() {
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         No account yet? <Link to="/signup" className="font-semibold text-primary hover:underline">Sign up</Link>
+        <br />
+        <span className="mt-2 inline-block">
+          List a turf?{" "}
+          <Link to="/owner/register" className="font-semibold text-primary hover:underline">
+            Add partner access
+          </Link>
+        </span>
       </p>
     </div>
   );

@@ -22,11 +22,13 @@ import { Route as OwnerIndexRouteImport } from './routes/owner.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
+import { Route as PlayersUsernameRouteImport } from './routes/players.$username'
 import { Route as OwnerVenuesRouteImport } from './routes/owner.venues'
 import { Route as OwnerSlotsRouteImport } from './routes/owner.slots'
 import { Route as OwnerSettingsRouteImport } from './routes/owner.settings'
 import { Route as OwnerRegisterRouteImport } from './routes/owner.register'
 import { Route as OwnerPricingRouteImport } from './routes/owner.pricing'
+import { Route as OwnerPlayerStatsRouteImport } from './routes/owner.player-stats'
 import { Route as OwnerPayoutsRouteImport } from './routes/owner.payouts'
 import { Route as OwnerLoginRouteImport } from './routes/owner.login'
 import { Route as OwnerBookingsRouteImport } from './routes/owner.bookings'
@@ -46,6 +48,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AccountProfileRouteImport } from './routes/account.profile'
 import { Route as AccountPaymentsRouteImport } from './routes/account.payments'
 import { Route as AccountNotificationsRouteImport } from './routes/account.notifications'
+import { Route as AccountCardRouteImport } from './routes/account.card'
 
 const SportsRoute = SportsRouteImport.update({
   id: '/sports',
@@ -112,6 +115,11 @@ const VenuesSlugRoute = VenuesSlugRouteImport.update({
   path: '/venues/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlayersUsernameRoute = PlayersUsernameRouteImport.update({
+  id: '/players/$username',
+  path: '/players/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OwnerVenuesRoute = OwnerVenuesRouteImport.update({
   id: '/venues',
   path: '/venues',
@@ -135,6 +143,11 @@ const OwnerRegisterRoute = OwnerRegisterRouteImport.update({
 const OwnerPricingRoute = OwnerPricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => OwnerRoute,
+} as any)
+const OwnerPlayerStatsRoute = OwnerPlayerStatsRouteImport.update({
+  id: '/player-stats',
+  path: '/player-stats',
   getParentRoute: () => OwnerRoute,
 } as any)
 const OwnerPayoutsRoute = OwnerPayoutsRouteImport.update({
@@ -232,6 +245,11 @@ const AccountNotificationsRoute = AccountNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AccountRoute,
 } as any)
+const AccountCardRoute = AccountCardRouteImport.update({
+  id: '/card',
+  path: '/card',
+  getParentRoute: () => AccountRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -243,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/owner': typeof OwnerRouteWithChildren
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/account/card': typeof AccountCardRoute
   '/account/notifications': typeof AccountNotificationsRoute
   '/account/payments': typeof AccountPaymentsRoute
   '/account/profile': typeof AccountProfileRoute
@@ -262,11 +281,13 @@ export interface FileRoutesByFullPath {
   '/owner/bookings': typeof OwnerBookingsRoute
   '/owner/login': typeof OwnerLoginRoute
   '/owner/payouts': typeof OwnerPayoutsRoute
+  '/owner/player-stats': typeof OwnerPlayerStatsRoute
   '/owner/pricing': typeof OwnerPricingRoute
   '/owner/register': typeof OwnerRegisterRoute
   '/owner/settings': typeof OwnerSettingsRoute
   '/owner/slots': typeof OwnerSlotsRoute
   '/owner/venues': typeof OwnerVenuesRoute
+  '/players/$username': typeof PlayersUsernameRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -279,6 +300,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/account/card': typeof AccountCardRoute
   '/account/notifications': typeof AccountNotificationsRoute
   '/account/payments': typeof AccountPaymentsRoute
   '/account/profile': typeof AccountProfileRoute
@@ -298,11 +320,13 @@ export interface FileRoutesByTo {
   '/owner/bookings': typeof OwnerBookingsRoute
   '/owner/login': typeof OwnerLoginRoute
   '/owner/payouts': typeof OwnerPayoutsRoute
+  '/owner/player-stats': typeof OwnerPlayerStatsRoute
   '/owner/pricing': typeof OwnerPricingRoute
   '/owner/register': typeof OwnerRegisterRoute
   '/owner/settings': typeof OwnerSettingsRoute
   '/owner/slots': typeof OwnerSlotsRoute
   '/owner/venues': typeof OwnerVenuesRoute
+  '/players/$username': typeof PlayersUsernameRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -319,6 +343,7 @@ export interface FileRoutesById {
   '/owner': typeof OwnerRouteWithChildren
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/account/card': typeof AccountCardRoute
   '/account/notifications': typeof AccountNotificationsRoute
   '/account/payments': typeof AccountPaymentsRoute
   '/account/profile': typeof AccountProfileRoute
@@ -338,11 +363,13 @@ export interface FileRoutesById {
   '/owner/bookings': typeof OwnerBookingsRoute
   '/owner/login': typeof OwnerLoginRoute
   '/owner/payouts': typeof OwnerPayoutsRoute
+  '/owner/player-stats': typeof OwnerPlayerStatsRoute
   '/owner/pricing': typeof OwnerPricingRoute
   '/owner/register': typeof OwnerRegisterRoute
   '/owner/settings': typeof OwnerSettingsRoute
   '/owner/slots': typeof OwnerSlotsRoute
   '/owner/venues': typeof OwnerVenuesRoute
+  '/players/$username': typeof PlayersUsernameRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -360,6 +387,7 @@ export interface FileRouteTypes {
     | '/owner'
     | '/signup'
     | '/sports'
+    | '/account/card'
     | '/account/notifications'
     | '/account/payments'
     | '/account/profile'
@@ -379,11 +407,13 @@ export interface FileRouteTypes {
     | '/owner/bookings'
     | '/owner/login'
     | '/owner/payouts'
+    | '/owner/player-stats'
     | '/owner/pricing'
     | '/owner/register'
     | '/owner/settings'
     | '/owner/slots'
     | '/owner/venues'
+    | '/players/$username'
     | '/venues/$slug'
     | '/account/'
     | '/admin/'
@@ -396,6 +426,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/sports'
+    | '/account/card'
     | '/account/notifications'
     | '/account/payments'
     | '/account/profile'
@@ -415,11 +446,13 @@ export interface FileRouteTypes {
     | '/owner/bookings'
     | '/owner/login'
     | '/owner/payouts'
+    | '/owner/player-stats'
     | '/owner/pricing'
     | '/owner/register'
     | '/owner/settings'
     | '/owner/slots'
     | '/owner/venues'
+    | '/players/$username'
     | '/venues/$slug'
     | '/account'
     | '/admin'
@@ -435,6 +468,7 @@ export interface FileRouteTypes {
     | '/owner'
     | '/signup'
     | '/sports'
+    | '/account/card'
     | '/account/notifications'
     | '/account/payments'
     | '/account/profile'
@@ -454,11 +488,13 @@ export interface FileRouteTypes {
     | '/owner/bookings'
     | '/owner/login'
     | '/owner/payouts'
+    | '/owner/player-stats'
     | '/owner/pricing'
     | '/owner/register'
     | '/owner/settings'
     | '/owner/slots'
     | '/owner/venues'
+    | '/players/$username'
     | '/venues/$slug'
     | '/account/'
     | '/admin/'
@@ -476,6 +512,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SportsRoute: typeof SportsRoute
   BookingSuccessRoute: typeof BookingSuccessRoute
+  PlayersUsernameRoute: typeof PlayersUsernameRoute
   VenuesSlugRoute: typeof VenuesSlugRoute
 }
 
@@ -572,6 +609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VenuesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/players/$username': {
+      id: '/players/$username'
+      path: '/players/$username'
+      fullPath: '/players/$username'
+      preLoaderRoute: typeof PlayersUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/owner/venues': {
       id: '/owner/venues'
       path: '/venues'
@@ -605,6 +649,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/owner/pricing'
       preLoaderRoute: typeof OwnerPricingRouteImport
+      parentRoute: typeof OwnerRoute
+    }
+    '/owner/player-stats': {
+      id: '/owner/player-stats'
+      path: '/player-stats'
+      fullPath: '/owner/player-stats'
+      preLoaderRoute: typeof OwnerPlayerStatsRouteImport
       parentRoute: typeof OwnerRoute
     }
     '/owner/payouts': {
@@ -740,10 +791,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountNotificationsRouteImport
       parentRoute: typeof AccountRoute
     }
+    '/account/card': {
+      id: '/account/card'
+      path: '/card'
+      fullPath: '/account/card'
+      preLoaderRoute: typeof AccountCardRouteImport
+      parentRoute: typeof AccountRoute
+    }
   }
 }
 
 interface AccountRouteChildren {
+  AccountCardRoute: typeof AccountCardRoute
   AccountNotificationsRoute: typeof AccountNotificationsRoute
   AccountPaymentsRoute: typeof AccountPaymentsRoute
   AccountProfileRoute: typeof AccountProfileRoute
@@ -751,6 +810,7 @@ interface AccountRouteChildren {
 }
 
 const AccountRouteChildren: AccountRouteChildren = {
+  AccountCardRoute: AccountCardRoute,
   AccountNotificationsRoute: AccountNotificationsRoute,
   AccountPaymentsRoute: AccountPaymentsRoute,
   AccountProfileRoute: AccountProfileRoute,
@@ -797,6 +857,7 @@ interface OwnerRouteChildren {
   OwnerBookingsRoute: typeof OwnerBookingsRoute
   OwnerLoginRoute: typeof OwnerLoginRoute
   OwnerPayoutsRoute: typeof OwnerPayoutsRoute
+  OwnerPlayerStatsRoute: typeof OwnerPlayerStatsRoute
   OwnerPricingRoute: typeof OwnerPricingRoute
   OwnerRegisterRoute: typeof OwnerRegisterRoute
   OwnerSettingsRoute: typeof OwnerSettingsRoute
@@ -810,6 +871,7 @@ const OwnerRouteChildren: OwnerRouteChildren = {
   OwnerBookingsRoute: OwnerBookingsRoute,
   OwnerLoginRoute: OwnerLoginRoute,
   OwnerPayoutsRoute: OwnerPayoutsRoute,
+  OwnerPlayerStatsRoute: OwnerPlayerStatsRoute,
   OwnerPricingRoute: OwnerPricingRoute,
   OwnerRegisterRoute: OwnerRegisterRoute,
   OwnerSettingsRoute: OwnerSettingsRoute,
@@ -831,6 +893,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SportsRoute: SportsRoute,
   BookingSuccessRoute: BookingSuccessRoute,
+  PlayersUsernameRoute: PlayersUsernameRoute,
   VenuesSlugRoute: VenuesSlugRoute,
 }
 export const routeTree = rootRouteImport

@@ -29,6 +29,14 @@ function AccountLayout() {
     return <div className="container mx-auto px-4 py-16 text-muted-foreground">Loading…</div>;
   }
 
+  if (pathname === "/account/card") {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 py-8">
+        <Outlet />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto grid gap-6 px-4 py-8 md:grid-cols-[200px_1fr]">
       <aside className="md:sticky md:top-20 md:self-start">

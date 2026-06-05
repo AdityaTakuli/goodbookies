@@ -17,7 +17,7 @@ async function venueHasReviewCountColumn() {
 const VENUE_CARD_FIELDS =
   "id, name, slug, description, address, city, image_url, price_per_hour, rating, amenities, sport:sports(name, slug, icon)";
 const VENUE_DETAIL_FIELDS =
-  "id, name, slug, description, address, city, image_url, price_per_hour, opening_hour, closing_hour, slot_duration_minutes, max_players_allowed, amenities, rating, sport:sports(name, slug, icon)";
+  "id, name, slug, description, address, city, image_url, price_per_hour, opening_hour, closing_hour, slot_duration_minutes, max_players_allowed, amenities, rating, owner_id, sport:sports(name, slug, icon)";
 
 function withReviewCount<T extends Record<string, unknown>>(row: T) {
   return { ...row, review_count: Number(row.review_count ?? 0) };
@@ -222,6 +222,9 @@ export const createBooking = createServerFn({ method: "POST" })
       .eq("approval_status", "approved")
       .maybeSingle();
     if (vErr || !venue) throw new Error("Venue not found");
+    if (venue.owner_id && venue.owner_id === context.userId) {
+      throw new Error("Partners cannot book their own turf. Book other venues as a player, or manage slots from Partner.");
+    }
     if (data.playerCount > (venue.max_players_allowed ?? 1)) {
       throw new Error(`Only ${venue.max_players_allowed} players are allowed for this turf`);
     }

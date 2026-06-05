@@ -21,6 +21,11 @@ const MIME = {
   ".json": "application/json",
 };
 
+const INVENTORY_ROUTES = {
+  "/inventory/flags": () => import("./api/inventory/flags.ts"),
+  "/inventory/clubs": () => import("./api/inventory/clubs.ts"),
+};
+
 const MOBILE_ROUTES = {
   "/api/mobile/venues": () => import("./api/mobile/venues.ts"),
   "/api/mobile/bookings": () => import("./api/mobile/bookings.ts"),
@@ -120,6 +125,15 @@ async function toFetchRequest(req, url) {
   });
 }
 
+async function handleInventory(pathname, req, nodeRes) {
+  const load = INVENTORY_ROUTES[pathname];
+  if (!load) return false;
+  const mod = await load();
+  const handler = mod.default;
+  await handler(req, createVercelResponse(nodeRes));
+  return true;
+}
+
 async function handleMobile(pathname, req, nodeRes, url) {
   const load = MOBILE_ROUTES[pathname];
   if (!load) return false;
@@ -158,6 +172,7 @@ const server = http.createServer(async (req, nodeRes) => {
     const url = new URL(req.url ?? "/", `${proto}://${host}`);
 
     if (await handleMobile(url.pathname, req, nodeRes, url)) return;
+    if (await handleInventory(url.pathname, req, nodeRes)) return;
     if (tryServeStatic(url, nodeRes)) return;
     await handleSsr(req, nodeRes, url);
   } catch (error) {

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -71,36 +72,70 @@ export const registerOwner = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data }) => {
+    const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+    const supabaseAnon = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+    const linkPartnerToUser = async (userId: string) => {
+      const { data: existingOwner } = await supabaseAdmin.from("owners").select("id").eq("id", userId).maybeSingle();
+      if (existingOwner) throw new Error("This account already has partner access.");
+
+      const { error: ownerErr } = await supabaseAdmin.from("owners").insert({
+        id: userId,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        business_name: data.business_name ?? null,
+        city: data.city,
+        status: "approved",
+        approved_at: new Date().toISOString(),
+      });
+      if (ownerErr) throw new Error(ownerErr.message);
+
+      await supabaseAdmin.from("profiles").update({
+        account_type: "both",
+        full_name: data.name,
+        phone: data.phone,
+        updated_at: new Date().toISOString(),
+      }).eq("id", userId);
+
+      await supabaseAdmin.from("user_roles").upsert({ user_id: userId, role: "user" }, { onConflict: "user_id,role" });
+      const { error: roleErr } = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: userId, role: "owner" }, { onConflict: "user_id,role" });
+      if (roleErr) throw new Error(roleErr.message);
+    };
+
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, account_type")
+      .eq("email", data.email)
+      .maybeSingle();
+
+    if (existingProfile) {
+      if (!supabaseUrl || !supabaseAnon) throw new Error("Server auth not configured");
+      const verifyClient = createClient(supabaseUrl, supabaseAnon, { auth: { persistSession: false, autoRefreshToken: false } });
+      const { error: pwErr } = await verifyClient.auth.signInWithPassword({ email: data.email, password: data.password });
+      if (pwErr) {
+        throw new Error("This email already has a player account. Log in first, or enter the correct password to add partner access.");
+      }
+      await linkPartnerToUser(existingProfile.id);
+      return {
+        ok: true,
+        message: "Partner access linked to your existing account. Log in to use both My Account and Partner.",
+      };
+    }
+
     const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
-      user_metadata: { full_name: data.name, phone: data.phone },
+      user_metadata: { full_name: data.name, phone: data.phone, account_type: "both" },
     });
     if (authErr) throw new Error(authErr.message);
-    const { error: ownerErr } = await supabaseAdmin.from("owners").insert({
-      id: authUser.user.id,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      business_name: data.business_name ?? null,
-      city: data.city,
-      status: "approved",
-      approved_at: new Date().toISOString(),
-    });
-    if (ownerErr) {
-      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
-      throw new Error(ownerErr.message);
-    }
-    const { error: roleErr } = await supabaseAdmin
-      .from("user_roles")
-      .upsert({ user_id: authUser.user.id, role: "owner" }, { onConflict: "user_id,role" });
-    if (roleErr) {
-      await supabaseAdmin.from("owners").delete().eq("id", authUser.user.id);
-      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
-      throw new Error(roleErr.message);
-    }
-    return { ok: true, message: "Partner account created and approved. You can log in now." };
+
+    await supabaseAdmin.from("profiles").update({ account_type: "both" }).eq("id", authUser.user.id);
+    await linkPartnerToUser(authUser.user.id);
+    return { ok: true, message: "Partner account created. You can book turfs and manage venues with the same login." };
   });
 
 export const getOwnerStatus = createServerFn({ method: "GET" })

@@ -26,7 +26,7 @@ function SignupPage() {
       password,
       options: {
         emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-        data: { full_name: fullName, phone },
+        data: { full_name: fullName, phone, account_type: "player" },
       },
     });
     setLoading(false);
@@ -38,7 +38,7 @@ function SignupPage() {
   return (
     <div className="container mx-auto flex max-w-md flex-col px-4 py-16">
       <h1 className="font-display text-3xl font-bold">Create account</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Start booking turfs in seconds.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Player account — book turfs and build your My Bookies card.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div>
           <Label htmlFor="name">Full name</Label>
@@ -60,6 +60,13 @@ function SignupPage() {
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have one? <Link to="/login" className="font-semibold text-primary hover:underline">Log in</Link>
+        <br />
+        <span className="mt-2 inline-block">
+          List a turf?{" "}
+          <Link to="/owner/register" className="font-semibold text-primary hover:underline">
+            Create a partner account
+          </Link>
+        </span>
       </p>
     </div>
   );

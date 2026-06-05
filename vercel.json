@@ -20,6 +20,18 @@
       "dest": "/api/mobile/$1"
     },
     {
+      "src": "/inventory/flags",
+      "dest": "/api/inventory/flags"
+    },
+    {
+      "src": "/inventory/clubs",
+      "dest": "/api/inventory/clubs"
+    },
+    {
+      "src": "/api/v1/assets/avatar-inventory",
+      "dest": "/api/v1/assets/avatar-inventory"
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/render?path=$1"
     }

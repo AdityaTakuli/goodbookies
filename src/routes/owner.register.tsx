@@ -54,7 +54,9 @@ function OwnerRegister() {
   return (
     <div className="container mx-auto max-w-lg px-4 py-12">
       <h1 className="font-display text-4xl font-bold">List your venue</h1>
-      <p className="mt-2 text-muted-foreground">Partner with Good Bookies. Registration is approved instantly.</p>
+      <p className="mt-2 text-muted-foreground">
+        Use the same Gmail as your player account — we&apos;ll link partner access. You can book other turfs as a player, but not your own.
+      </p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-2xl border border-border/60 bg-card p-6">
         <Field label="Full name"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
         <Field label="Email"><Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>

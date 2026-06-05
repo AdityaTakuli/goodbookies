@@ -1,5 +1,5 @@
 import type { PlayerCardView } from "@/lib/player-card.types";
-import { resolveAvatarDisplay } from "@/lib/player-card.utils";
+import { getCardSkillLevel, PLAYER_SKILL_LEVEL_LABELS, resolveAvatarDisplay } from "@/lib/player-card.utils";
 import { getSportConfig } from "@/lib/sports/player-sports";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,7 @@ export function FutPlayerCard({
     (data.sportSettings.card_name as string) ||
     data.player.fullName.split(" ").pop()?.toUpperCase() ||
     "PLAYER";
+  const skillLevel = getCardSkillLevel(data);
   const attrOrder =
     data.sportSlug === "football"
       ? ["PAC", "DRI", "SHO", "DEF", "PAS", "PHY"]
@@ -60,10 +61,15 @@ export function FutPlayerCard({
           )}
         </div>
 
-        {/* Card name */}
+        {/* Card name + skill tag */}
         <p className="relative mt-3 text-center font-display text-lg font-black uppercase tracking-wide text-white">
           {cardName}
         </p>
+        <div className="relative mt-2 flex justify-center">
+          <span className="rounded-full border border-primary/40 bg-primary/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+            {PLAYER_SKILL_LEVEL_LABELS[skillLevel]}
+          </span>
+        </div>
 
         {/* Club badge */}
         {data.club && (

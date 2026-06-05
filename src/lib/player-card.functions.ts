@@ -11,6 +11,7 @@ import {
   INVENTORY_FLAGS,
 } from "@/lib/inventory/catalog";
 import type { MatchHistoryRow, PlayerCardView } from "@/lib/player-card.types";
+import { parseSkillLevel } from "@/lib/player-card.utils";
 import {
   getSportConfig,
   isPlayerSportSlug,
@@ -268,6 +269,11 @@ export const updatePlayerProfileSettings = createServerFn({ method: "POST" })
     if (profileErr) throw new Error(profileErr.message);
 
     const ratings = { ...config.defaultRatings, ...(data.card_ratings ?? {}) };
+    const incomingSettings = (data.sport_settings ?? {}) as Record<string, unknown>;
+    const sportSettings = {
+      ...incomingSettings,
+      skill_level: parseSkillLevel(incomingSettings.skill_level),
+    };
     const cardPayload = {
       user_id: context.userId,
       sport_slug: sport,
@@ -277,7 +283,7 @@ export const updatePlayerProfileSettings = createServerFn({ method: "POST" })
       jersey_number: data.jersey_number ?? null,
       preferred_foot: sport === "football" ? (data.preferred_foot ?? null) : null,
       card_ratings: ratings,
-      sport_settings: data.sport_settings ?? {},
+      sport_settings: sportSettings,
       is_public: data.is_public,
       updated_at: new Date().toISOString(),
     };

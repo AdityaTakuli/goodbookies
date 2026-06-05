@@ -26,6 +26,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  parseSkillLevel,
+  PLAYER_SKILL_LEVEL_LABELS,
+  PLAYER_SKILL_LEVELS,
+  type PlayerSkillLevel,
+} from "@/lib/player-card.utils";
 import { cn } from "@/lib/utils";
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
@@ -60,6 +66,7 @@ function MyBookiesDashboard() {
   const [avatarInventoryId, setAvatarInventoryId] = useState<string | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [cardRatings, setCardRatings] = useState<Record<string, number>>({});
+  const [skillLevel, setSkillLevel] = useState<PlayerSkillLevel>("beginner");
   const [isPublic, setIsPublic] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -84,11 +91,13 @@ function MyBookiesDashboard() {
       setCardRatings(card.cardRatings);
       setIsPublic(card.isPublic);
       setCardName((card.sportSettings.card_name as string) ?? "");
+      setSkillLevel(parseSkillLevel(card.sportSettings.skill_level));
     } else {
       setPosition(config.positions[0]);
       setCardRatings({ ...config.defaultRatings });
       setClubId(clubs?.clubs?.[0]?.id ?? "");
       setCardName("");
+      setSkillLevel("beginner");
     }
   }, [data?.cards, sport, config, clubs?.clubs]);
 
@@ -105,7 +114,11 @@ function MyBookiesDashboard() {
       position: position || config.positions[0],
       jerseyNumber: jerseyNumber ? Number(jerseyNumber) : null,
       preferredFoot: sport === "football" ? preferredFoot : null,
-      sportSettings: { ...(existing?.sportSettings ?? {}), card_name: cardName.toUpperCase() },
+      sportSettings: {
+        ...(existing?.sportSettings ?? {}),
+        card_name: cardName.toUpperCase(),
+        skill_level: skillLevel,
+      },
       cardRatings: { ...config.defaultRatings, ...cardRatings },
       isPublic,
       verifiedStats: existing?.verifiedStats ?? {},
@@ -134,6 +147,7 @@ function MyBookiesDashboard() {
     username,
     fullName,
     cardName,
+    skillLevel,
     avatarInventoryId,
     avatarPreviewUrl,
     config,
@@ -182,7 +196,11 @@ function MyBookiesDashboard() {
           jersey_number: jerseyNumber ? Number(jerseyNumber) : null,
           preferred_foot: sport === "football" ? preferredFoot : undefined,
           card_ratings: cardRatings,
-          sport_settings: { ...(existing?.sportSettings ?? {}), card_name: cardName.toUpperCase() },
+          sport_settings: {
+            ...(existing?.sportSettings ?? {}),
+            card_name: cardName.toUpperCase(),
+            skill_level: skillLevel,
+          },
           is_public: isPublic,
         },
       });
@@ -358,6 +376,17 @@ function MyBookiesDashboard() {
               {config.positions.map((p) => (
                 <Pill key={p} selected={position === p} onClick={() => setPosition(p)}>
                   {p}
+                </Pill>
+              ))}
+            </PillGroup>
+          </CardBuilderSection>
+
+          <CardBuilderSection title="Skill level">
+            <p className="mb-3 text-xs text-muted-foreground">Self-selected tag shown on your player card.</p>
+            <PillGroup>
+              {PLAYER_SKILL_LEVELS.map((level) => (
+                <Pill key={level} selected={skillLevel === level} onClick={() => setSkillLevel(level)}>
+                  {PLAYER_SKILL_LEVEL_LABELS[level]}
                 </Pill>
               ))}
             </PillGroup>

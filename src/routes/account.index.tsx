@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Users } from "lucide-react";
+import { Calendar, MapPin, Users, Star } from "lucide-react";
 import { listMyBookings } from "@/lib/booking.functions";
 import {
   acceptLobbyQuery,
@@ -228,9 +228,17 @@ function BookingSection({
                 <Button size="sm" variant="outline" onClick={() => onCancel(b.id)}>Cancel</Button>
               )}
               {rebook && (
-                <Link to="/venues/$slug" params={{ slug: (b.venue as any)?.slug }}>
-                  <Button size="sm" variant="ghost">Re-book</Button>
-                </Link>
+                <>
+                  <Link to="/venues/$slug" params={{ slug: (b.venue as any)?.slug }} hash="reviews">
+                    <Button size="sm" variant="outline" className="gap-1">
+                      <Star className="h-3.5 w-3.5" />
+                      Review turf
+                    </Button>
+                  </Link>
+                  <Link to="/venues/$slug" params={{ slug: (b.venue as any)?.slug }}>
+                    <Button size="sm" variant="ghost">Re-book</Button>
+                  </Link>
+                </>
               )}
             </div>
           </motion.div>

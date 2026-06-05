@@ -5,6 +5,24 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { calculateBookingTotal, loadVenuePricing } from "@/lib/pricing";
 import { createRazorpayOrder } from "@/lib/services/razorpay";
 
+let reviewCountColumnReady: boolean | null = null;
+
+async function venueHasReviewCountColumn() {
+  if (reviewCountColumnReady != null) return reviewCountColumnReady;
+  const { error } = await supabaseAdmin.from("venues").select("review_count").limit(1);
+  reviewCountColumnReady = !error?.message?.includes("review_count");
+  return reviewCountColumnReady;
+}
+
+const VENUE_CARD_FIELDS =
+  "id, name, slug, description, address, city, image_url, price_per_hour, rating, amenities, sport:sports(name, slug, icon)";
+const VENUE_DETAIL_FIELDS =
+  "id, name, slug, description, address, city, image_url, price_per_hour, opening_hour, closing_hour, slot_duration_minutes, max_players_allowed, amenities, rating, sport:sports(name, slug, icon)";
+
+function withReviewCount<T extends Record<string, unknown>>(row: T) {
+  return { ...row, review_count: Number(row.review_count ?? 0) };
+}
+
 const defaultSports = [
   { name: "Football", slug: "football", icon: "⚽", is_active: true },
   { name: "Cricket", slug: "cricket", icon: "🏏", is_active: true },
@@ -40,9 +58,12 @@ export const listVenues = createServerFn({ method: "GET" })
     z.object({ sport: z.string().min(1).max(64).optional() }).parse(input ?? {}),
   )
   .handler(async ({ data }) => {
+    const fields = (await venueHasReviewCountColumn())
+      ? `${VENUE_CARD_FIELDS.replace("rating,", "rating, review_count,")}`
+      : VENUE_CARD_FIELDS;
     let query = supabaseAdmin
       .from("venues")
-      .select("id, name, slug, description, address, city, image_url, price_per_hour, rating, amenities, sport:sports(name, slug, icon)")
+      .select(fields)
       .eq("is_active", true)
       .eq("approval_status", "approved")
       .order("rating", { ascending: false });
@@ -52,7 +73,7 @@ export const listVenues = createServerFn({ method: "GET" })
     }
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return (rows ?? []).map((row) => withReviewCount(row as Record<string, unknown>));
   });
 
 export const getVenue = createServerFn({ method: "GET" })
@@ -60,15 +81,18 @@ export const getVenue = createServerFn({ method: "GET" })
     z.object({ slug: z.string().min(1).max(120) }).parse(input),
   )
   .handler(async ({ data }) => {
+    const fields = (await venueHasReviewCountColumn())
+      ? `${VENUE_DETAIL_FIELDS.replace("rating,", "rating, review_count,")}`
+      : VENUE_DETAIL_FIELDS;
     const { data: venue, error } = await supabaseAdmin
       .from("venues")
-      .select("id, name, slug, description, address, city, image_url, price_per_hour, opening_hour, closing_hour, slot_duration_minutes, max_players_allowed, amenities, rating, sport:sports(name, slug, icon)")
+      .select(fields)
       .eq("slug", data.slug)
       .eq("is_active", true)
       .eq("approval_status", "approved")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return venue;
+    return venue ? withReviewCount(venue as Record<string, unknown>) : null;
   });
 
 export const getSlots = createServerFn({ method: "GET" })

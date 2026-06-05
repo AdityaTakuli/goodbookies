@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveVenueImage } from "@/lib/images";
+import { VenueReviews } from "@/components/VenueReviews";
 
 const venueQO = (slug: string) =>
   queryOptions({ queryKey: ["venue", slug], queryFn: () => getVenue({ data: { slug } }) });
@@ -158,7 +159,11 @@ function VenuePage() {
             <h1 className="mt-3 font-display text-4xl font-bold">{venue.name}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {venue.address}, {venue.city}</span>
-              <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-primary text-primary" /> {venue.rating}</span>
+              <span className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-primary text-primary" />
+                {venue.rating != null ? Number(venue.rating).toFixed(1) : "New"}
+                {venue.review_count ? ` (${venue.review_count} reviews)` : ""}
+              </span>
               <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {venue.opening_hour}:00 – {venue.closing_hour}:00</span>
             </div>
             <p className="mt-2 text-sm font-semibold text-primary">
@@ -296,6 +301,8 @@ function VenuePage() {
           </motion.div>
         </div>
       </div>
+
+      <VenueReviews venueId={venue.id} venueName={venue.name} />
     </div>
   );
 }

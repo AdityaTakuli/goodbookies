@@ -139,6 +139,54 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_reviews: {
+        Row: {
+          booking_id: string | null
+          comment: string
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          comment: string
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          comment?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_reviews_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           address: string
@@ -155,6 +203,7 @@ export type Database = {
           opening_hour: number
           price_per_hour: number
           rating: number | null
+          review_count: number
           slot_duration_minutes: number
           slug: string
           sport_id: string
@@ -174,6 +223,7 @@ export type Database = {
           opening_hour?: number
           price_per_hour: number
           rating?: number | null
+          review_count?: number
           slot_duration_minutes?: number
           slug: string
           sport_id: string
@@ -193,6 +243,7 @@ export type Database = {
           opening_hour?: number
           price_per_hour?: number
           rating?: number | null
+          review_count?: number
           slot_duration_minutes?: number
           slug?: string
           sport_id?: string

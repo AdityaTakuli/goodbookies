@@ -10,6 +10,7 @@ type Venue = {
   image_url: string | null;
   price_per_hour: number;
   rating: number | null;
+  review_count?: number | null;
   sport: { name: string; icon: string | null } | null;
 };
 
@@ -38,8 +39,16 @@ export function VenueCard({ venue, index = 0 }: { venue: Venue; index?: number }
           <div className="absolute left-3 top-3 rounded-full bg-background/80 px-3 py-1 text-xs font-semibold backdrop-blur">
             {venue.sport?.icon} {venue.sport?.name}
           </div>
-          <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-xs font-bold text-primary-foreground">
-            <Star className="h-3 w-3 fill-current" /> {venue.rating ?? "—"}
+          <div className="absolute right-3 top-3 flex flex-col items-end gap-0.5">
+            <div className="flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-xs font-bold text-primary-foreground">
+              <Star className="h-3 w-3 fill-current" />
+              {venue.rating != null ? Number(venue.rating).toFixed(1) : "New"}
+            </div>
+            {(venue.review_count ?? 0) > 0 && (
+              <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur">
+                {venue.review_count} review{(venue.review_count ?? 0) === 1 ? "" : "s"}
+              </span>
+            )}
           </div>
         </div>
         <div className="p-5">

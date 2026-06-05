@@ -15,7 +15,7 @@ export function Header() {
     ...(user
       ? [
           { to: "/account", label: "My Account" },
-          { to: "/account/card", label: "My Bookies" },
+          { to: "/account/card", label: "My Player Card" },
         ]
       : []),
     ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),

@@ -62,7 +62,7 @@ function AccountProfile() {
         <p className="text-sm text-muted-foreground">
           Want a shareable player page?{" "}
           <Link to="/account/card" className="font-medium text-primary hover:underline">
-            Open My Bookies dashboard →
+            Open My Player Card →
           </Link>
         </p>
       </div>

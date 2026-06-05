@@ -32,7 +32,7 @@ function LoginPage() {
   return (
     <div className="container mx-auto flex max-w-md flex-col px-4 py-16">
       <h1 className="font-display text-3xl font-bold">Log in</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Log in to book turfs, manage My Bookies, or access Partner if you list venues.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Log in to book turfs, manage My Player Card, or access Partner if you list venues.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div>
           <Label htmlFor="email">Email</Label>

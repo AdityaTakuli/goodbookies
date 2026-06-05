@@ -218,7 +218,7 @@ function MyBookiesDashboard() {
   if (data?.migrationRequired) {
     return (
       <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
-        <h1 className="font-display text-2xl font-bold">My Bookies Dashboard</h1>
+        <h1 className="font-display text-2xl font-bold">My Player Card</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Run migrations in Supabase SQL editor:
           <code className="mx-1 rounded bg-muted px-1">20260605120000_player_cards_football.sql</code>
@@ -233,7 +233,7 @@ function MyBookiesDashboard() {
     <div className="space-y-5 sm:space-y-6 md:space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">My Bookies</h1>
+          <h1 className="font-display text-2xl font-bold sm:text-3xl">My Player Card</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Build your multi-sport player card — stats are turf-verified, aesthetics are yours.
           </p>

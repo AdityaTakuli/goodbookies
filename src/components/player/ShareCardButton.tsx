@@ -53,7 +53,7 @@ export function ShareCardButton({
   const nativeShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "My Good Bookies football card", url: fullUrl });
+        await navigator.share({ title: "My Good Bookies player card", url: fullUrl });
       } catch {
         /* user cancelled */
       }

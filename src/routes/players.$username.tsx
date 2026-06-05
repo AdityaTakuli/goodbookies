@@ -29,7 +29,7 @@ export const Route = createFileRoute("/players/$username")({
   },
   head: ({ params }) => ({
     meta: [
-      { title: `@${params.username} · My Bookies Player` },
+      { title: `@${params.username} · Player Card` },
       { name: "description", content: `Public multi-sport player profile for @${params.username}` },
       { property: "og:type", content: "profile" },
     ],
@@ -65,7 +65,7 @@ function PublicPlayerPage() {
           className="mx-auto flex w-full max-w-4xl flex-col gap-6 sm:gap-8"
         >
           <div className="text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#10B981] sm:text-xs sm:tracking-[0.25em]">My Bookies · Player</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#10B981] sm:text-xs sm:tracking-[0.25em]">My Player Card</p>
             <h1 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl md:text-4xl">{card.player.fullName}</h1>
             <p className="mt-1 text-white/60">@{card.player.username}</p>
             {card.player.bio && <p className="mx-auto mt-3 max-w-lg text-sm text-white/75">{card.player.bio}</p>}

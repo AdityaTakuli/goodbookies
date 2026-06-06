@@ -250,7 +250,7 @@ function MyBookiesDashboard() {
         )}
       </div>
 
-      <div className="-mx-1 flex gap-2 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
+      <div className="-mx-1 flex gap-2 overflow-x-auto overscroll-x-contain px-1 pb-2 pr-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0 md:pr-0 [&::-webkit-scrollbar]:hidden">
         {PLAYER_SPORT_SLUGS.map((slug) => (
           <button
             key={slug}
@@ -266,14 +266,14 @@ function MyBookiesDashboard() {
         ))}
       </div>
 
-      <div className="grid gap-5 md:grid-cols-[minmax(0,18.75rem)_1fr] md:gap-6 lg:grid-cols-[minmax(0,20rem)_1fr] lg:gap-8">
+      <div className="mt-2 grid gap-5 md:mt-0 md:grid-cols-[minmax(0,18.75rem)_1fr] md:gap-6 lg:grid-cols-[minmax(0,20rem)_1fr] lg:gap-8">
         {/* Preview — top on mobile, sticky sidebar on tablet+ */}
         <div className="order-1 md:sticky md:top-20 md:self-start lg:top-24">
           <div className="space-y-3 sm:space-y-4">
             <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Live preview</p>
             {preview && (
-              <div className="flex flex-col items-center gap-3 overflow-visible px-4 py-6 sm:gap-4 sm:px-2 sm:py-4">
-                <FutPlayerCard data={preview} captureId="dashboard-fut-card" className="w-full" />
+              <div className="player-card-preview-shell flex flex-col items-center gap-3 sm:gap-4">
+                <FutPlayerCard data={preview} captureId="dashboard-fut-card" />
                 {username && (
                   <ShareCardButton
                     captureId="dashboard-fut-card"

@@ -75,11 +75,21 @@ export function FutPlayerCard({
           </div>
         )}
 
-        <div className="relative mt-3 grid grid-cols-2 gap-x-3 gap-y-2 px-1 sm:mt-4 sm:gap-x-4 sm:px-2">
+        <div className="relative mt-3 grid grid-cols-2 gap-x-2 gap-y-2 px-1 sm:mt-4 sm:gap-x-6 sm:px-2">
           {attrOrder.map((key, i) => (
-            <div key={key} className={cn("flex items-baseline justify-between", i % 2 === 0 ? "pr-1 sm:pr-2" : "pl-1 sm:pl-2")}>
-              <span className="font-display text-lg font-bold text-white sm:text-xl">{data.cardRatings[key] ?? 50}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary/90 sm:text-[11px]">{key}</span>
+            <div
+              key={key}
+              className={cn(
+                "flex items-baseline gap-1.5 sm:gap-2",
+                i % 2 === 0 ? "justify-start pr-1 sm:pr-2" : "justify-end pl-1 sm:pl-2",
+              )}
+            >
+              <span className="w-6 shrink-0 text-right font-display text-lg font-bold tabular-nums text-white sm:w-7 sm:text-xl">
+                {data.cardRatings[key] ?? 50}
+              </span>
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-primary/90 sm:text-[11px]">
+                {key}
+              </span>
             </div>
           ))}
         </div>

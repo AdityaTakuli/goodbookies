@@ -7,11 +7,12 @@ import { MapPin, Star, Clock, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import { getVenue, getSlots, createBooking } from "@/lib/booking.functions";
 import { SlotPicker } from "@/components/SlotPicker";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveVenueImage } from "@/lib/images";
 import { VenueReviews } from "@/components/VenueReviews";
+import { BookingPaymentPortal } from "@/components/payments/BookingPaymentPortal";
+import { useRazorpayCheckout } from "@/components/payments/useRazorpayCheckout";
 
 const venueQO = (slug: string) =>
   queryOptions({ queryKey: ["venue", slug], queryFn: () => getVenue({ data: { slug } }) });
@@ -32,10 +33,11 @@ function todayISO() {
 function VenuePage() {
   const { slug } = Route.useParams();
   const { data: venue } = useSuspenseQuery(venueQO(slug));
-  const { user, isOwner } = useAuth();
+  const { user, isOwner, session } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const bookFn = useServerFn(createBooking);
+  const { openCheckout, paying } = useRazorpayCheckout();
 
   const [date, setDate] = useState(todayISO());
   const [selected, setSelected] = useState<number[]>([]);
@@ -43,6 +45,12 @@ function VenuePage() {
   const [playerNames, setPlayerNames] = useState<string[]>([""]);
   const [isOpenLobby, setIsOpenLobby] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingCheckout, setPendingCheckout] = useState<{
+    bookingId: string;
+    orderId: string;
+    amountPaise: number;
+    customerName: string;
+  } | null>(null);
 
   const slotsQuery = useQuery({
     queryKey: ["slots", venue!.id, date, playerCount],
@@ -98,6 +106,25 @@ function VenuePage() {
     setSelected((prev) => (prev.includes(h) ? prev.filter((x) => x !== h) : [...prev, h]));
   };
 
+  async function handleOpenPayment() {
+    if (!pendingCheckout || !venue) return;
+    const paid = await openCheckout({
+      bookingId: pendingCheckout.bookingId,
+      orderId: pendingCheckout.orderId,
+      amountPaise: pendingCheckout.amountPaise,
+      title: "Good Bookies",
+      description: `${venue.name} · ${date}`,
+      customerName: pendingCheckout.customerName,
+      customerEmail: session?.user?.email ?? undefined,
+    });
+    if (paid) {
+      const bookingId = pendingCheckout.bookingId;
+      setPendingCheckout(null);
+      await qc.invalidateQueries({ queryKey: ["slots", venue.id, date] });
+      navigate({ to: "/booking/success", search: { id: bookingId } });
+    }
+  }
+
   async function handleBook() {
     if (!user) {
       toast.info("Sign in to confirm your booking");
@@ -132,6 +159,21 @@ function VenuePage() {
           isOpenLobby: isOpenLobby && playerCount < maxPlayersAllowed,
         },
       });
+
+      if (res.requiresPayment && res.razorpayOrderId && res.amountPaise >= 100) {
+        setPendingCheckout({
+          bookingId: res.bookingId,
+          orderId: res.razorpayOrderId,
+          amountPaise: res.amountPaise,
+          customerName: trimmedNames[0],
+        });
+        await qc.invalidateQueries({ queryKey: ["slots", venue!.id, date] });
+        toast.message("Slot reserved", {
+          description: "Click Open Razorpay below to pay and confirm.",
+        });
+        return;
+      }
+
       await qc.invalidateQueries({ queryKey: ["slots", venue!.id, date] });
       navigate({ to: "/booking/success", search: { id: res.bookingId } });
     } catch (e: any) {
@@ -285,34 +327,29 @@ function VenuePage() {
               </p>
             </div>
           ) : (
-            <motion.div layout className="sticky bottom-4 rounded-2xl border border-primary/40 bg-card p-5 shadow-[var(--shadow-glow)]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">You Pay (for {playerCount} players)</p>
-                  <p className="flex items-center font-display text-3xl font-bold">
-                    <IndianRupee className="h-6 w-6" />{payableForSelectedPlayers.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{selected.length} hour{selected.length === 1 ? "" : "s"} selected</p>
-                  <p className="text-xs text-muted-foreground">
-                    Full booking total for turf: <IndianRupee className="mb-0.5 inline h-3 w-3" />{total.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Per person (selected {playerCount}):{" "}
-                    <IndianRupee className="mb-0.5 inline h-3 w-3" />
-                    {selectedSplitPrice.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Split per person at full turf capacity ({maxPlayersAllowed}):{" "}
-                    <IndianRupee className="mb-0.5 inline h-3 w-3" />
-                    {perPersonPrice.toLocaleString()}
-                  </p>
-                </div>
-                <Button size="lg" disabled={selected.length === 0 || submitting} onClick={handleBook} className="glow-primary">
-                  {submitting ? "Booking…" : "Book Now"}
-                </Button>
+            <motion.div layout className="sticky bottom-4 space-y-3">
+              <BookingPaymentPortal
+                amount={payableForSelectedPlayers}
+                playerCount={playerCount}
+                hours={selected.length}
+                venueName={venue.name}
+                disabled={selected.length === 0}
+                loading={submitting || paying}
+                requiresPayment={payableForSelectedPlayers >= 1}
+                awaitingCheckout={Boolean(pendingCheckout)}
+                onPay={handleBook}
+                onOpenCheckout={handleOpenPayment}
+              />
+              <div className="rounded-xl border border-border/50 bg-card/80 px-4 py-3 text-xs text-muted-foreground">
+                <p>
+                  Full turf total: <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                  {total.toLocaleString()} · Per person ({playerCount} selected):{" "}
+                  <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                  {selectedSplitPrice.toLocaleString()}
+                </p>
               </div>
               {selected.length > 0 && !isContiguous && (
-                <p className="mt-3 text-xs text-destructive">Pick consecutive hours to book a continuous slot.</p>
+                <p className="text-xs text-destructive">Pick consecutive hours to book a continuous slot.</p>
               )}
             </motion.div>
           )}

@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 /** Razorpay integration — stub when keys missing; real API when configured. */
 
 export type RazorpayOrder = {
@@ -7,17 +9,47 @@ export type RazorpayOrder = {
   status: string;
 };
 
-export async function createRazorpayOrder(amountPaise: number, receipt: string): Promise<RazorpayOrder> {
+export function isRazorpayConfigured(): boolean {
+  return Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
+}
+
+export function verifyRazorpayPaymentSignature(input: {
+  orderId: string;
+  paymentId: string;
+  signature: string;
+}): boolean {
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keySecret) return false;
+
+  const expected = createHmac("sha256", keySecret)
+    .update(`${input.orderId}|${input.paymentId}`)
+    .digest("hex");
+
+  try {
+    const a = Buffer.from(expected, "utf8");
+    const b = Buffer.from(input.signature, "utf8");
+    return a.length === b.length && timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+export async function createRazorpayOrder(
+  amountPaise: number,
+  receipt: string,
+  currency = "INR",
+): Promise<RazorpayOrder> {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keyId || !keySecret) {
     return {
       id: `order_stub_${receipt.slice(0, 8)}`,
       amount: amountPaise,
-      currency: "INR",
+      currency,
       status: "created",
     };
   }
+
   const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
   const res = await fetch("https://api.razorpay.com/v1/orders", {
     method: "POST",
@@ -27,17 +59,36 @@ export async function createRazorpayOrder(amountPaise: number, receipt: string):
     },
     body: JSON.stringify({
       amount: amountPaise,
-      currency: "INR",
+      currency,
       receipt,
       payment_capture: 1,
     }),
   });
+
+  if (res.status === 401) {
+    throw new RazorpayAuthError("Razorpay authentication failed");
+  }
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Razorpay order failed: ${err}`);
+    throw new RazorpayApiError(`Razorpay order failed: ${err}`);
   }
+
   const data = await res.json();
   return { id: data.id, amount: data.amount, currency: data.currency, status: data.status };
+}
+
+export class RazorpayAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RazorpayAuthError";
+  }
+}
+
+export class RazorpayApiError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RazorpayApiError";
+  }
 }
 
 export async function refundRazorpayPayment(

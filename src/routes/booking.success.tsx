@@ -30,7 +30,7 @@ function SuccessPage() {
         Back of the net!
       </motion.h1>
       <p className="mt-3 text-muted-foreground">
-        Your booking is confirmed. We've saved the slot for you.
+        Payment received and your booking is confirmed. We've saved the slot for you.
       </p>
       {id && <p className="mt-2 text-xs text-muted-foreground">Booking ID: <span className="font-mono">{id}</span></p>}
       <div className="mt-8 flex gap-3">

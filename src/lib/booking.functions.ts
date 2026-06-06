@@ -3,7 +3,8 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { calculateBookingTotal, loadVenuePricing } from "@/lib/pricing";
-import { createRazorpayOrder } from "@/lib/services/razorpay";
+import { MIN_ORDER_PAISE } from "@/lib/payments/checkout";
+import { createRazorpayOrder, isRazorpayConfigured } from "@/lib/services/razorpay";
 
 let reviewCountColumnReady: boolean | null = null;
 
@@ -283,15 +284,17 @@ export const createBooking = createServerFn({ method: "POST" })
     const perPerson = total > 0 ? Math.ceil(total / maxCap) : 0;
     const chargeAmount = perPerson * data.playerCount;
 
-    const status = "confirmed";
-    const order = await createRazorpayOrder(chargeAmount * 100, `bk_${Date.now()}`);
+    const amountPaise = chargeAmount * 100;
+    const requiresPayment = isRazorpayConfigured() && amountPaise >= MIN_ORDER_PAISE;
+    const status = requiresPayment ? "pending" : "confirmed";
+    const order = await createRazorpayOrder(amountPaise, `bk_${Date.now()}`);
     const { data: payment, error: payErr } = await supabaseAdmin
       .from("payments")
       .insert({
         user_id: context.userId,
         amount: chargeAmount,
         razorpay_order_id: order.id,
-        status: process.env.RAZORPAY_KEY_ID ? "created" : "success",
+        status: requiresPayment ? "created" : "success",
       })
       .select("id")
       .single();
@@ -319,27 +322,39 @@ export const createBooking = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("payments").update({ booking_id: booking.id }).eq("id", payment.id);
 
-    if (coupon) {
+    if (coupon && !requiresPayment) {
       await supabaseAdmin.from("coupons").update({ used_count: (coupon.used_count ?? 0) + 1 }).eq("id", coupon.id);
     }
 
-    await supabaseAdmin.from("notifications").insert({
-      user_id: context.userId,
-      title: "Booking confirmed",
-      message: `Your slot on ${data.date} is confirmed. See you on the turf!`,
-      type: "booking",
-    });
-
-    if (venue.owner_id) {
+    if (!requiresPayment) {
       await supabaseAdmin.from("notifications").insert({
-        user_id: venue.owner_id,
-        title: "New booking",
-        message: `New confirmed booking on ${data.date}.`,
+        user_id: context.userId,
+        title: "Booking confirmed",
+        message: `Your slot on ${data.date} is confirmed. See you on the turf!`,
         type: "booking",
       });
+
+      if (venue.owner_id) {
+        await supabaseAdmin.from("notifications").insert({
+          user_id: venue.owner_id,
+          title: "New booking",
+          message: `New confirmed booking on ${data.date}.`,
+          type: "booking",
+        });
+      }
     }
 
-    return { bookingId: booking.id, total: chargeAmount, fullTotal: total, razorpayOrderId: order.id, status, isOpenLobby: openLobby };
+    return {
+      bookingId: booking.id,
+      total: chargeAmount,
+      fullTotal: total,
+      amountPaise,
+      razorpayOrderId: order.id,
+      razorpayKeyId: process.env.VITE_RAZORPAY_KEY_ID ?? process.env.RAZORPAY_KEY_ID ?? null,
+      requiresPayment,
+      status,
+      isOpenLobby: openLobby,
+    };
   });
 
 export const listMyBookings = createServerFn({ method: "GET" })

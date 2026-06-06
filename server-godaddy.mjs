@@ -36,6 +36,11 @@ const MOBILE_ROUTES = {
   "/api/mobile/notifications": () => import("./api/mobile/notifications.ts"),
 };
 
+const PAYMENT_ROUTES = {
+  "/api/create-order": () => import("./api/payments/create-order.ts"),
+  "/api/verify-payment": () => import("./api/payments/verify-payment.ts"),
+};
+
 let serverEntryPromise;
 
 export function validateProductionBuild() {
@@ -144,6 +149,28 @@ async function handleInventory(pathname, req, nodeRes) {
   return true;
 }
 
+async function handlePayments(pathname, req, nodeRes) {
+  const load = PAYMENT_ROUTES[pathname];
+  if (!load) return false;
+
+  const mod = await load();
+  const handler = mod.default;
+  if (typeof handler !== "function") {
+    nodeRes.writeHead(500).end("Payment handler missing");
+    return true;
+  }
+
+  const body = await readBody(req);
+  const vercelReq = {
+    method: req.method,
+    headers: req.headers,
+    body,
+  };
+
+  await handler(vercelReq, createVercelResponse(nodeRes));
+  return true;
+}
+
 async function handleMobile(pathname, req, nodeRes, url) {
   const load = MOBILE_ROUTES[pathname];
   if (!load) return false;
@@ -180,6 +207,7 @@ export async function handleNodeRequest(req, nodeRes) {
   const proto = (req.headers["x-forwarded-proto"] ?? "http").toString().split(",")[0];
   const url = new URL(req.url ?? "/", `${proto}://${host}`);
 
+  if (await handlePayments(url.pathname, req, nodeRes)) return;
   if (await handleMobile(url.pathname, req, nodeRes, url)) return;
   if (await handleInventory(url.pathname, req, nodeRes)) return;
   if (tryServeStatic(url, nodeRes)) return;

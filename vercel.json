@@ -16,6 +16,14 @@
       "dest": "/client/favicon.png"
     },
     {
+      "src": "/api/create-order",
+      "dest": "/api/payments/create-order"
+    },
+    {
+      "src": "/api/verify-payment",
+      "dest": "/api/payments/verify-payment"
+    },
+    {
       "src": "/api/mobile/(.*)",
       "dest": "/api/mobile/$1"
     },

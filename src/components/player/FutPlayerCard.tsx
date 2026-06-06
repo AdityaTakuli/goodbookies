@@ -37,7 +37,10 @@ export function FutPlayerCard({
           background: `linear-gradient(165deg, ${clubColors[0]} 0%, #1E3A27 38%, #142219 62%, #0B130E 100%)`,
         }}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_5%,rgba(16,185,129,0.28),transparent_42%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_5%,rgba(16,185,129,0.42),transparent_45%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_95%,rgba(16,185,129,0.18),transparent_40%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/[0.08] to-transparent max-md:from-white/[0.1]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/35 to-transparent" />
 
         <div className="relative flex items-start justify-between">
           <div>

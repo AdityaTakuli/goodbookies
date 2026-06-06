@@ -272,7 +272,7 @@ function MyBookiesDashboard() {
           <div className="space-y-3 sm:space-y-4">
             <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Live preview</p>
             {preview && (
-              <div className="flex flex-col items-center gap-3 sm:gap-4">
+              <div className="flex flex-col items-center gap-3 overflow-visible px-4 py-6 sm:gap-4 sm:px-2 sm:py-4">
                 <FutPlayerCard data={preview} captureId="dashboard-fut-card" className="w-full" />
                 {username && (
                   <ShareCardButton

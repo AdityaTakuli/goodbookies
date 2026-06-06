@@ -89,7 +89,7 @@ function PublicPlayerPage() {
             </div>
           )}
 
-          <div className="flex w-full flex-col items-center gap-4 sm:gap-6">
+          <div className="flex w-full flex-col items-center gap-4 overflow-visible px-4 py-6 sm:gap-6 sm:px-2 sm:py-4">
             <FutPlayerCard data={card} captureId="public-fut-card" className="w-full" />
             <ShareCardButton captureId="public-fut-card" publicPath={`/players/${username}?sport=${activeSport}`} />
           </div>

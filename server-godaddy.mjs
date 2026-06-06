@@ -1,6 +1,5 @@
 /**
- * GoDaddy VPS production server: static assets, /api/mobile/*, SSR for all other routes.
- * Run after `npm run build`: `npm start` (requires tsx for mobile API TypeScript).
+ * Production server: static assets, /api/mobile/*, SSR for all other routes.
  */
 import http from "node:http";
 import fs from "node:fs";
@@ -9,7 +8,9 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.HOST ?? "0.0.0.0";
 const CLIENT_ROOT = path.join(__dirname, "dist/client");
+const SERVER_BUNDLE = path.join(__dirname, "dist/server/index.js");
 
 const MIME = {
   ".js": "application/javascript",
@@ -37,11 +38,20 @@ const MOBILE_ROUTES = {
 
 let serverEntryPromise;
 
+export function validateProductionBuild() {
+  const missing = [];
+  if (!fs.existsSync(SERVER_BUNDLE)) missing.push(SERVER_BUNDLE);
+  if (!fs.existsSync(CLIENT_ROOT)) missing.push(CLIENT_ROOT);
+  if (missing.length) {
+    throw new Error(
+      `Build output missing (${missing.join(", ")}). Ensure "npm run build" completed successfully.`,
+    );
+  }
+}
+
 async function getServerEntry() {
   if (!serverEntryPromise) {
-    serverEntryPromise = import("./dist/server/index.js").then(
-      (m) => m.default ?? m,
-    );
+    serverEntryPromise = import("./dist/server/index.js").then((m) => m.default ?? m);
   }
   return serverEntryPromise;
 }
@@ -165,27 +175,41 @@ async function handleSsr(req, nodeRes, url) {
   nodeRes.end(Buffer.from(await response.arrayBuffer()));
 }
 
-const server = http.createServer(async (req, nodeRes) => {
-  try {
-    const host = req.headers["x-forwarded-host"] ?? req.headers.host ?? "localhost";
-    const proto = (req.headers["x-forwarded-proto"] ?? "http").toString().split(",")[0];
-    const url = new URL(req.url ?? "/", `${proto}://${host}`);
+export async function handleNodeRequest(req, nodeRes) {
+  const host = req.headers["x-forwarded-host"] ?? req.headers.host ?? "localhost";
+  const proto = (req.headers["x-forwarded-proto"] ?? "http").toString().split(",")[0];
+  const url = new URL(req.url ?? "/", `${proto}://${host}`);
 
-    if (await handleMobile(url.pathname, req, nodeRes, url)) return;
-    if (await handleInventory(url.pathname, req, nodeRes)) return;
-    if (tryServeStatic(url, nodeRes)) return;
-    await handleSsr(req, nodeRes, url);
-  } catch (error) {
-    console.error("[server-godaddy]", error);
-    if (!nodeRes.headersSent) {
-      nodeRes.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
-      nodeRes.end("Internal Server Error");
+  if (await handleMobile(url.pathname, req, nodeRes, url)) return;
+  if (await handleInventory(url.pathname, req, nodeRes)) return;
+  if (tryServeStatic(url, nodeRes)) return;
+  await handleSsr(req, nodeRes, url);
+}
+
+export function startHttpServer() {
+  validateProductionBuild();
+  const server = http.createServer(async (req, nodeRes) => {
+    try {
+      await handleNodeRequest(req, nodeRes);
+    } catch (error) {
+      console.error("[server-godaddy]", error);
+      if (!nodeRes.headersSent) {
+        nodeRes.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
+        nodeRes.end("Internal Server Error");
+      }
     }
-  }
-});
+  });
 
-const HOST = process.env.HOST ?? "0.0.0.0";
+  server.listen(PORT, HOST, () => {
+    console.log(`Good Bookies listening on http://${HOST}:${PORT}`);
+  });
 
-server.listen(PORT, HOST, () => {
-  console.log(`Good Bookies listening on http://${HOST}:${PORT}`);
-});
+  return server;
+}
+
+const isDirectRun =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  startHttpServer();
+}

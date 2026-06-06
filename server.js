@@ -1,12 +1,47 @@
 /**
- * Hostinger Node.js entry file (Framework preset: Express).
- * Runs after `npm run build`. Do not use Vite/CRA — those serve static files only (403).
+ * Hostinger entry (Framework preset: Express).
  */
+import express from "express";
 import { register } from "tsx/esm/api";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { validateProductionBuild, handleNodeRequest } from "./server-godaddy.mjs";
 
-const dir = path.dirname(fileURLToPath(import.meta.url));
-register();
+process.on("uncaughtException", (error) => {
+  console.error("[startup] uncaughtException:", error);
+});
 
-await import(path.join(dir, "server-godaddy.mjs"));
+process.on("unhandledRejection", (reason) => {
+  console.error("[startup] unhandledRejection:", reason);
+});
+
+try {
+  register();
+  validateProductionBuild();
+  console.log("[startup] Build output OK, starting Express…");
+} catch (error) {
+  console.error("[startup] Failed:", error);
+  process.exit(1);
+}
+
+const app = express();
+const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.HOST ?? "0.0.0.0";
+
+app.disable("x-powered-by");
+app.get("/health", (_req, res) => {
+  res.status(200).type("text/plain").send("ok");
+});
+
+app.use(async (req, res) => {
+  try {
+    await handleNodeRequest(req, res);
+  } catch (error) {
+    console.error("[server]", error);
+    if (!res.headersSent) {
+      res.status(500).type("text/plain").send("Internal Server Error");
+    }
+  }
+});
+
+app.listen(PORT, HOST, () => {
+  console.log(`Good Bookies (Express) listening on http://${HOST}:${PORT}`);
+});

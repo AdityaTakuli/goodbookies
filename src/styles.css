@@ -219,6 +219,15 @@
   background: transparent;
 }
 
+.electric-player-card__lightning-border {
+  display: none;
+  position: absolute;
+  inset: -2px 3px 3px -2px;
+  z-index: 6;
+  overflow: visible;
+  pointer-events: none;
+}
+
 .electric-player-card__glow-1,
 .electric-player-card__glow-2 {
   position: absolute;
@@ -281,7 +290,7 @@
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45));
 }
 
-/* Mobile: CSS electric glow (no SVG filter) — keep light leaks + shading */
+/* Mobile: SVG stroke + displacement (Safari ignores filter on HTML divs) */
 @media (max-width: 767px) {
   .electric-player-card {
     filter: drop-shadow(0 0 28px rgba(16, 185, 129, 0.22));
@@ -291,9 +300,20 @@
     inset: -16px;
   }
 
+  .electric-player-card__lightning-border {
+    display: block;
+    filter:
+      drop-shadow(0 0 6px rgba(16, 185, 129, 0.75))
+      drop-shadow(0 0 14px rgba(16, 185, 129, 0.45))
+      drop-shadow(0 0 24px rgba(52, 211, 153, 0.25));
+    transform: translateZ(0);
+  }
+
   .electric-player-card__border-main {
+    opacity: 0;
     filter: none;
-    animation: electric-border-pulse 3s ease-in-out infinite;
+    animation: none;
+    border-color: transparent;
   }
 
   .electric-player-card__glow-1 {
@@ -379,6 +399,20 @@
   .electric-player-card__glow-2,
   .electric-player-card__bg-glow {
     animation: none;
+  }
+
+  @media (max-width: 767px) {
+    .electric-player-card__lightning-border {
+      display: none;
+    }
+
+    .electric-player-card__border-main {
+      opacity: 1;
+      border-color: var(--electric-border-color);
+      box-shadow:
+        0 0 10px rgba(16, 185, 129, 0.5),
+        0 0 20px rgba(16, 185, 129, 0.25);
+    }
   }
 
   @media (min-width: 768px) {

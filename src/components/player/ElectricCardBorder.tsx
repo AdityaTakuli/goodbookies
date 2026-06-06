@@ -8,7 +8,9 @@ type ElectricCardBorderProps = {
 };
 
 export function ElectricCardBorder({ children, className, captureId }: ElectricCardBorderProps) {
-  const filterId = `electric-border-${useId().replace(/:/g, "")}`;
+  const uid = useId().replace(/:/g, "");
+  const filterId = `electric-border-${uid}`;
+  const mobileFilterId = `electric-border-mobile-${uid}`;
 
   return (
     <div
@@ -56,6 +58,30 @@ export function ElectricCardBorder({ children, className, captureId }: ElectricC
               yChannelSelector="B"
             />
           </filter>
+          {/* Safari/iOS: feDisplacementMap on HTML divs fails; this simpler filter targets an SVG stroke */}
+          <filter
+            id={mobileFilterId}
+            colorInterpolationFilters="sRGB"
+            x="-30%"
+            y="-30%"
+            width="160%"
+            height="160%"
+          >
+            <feTurbulence type="turbulence" baseFrequency="0.035" numOctaves="3" result="noise1" seed="4">
+              <animate attributeName="seed" values="4;9;4" dur="3s" repeatCount="indefinite" />
+            </feTurbulence>
+            <feTurbulence type="turbulence" baseFrequency="0.05" numOctaves="2" result="noise2" seed="7">
+              <animate attributeName="baseFrequency" values="0.05;0.09;0.05" dur="2.5s" repeatCount="indefinite" />
+            </feTurbulence>
+            <feBlend in="noise1" in2="noise2" mode="screen" result="combinedNoise" />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="combinedNoise"
+              scale="30"
+              xChannelSelector="R"
+              yChannelSelector="B"
+            />
+          </filter>
         </defs>
       </svg>
 
@@ -65,6 +91,26 @@ export function ElectricCardBorder({ children, className, captureId }: ElectricC
             <div className="electric-player-card__border-outer">
               <div className="electric-player-card__border-main" />
             </div>
+            <svg
+              className="electric-player-card__lightning-border"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden
+            >
+              <rect
+                x="1.8"
+                y="1.8"
+                width="96.4"
+                height="96.4"
+                rx="8.5"
+                ry="8.5"
+                fill="none"
+                stroke="var(--electric-border-color)"
+                strokeWidth="1.4"
+                vectorEffect="non-scaling-stroke"
+                filter={`url(#${mobileFilterId})`}
+              />
+            </svg>
             <div className="electric-player-card__glow-1" />
             <div className="electric-player-card__glow-2" />
           </div>

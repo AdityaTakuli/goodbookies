@@ -21,9 +21,10 @@ const profileQO = (username: string, sport?: string) =>
 
 export const Route = createFileRoute("/players/$username")({
   validateSearch: searchSchema,
-  loader: async ({ context, params, search }) => {
+  loaderDeps: ({ search }) => ({ sport: search.sport }),
+  loader: async ({ context, params, deps }) => {
     const profile = await context.queryClient.ensureQueryData(
-      profileQO(params.username, search.sport),
+      profileQO(params.username, deps.sport),
     );
     if (!profile) throw notFound();
   },

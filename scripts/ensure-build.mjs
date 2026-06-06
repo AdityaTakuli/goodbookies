@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import "./fix-esbuild-perms.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const serverBundle = path.join(root, "dist/server/index.js");
@@ -45,6 +46,13 @@ function runViteBuild() {
   }
 
   if (result.status !== 0) {
+    const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+    if (output.includes("EACCES") && output.includes("esbuild")) {
+      throw new Error(
+        "vite build failed: esbuild permission denied (EACCES). " +
+          "Redeploy after pushing scripts/fix-esbuild-perms.mjs, or build on Vercel instead.",
+      );
+    }
     throw new Error(`vite build failed (exit ${result.status ?? "unknown"})`);
   }
 }

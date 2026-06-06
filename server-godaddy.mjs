@@ -37,14 +37,6 @@ const MOBILE_ROUTES = {
 };
 
 let serverEntryPromise;
-let tsxReady = false;
-
-async function ensureTsx() {
-  if (tsxReady) return;
-  const { register } = await import("tsx/esm/api");
-  register();
-  tsxReady = true;
-}
 
 export function validateProductionBuild() {
   const missing = [];
@@ -52,9 +44,7 @@ export function validateProductionBuild() {
   if (!fs.existsSync(CLIENT_ROOT)) missing.push(CLIENT_ROOT);
   if (missing.length) {
     throw new Error(
-      `Build output missing (${missing.join(", ")}). ` +
-        "Hostinger cannot build this app (CPU/thread limits). " +
-        "Push to main and wait for GitHub Actions to commit dist/, then redeploy.",
+      `Build output missing (${missing.join(", ")}). Ensure "npm run build" completed successfully.`,
     );
   }
 }
@@ -148,7 +138,6 @@ async function toFetchRequest(req, url) {
 async function handleInventory(pathname, req, nodeRes) {
   const load = INVENTORY_ROUTES[pathname];
   if (!load) return false;
-  await ensureTsx();
   const mod = await load();
   const handler = mod.default;
   await handler(req, createVercelResponse(nodeRes));
@@ -159,7 +148,6 @@ async function handleMobile(pathname, req, nodeRes, url) {
   const load = MOBILE_ROUTES[pathname];
   if (!load) return false;
 
-  await ensureTsx();
   const mod = await load();
   const handler = mod.default;
   if (typeof handler !== "function") {

@@ -1,26 +1,14 @@
-name: Build dist for Hostinger
+name: Build
 
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "dist/**"
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
-concurrency:
-  group: build-dist
-  cancel-in-progress: true
+  pull_request:
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-      VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,13 +19,11 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-      - run: test -f dist/server/index.js && test -d dist/client/assets
+      - run: test -f dist/server/index.js && test -d dist/client
 
-      - name: Commit dist for Hostinger deploy
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f dist/
-          git diff --staged --quiet && echo "dist unchanged" && exit 0
-          git commit -m "chore: update dist for Hostinger [skip ci]"
-          git push
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: goodbookies-dist
+          path: dist/
+          retention-days: 7

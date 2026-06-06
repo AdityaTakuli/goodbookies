@@ -1,8 +1,9 @@
 /**
  * Hostinger entry (Framework preset: Express).
- * dist/ must exist before start — built by GitHub Actions, not on Hostinger.
  */
 import express from "express";
+import { register } from "tsx/esm/api";
+import { ensureProductionBuild } from "./scripts/ensure-build.mjs";
 import { validateProductionBuild, handleNodeRequest } from "./server-godaddy.mjs";
 
 process.on("uncaughtException", (error) => {
@@ -14,8 +15,10 @@ process.on("unhandledRejection", (reason) => {
 });
 
 try {
+  register();
+  ensureProductionBuild();
   validateProductionBuild();
-  console.log("[startup] dist OK, starting Express…");
+  console.log("[startup] Build output OK, starting Express…");
 } catch (error) {
   console.error("[startup] Failed:", error);
   process.exit(1);

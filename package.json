@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "build:hostinger": "node scripts/fix-esbuild-perms.mjs && NODE_OPTIONS=--max-old-space-size=2048 node node_modules/vite/bin/vite.js build",
+    "build:hostinger": "echo 'dist is built by GitHub Actions — do not build on Hostinger'",
     "postinstall": "node scripts/fix-esbuild-perms.mjs",
     "start": "node server.js",
     "build:dev": "vite build --mode development",

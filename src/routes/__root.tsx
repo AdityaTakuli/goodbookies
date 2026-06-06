@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { getPublicEnvInlineScript } from "@/lib/public-env";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -105,12 +106,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  const publicEnvScript = getPublicEnvInlineScript();
+
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
+        {publicEnvScript ? (
+          <script dangerouslySetInnerHTML={{ __html: publicEnvScript }} />
+        ) : null}
         {children}
         <Scripts />
       </body>

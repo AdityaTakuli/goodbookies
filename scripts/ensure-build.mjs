@@ -12,9 +12,44 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const serverBundle = path.join(root, "dist/server/index.js");
 const clientDir = path.join(root, "dist/client");
 const viteBin = path.join(root, "node_modules/vite/bin/vite.js");
+const envStampPath = path.join(clientDir, ".build-env.json");
 
 function buildExists() {
   return fs.existsSync(serverBundle) && fs.existsSync(clientDir);
+}
+
+function currentBuildEnv() {
+  return {
+    url: process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "",
+    key:
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.SUPABASE_PUBLISHABLE_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      "",
+  };
+}
+
+function needsEnvRebuild() {
+  const env = currentBuildEnv();
+  if (!env.url || !env.key) return false;
+  if (!buildExists()) return true;
+  if (!fs.existsSync(envStampPath)) {
+    console.log("[build] dist present but env not baked in — rebuilding…");
+    return true;
+  }
+  try {
+    const stamp = JSON.parse(fs.readFileSync(envStampPath, "utf8"));
+    return stamp.url !== env.url || stamp.key !== env.key;
+  } catch {
+    return true;
+  }
+}
+
+function writeEnvStamp() {
+  const env = currentBuildEnv();
+  if (!env.url || !env.key) return;
+  fs.mkdirSync(clientDir, { recursive: true });
+  fs.writeFileSync(envStampPath, JSON.stringify(env));
 }
 
 function runViteBuild() {
@@ -58,12 +93,18 @@ function runViteBuild() {
 }
 
 export function ensureProductionBuild() {
-  if (buildExists()) {
+  if (buildExists() && !needsEnvRebuild()) {
     console.log("[build] dist output already present");
     return;
   }
 
+  if (buildExists() && needsEnvRebuild()) {
+    console.log("[build] removing stale dist for env-aware rebuild…");
+    fs.rmSync(path.join(root, "dist"), { recursive: true, force: true });
+  }
+
   runViteBuild();
+  writeEnvStamp();
 
   if (!buildExists()) {
     throw new Error(

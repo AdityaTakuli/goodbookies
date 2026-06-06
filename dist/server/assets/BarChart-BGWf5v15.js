@@ -1,0 +1,18 @@
+import { n as generateCategoricalChart, B as Bar, X as XAxis, Y as YAxis, m as formatAxisMap } from "./LineChart-o8_MM9SV.js";
+var BarChart = generateCategoricalChart({
+  chartName: "BarChart",
+  GraphicalChild: Bar,
+  defaultTooltipEventType: "axis",
+  validateTooltipEventTypes: ["axis", "item"],
+  axisComponents: [{
+    axisType: "xAxis",
+    AxisComp: XAxis
+  }, {
+    axisType: "yAxis",
+    AxisComp: YAxis
+  }],
+  formatAxisMap
+});
+export {
+  BarChart as B
+};

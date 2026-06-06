@@ -124,7 +124,11 @@ function tryServeStatic(url, nodeRes) {
 
 function pipeFile(file, nodeRes) {
   const ext = path.extname(file);
-  nodeRes.writeHead(200, { "content-type": MIME[ext] ?? "application/octet-stream" });
+  const headers = { "content-type": MIME[ext] ?? "application/octet-stream" };
+  if (ext === ".js" || ext === ".css") {
+    headers["cache-control"] = "public, max-age=31536000, immutable";
+  }
+  nodeRes.writeHead(200, headers);
   fs.createReadStream(file).pipe(nodeRes);
   return true;
 }
@@ -198,7 +202,10 @@ async function handleSsr(req, nodeRes, url) {
   const entry = await getServerEntry();
   const request = await toFetchRequest(req, url);
   const response = await entry.fetch(request, {}, {});
-  nodeRes.writeHead(response.status, Object.fromEntries(response.headers));
+  const headers = Object.fromEntries(response.headers);
+  headers["cache-control"] = "no-store, no-cache, must-revalidate";
+  headers["pragma"] = "no-cache";
+  nodeRes.writeHead(response.status, headers);
   nodeRes.end(Buffer.from(await response.arrayBuffer()));
 }
 

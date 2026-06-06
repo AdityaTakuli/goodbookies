@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { CLIENT_BUILD_ID } from "@/generated/client-build-id";
 import { getPublicEnvInlineScript } from "@/lib/public-env";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Header } from "@/components/site/Header";
@@ -86,6 +87,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Good Bookies — Book Sports Slots in Seconds" },
       { name: "twitter:description", content: "Find and book floodlit football turfs, cricket nets, basketball courts and more. Real-time slot availability, instant confirmation." },
+      { name: "gb-build", content: CLIENT_BUILD_ID },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8bee6680-9518-4611-88e8-ad651670a130/id-preview-a5108356--72920ab1-64f0-4a04-a6e6-628a335ada58.lovable.app-1779783257235.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8bee6680-9518-4611-88e8-ad651670a130/id-preview-a5108356--72920ab1-64f0-4a04-a6e6-628a335ada58.lovable.app-1779783257235.png" },
     ],

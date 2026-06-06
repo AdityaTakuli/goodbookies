@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node scripts/clean-dist-secrets.mjs && node scripts/write-build-env-stamp.mjs",
+    "build": "node scripts/write-client-build-id.mjs && vite build && node scripts/clean-dist-secrets.mjs && node scripts/write-build-env-stamp.mjs",
     "build:hostinger": "node scripts/verify-dist.mjs",
     "postinstall": "node scripts/fix-esbuild-perms.mjs",
     "start": "node server.js",

@@ -184,6 +184,8 @@ const server = http.createServer(async (req, nodeRes) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Good Bookies listening on http://127.0.0.1:${PORT}`);
+const HOST = process.env.HOST ?? "0.0.0.0";
+
+server.listen(PORT, HOST, () => {
+  console.log(`Good Bookies listening on http://${HOST}:${PORT}`);
 });

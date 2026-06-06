@@ -2,7 +2,7 @@
   "name": "goodbookies",
   "version": "1.0.0",
   "description": "Good Bookies — sports venue booking marketplace",
-  "main": "server-godaddy.mjs",
+  "main": "server.js",
   "private": true,
   "sideEffects": false,
   "type": "module",

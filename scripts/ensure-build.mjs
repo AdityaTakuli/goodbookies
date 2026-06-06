@@ -1,6 +1,6 @@
 /**
  * Ensures dist/client + dist/server exist before starting the app.
- * Uses `node vite.js build` directly — Hostinger runtime often has no `npm` in PATH.
+ * Hostinger cannot run vite build at runtime (thread/process limits) — dist must be pre-built in CI.
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -12,44 +12,9 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const serverBundle = path.join(root, "dist/server/index.js");
 const clientDir = path.join(root, "dist/client");
 const viteBin = path.join(root, "node_modules/vite/bin/vite.js");
-const envStampPath = path.join(clientDir, ".build-env.json");
 
 function buildExists() {
   return fs.existsSync(serverBundle) && fs.existsSync(clientDir);
-}
-
-function currentBuildEnv() {
-  return {
-    url: process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "",
-    key:
-      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-      process.env.SUPABASE_PUBLISHABLE_KEY ||
-      process.env.SUPABASE_ANON_KEY ||
-      "",
-  };
-}
-
-function needsEnvRebuild() {
-  const env = currentBuildEnv();
-  if (!env.url || !env.key) return false;
-  if (!buildExists()) return true;
-  if (!fs.existsSync(envStampPath)) {
-    console.log("[build] dist present but env not baked in — rebuilding…");
-    return true;
-  }
-  try {
-    const stamp = JSON.parse(fs.readFileSync(envStampPath, "utf8"));
-    return stamp.url !== env.url || stamp.key !== env.key;
-  } catch {
-    return true;
-  }
-}
-
-function writeEnvStamp() {
-  const env = currentBuildEnv();
-  if (!env.url || !env.key) return;
-  fs.mkdirSync(clientDir, { recursive: true });
-  fs.writeFileSync(envStampPath, JSON.stringify(env));
 }
 
 function runViteBuild() {
@@ -82,10 +47,14 @@ function runViteBuild() {
 
   if (result.status !== 0) {
     const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
-    if (output.includes("EACCES") && output.includes("esbuild")) {
+    if (
+      output.includes("EACCES") ||
+      output.includes("EAGAIN") ||
+      output.includes("Resource temporarily unavailable")
+    ) {
       throw new Error(
-        "vite build failed: esbuild permission denied (EACCES). " +
-          "Redeploy after pushing scripts/fix-esbuild-perms.mjs, or build on Vercel instead.",
+        "vite build failed on this host (resource limits). " +
+          "Use pre-built dist from GitHub Actions — do not build on Hostinger at runtime.",
       );
     }
     throw new Error(`vite build failed (exit ${result.status ?? "unknown"})`);
@@ -93,18 +62,12 @@ function runViteBuild() {
 }
 
 export function ensureProductionBuild() {
-  if (buildExists() && !needsEnvRebuild()) {
-    console.log("[build] dist output already present");
+  if (buildExists()) {
+    console.log("[build] using pre-built dist (runtime env injection supplies Supabase keys)");
     return;
   }
 
-  if (buildExists() && needsEnvRebuild()) {
-    console.log("[build] removing stale dist for env-aware rebuild…");
-    fs.rmSync(path.join(root, "dist"), { recursive: true, force: true });
-  }
-
   runViteBuild();
-  writeEnvStamp();
 
   if (!buildExists()) {
     throw new Error(

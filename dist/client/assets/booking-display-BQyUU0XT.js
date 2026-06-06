@@ -1,0 +1,1 @@
+function r(e){const n=(e.player_names??[]).map(a=>a.trim()).filter(Boolean);if(n.length)return n;const t=e.profile?.full_name||e.profile?.email;return t?[t]:[]}function o(e){const n=r(e);return n.length?n.join(", "):"—"}function l(e){const n=r(e);return n.length?n.length:Math.max(1,e.player_count??1)}export{l as b,o as f};

@@ -1,6 +1,5 @@
 /**
- * Hostinger entry — logs to logs/startup.log before loading the app.
- * Use as npm start so failures are visible in File Manager when hPanel logs are empty.
+ * Boots Express — loaded via import() from app.js (top-level await OK here).
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,7 +14,7 @@ deployHeartbeat("[start] hostinger-start.mjs");
 startupLog(`[boot] hostinger-start cwd=${process.cwd()} node=${process.version}`);
 startupLog(`[boot] server=${serverPath}`);
 
-try {
+async function boot() {
   if (typeof process.setSourceMapsEnabled !== "function") {
     process.setSourceMapsEnabled = () => {};
   }
@@ -23,7 +22,10 @@ try {
   globalThis.__GOODBOOKIES_TSX__ = true;
   startupLog("[boot] tsx registered, loading server.js…");
   await import(serverPath);
-} catch (error) {
-  startupLog("[boot] FATAL — server failed to start", error);
-  process.exit(1);
 }
+
+boot().catch((error) => {
+  startupLog("[boot] FATAL — server failed to start", error);
+  console.error("[boot] FATAL — server failed to start", error);
+  process.exit(1);
+});

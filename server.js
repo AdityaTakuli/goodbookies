@@ -1,5 +1,5 @@
 /**
- * Hostinger Express entry (hPanel runs: node server.js).
+ * Express server — no top-level await (Hostinger lsnode may require() entry files).
  */
 import "./scripts/hostinger-prelude.mjs";
 import fs from "node:fs";
@@ -31,45 +31,53 @@ process.on("unhandledRejection", (reason) => {
   startupLog("[startup] unhandledRejection", reason);
 });
 
-startupLog(`[startup] server.js node=${process.version} cwd=${process.cwd()}`);
+async function main() {
+  startupLog(`[startup] server.js node=${process.version} cwd=${process.cwd()}`);
 
-const { ensureProductionBuild } = await import("./scripts/ensure-build.mjs");
-const { validateProductionBuild, handleNodeRequest } = await import("./server-hostinger.mjs");
+  const { ensureProductionBuild } = await import("./scripts/ensure-build.mjs");
+  const { validateProductionBuild, handleNodeRequest } = await import("./server-hostinger.mjs");
 
-try {
-  ensureProductionBuild();
-  validateProductionBuild();
-  startupLog("[startup] Build output OK, starting Express…");
-} catch (error) {
-  startupLog("[startup] Failed", error);
-  console.error("[startup] Failed:", error);
-  process.exit(1);
+  try {
+    ensureProductionBuild();
+    validateProductionBuild();
+    startupLog("[startup] Build output OK, starting Express…");
+  } catch (error) {
+    startupLog("[startup] Failed", error);
+    console.error("[startup] Failed:", error);
+    process.exit(1);
+  }
+
+  const app = express();
+  const PORT = Number(process.env.PORT) || 3000;
+  const HOST = process.env.HOST ?? "0.0.0.0";
+
+  app.disable("x-powered-by");
+  app.get("/health", (_req, res) => {
+    res.status(200).type("text/plain").send("ok");
+  });
+  app.get("/debug/startup", (_req, res) => {
+    res.status(200).type("text/plain; charset=utf-8").send(readStartupLog());
+  });
+
+  app.use(async (req, res) => {
+    try {
+      await handleNodeRequest(req, res);
+    } catch (error) {
+      console.error("[server]", error);
+      if (!res.headersSent) {
+        res.status(500).type("text/plain").send("Internal Server Error");
+      }
+    }
+  });
+
+  app.listen(PORT, HOST, () => {
+    startupLog(`[startup] listening on http://${HOST}:${PORT}`);
+    console.error(`[startup] listening on http://${HOST}:${PORT}`);
+  });
 }
 
-const app = express();
-const PORT = Number(process.env.PORT) || 3000;
-const HOST = process.env.HOST ?? "0.0.0.0";
-
-app.disable("x-powered-by");
-app.get("/health", (_req, res) => {
-  res.status(200).type("text/plain").send("ok");
-});
-app.get("/debug/startup", (_req, res) => {
-  res.status(200).type("text/plain; charset=utf-8").send(readStartupLog());
-});
-
-app.use(async (req, res) => {
-  try {
-    await handleNodeRequest(req, res);
-  } catch (error) {
-    console.error("[server]", error);
-    if (!res.headersSent) {
-      res.status(500).type("text/plain").send("Internal Server Error");
-    }
-  }
-});
-
-app.listen(PORT, HOST, () => {
-  startupLog(`[startup] listening on http://${HOST}:${PORT}`);
-  console.error(`[startup] listening on http://${HOST}:${PORT}`);
+main().catch((error) => {
+  startupLog("[startup] FATAL", error);
+  console.error("[startup] FATAL:", error);
+  process.exit(1);
 });

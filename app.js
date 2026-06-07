@@ -1,9 +1,11 @@
 /**
- * Hostinger default entry file (hPanel often expects app.js).
- * Writes DEPLOY_STATUS.txt immediately, then boots the Express server.
+ * Hostinger entry (lsnode.js require() — no top-level await allowed).
  */
 import { deployHeartbeat } from "./scripts/deploy-heartbeat.mjs";
 
 deployHeartbeat("[app.js] Hostinger entry file executed");
 
-await import("./scripts/hostinger-start.mjs");
+import("./scripts/hostinger-start.mjs").catch((error) => {
+  console.error("[app.js] FATAL — boot failed", error);
+  process.exit(1);
+});

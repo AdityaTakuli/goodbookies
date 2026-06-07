@@ -1,4 +1,7 @@
 /**
- * Alternate Hostinger entry (some Express presets look for index.js).
+ * Alternate Hostinger entry — no top-level await.
  */
-import "./app.js";
+import("./app.js").catch((error) => {
+  console.error("[index.js] FATAL — boot failed", error);
+  process.exit(1);
+});

@@ -15,7 +15,7 @@
     "build:ci": "FORCE_REBUILD=1 node scripts/build-production.mjs",
     "build:hostinger": "node scripts/verify-dist.mjs",
     "postinstall": "node scripts/fix-esbuild-perms.mjs",
-    "start": "node --import tsx server.js",
+    "start": "node scripts/hostinger-start.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

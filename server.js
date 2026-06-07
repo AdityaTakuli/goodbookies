@@ -3,18 +3,19 @@
  */
 import express from "express";
 import { register } from "tsx/esm/api";
+import { readStartupLog, startupLog } from "./scripts/startup-log.mjs";
 
 process.on("uncaughtException", (error) => {
-  console.error("[startup] uncaughtException:", error);
+  startupLog("[startup] uncaughtException", error);
 });
 
 process.on("unhandledRejection", (reason) => {
-  console.error("[startup] unhandledRejection:", reason);
+  startupLog("[startup] unhandledRejection", reason);
 });
 
-register();
+startupLog(`[startup] server.js node=${process.version} cwd=${process.cwd()}`);
 
-console.log("[startup] node", process.version, "cwd:", process.cwd());
+register();
 
 const { ensureProductionBuild } = await import("./scripts/ensure-build.mjs");
 const { validateProductionBuild, handleNodeRequest } = await import("./server-godaddy.mjs");
@@ -22,9 +23,9 @@ const { validateProductionBuild, handleNodeRequest } = await import("./server-go
 try {
   ensureProductionBuild();
   validateProductionBuild();
-  console.log("[startup] Build output OK, starting Express…");
+  startupLog("[startup] Build output OK, starting Express…");
 } catch (error) {
-  console.error("[startup] Failed:", error);
+  startupLog("[startup] Failed", error);
   process.exit(1);
 }
 
@@ -35,6 +36,9 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 app.disable("x-powered-by");
 app.get("/health", (_req, res) => {
   res.status(200).type("text/plain").send("ok");
+});
+app.get("/debug/startup", (_req, res) => {
+  res.status(200).type("text/plain; charset=utf-8").send(readStartupLog());
 });
 
 app.use(async (req, res) => {
@@ -49,5 +53,5 @@ app.use(async (req, res) => {
 });
 
 app.listen(PORT, HOST, () => {
-  console.log(`Good Bookies (Express) listening on http://${HOST}:${PORT}`);
+  startupLog(`[startup] listening on http://${HOST}:${PORT}`);
 });

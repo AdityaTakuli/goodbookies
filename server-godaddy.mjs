@@ -8,6 +8,14 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+let tsxReady = false;
+async function ensureTsx() {
+  if (tsxReady) return;
+  const { register } = await import("tsx/esm/api");
+  register();
+  tsxReady = true;
+}
+
 function isMysqlMediaEnabled() {
   const hasUser = Boolean(
     process.env.USER_MEDIA_DATABASE_URL ||
@@ -235,6 +243,7 @@ async function toFetchRequest(req, url) {
 async function handleInventory(pathname, req, nodeRes) {
   const load = INVENTORY_ROUTES[pathname];
   if (!load) return false;
+  await ensureTsx();
   const mod = await load();
   const handler = mod.default;
   await handler(req, createVercelResponse(nodeRes));
@@ -248,6 +257,7 @@ async function handleMediaAsset(pathname, req, nodeRes) {
     pathname.startsWith("/api/media/asset/");
   if (!isMediaServe) return false;
 
+  await ensureTsx();
   const mod = await import("./api/media/serve.ts");
   const handler = mod.default;
   if (typeof handler !== "function") {
@@ -278,6 +288,7 @@ async function handleMedia(pathname, req, nodeRes) {
   const load = MEDIA_ROUTES[pathname];
   if (!load) return false;
 
+  await ensureTsx();
   const mod = await load();
   const handler = mod.default;
   if (typeof handler !== "function") {
@@ -300,6 +311,7 @@ async function handlePayments(pathname, req, nodeRes) {
   const load = PAYMENT_ROUTES[pathname];
   if (!load) return false;
 
+  await ensureTsx();
   const mod = await load();
   const handler = mod.default;
   if (typeof handler !== "function") {
@@ -322,6 +334,7 @@ async function handleMobile(pathname, req, nodeRes, url) {
   const load = MOBILE_ROUTES[pathname];
   if (!load) return false;
 
+  await ensureTsx();
   const mod = await load();
   const handler = mod.default;
   if (typeof handler !== "function") {

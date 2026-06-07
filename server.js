@@ -1,10 +1,24 @@
 /**
- * Hostinger entry (Framework preset: Express).
+ * Hostinger Express entry (hPanel runs: node server.js).
  */
-import { deployHeartbeat } from "./scripts/deploy-heartbeat.mjs";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
-import { register } from "tsx/esm/api";
+import { deployHeartbeat } from "./scripts/deploy-heartbeat.mjs";
 import { readStartupLog, startupLog } from "./scripts/startup-log.mjs";
+
+const appRoot = path.dirname(fileURLToPath(import.meta.url));
+const distServer = path.join(appRoot, "dist/server/index.js");
+const distClient = path.join(appRoot, "dist/client");
+
+console.error("[boot] server.js starting");
+console.error("[boot] node=", process.version);
+console.error("[boot] cwd=", process.cwd());
+console.error("[boot] appRoot=", appRoot);
+console.error("[boot] dist/server=", fs.existsSync(distServer));
+console.error("[boot] dist/client=", fs.existsSync(distClient));
+console.error("[boot] PORT=", process.env.PORT ?? "(default 3000)");
 
 deployHeartbeat("[server.js] Express entry file executed");
 
@@ -18,8 +32,6 @@ process.on("unhandledRejection", (reason) => {
 
 startupLog(`[startup] server.js node=${process.version} cwd=${process.cwd()}`);
 
-register();
-
 const { ensureProductionBuild } = await import("./scripts/ensure-build.mjs");
 const { validateProductionBuild, handleNodeRequest } = await import("./server-godaddy.mjs");
 
@@ -29,6 +41,7 @@ try {
   startupLog("[startup] Build output OK, starting Express…");
 } catch (error) {
   startupLog("[startup] Failed", error);
+  console.error("[startup] Failed:", error);
   process.exit(1);
 }
 
@@ -57,4 +70,5 @@ app.use(async (req, res) => {
 
 app.listen(PORT, HOST, () => {
   startupLog(`[startup] listening on http://${HOST}:${PORT}`);
+  console.error(`[startup] listening on http://${HOST}:${PORT}`);
 });

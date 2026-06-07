@@ -9,8 +9,8 @@
 | **Framework** | **Express** or **Node.js** — NOT “Vite static” / “React static” |
 | **Build command** | `npm run build` or `npm run build:hostinger` |
 | **Start command** | `npm start` |
-| **Entry file** | **`app.js`** (must match — Hostinger often defaults to this) |
-| **Output directory** | **leave empty** or `.` — do NOT set to `dist/client` only (that deploys static files without Node SSR) |
+| **Entry file** | **`server.js`** (matches Express preset — Hostinger runs `node server.js`) |
+| **Output directory** | Not shown for Express preset — that is normal |
 | **Root directory** | repository root (folder with `package.json`) |
 
 If `logs/startup.log` and `DEPLOY_STATUS.txt` are **empty after redeploy**, Hostinger is **not running your Node app** — fix Entry file + Framework above, then Redeploy.

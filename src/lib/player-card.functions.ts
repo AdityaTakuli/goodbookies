@@ -44,7 +44,12 @@ const settingsSchema = z.object({
   city: z.string().max(80).optional().nullable(),
   avatar_inventory_id: z.string().max(64).optional().nullable(),
   full_name: z.string().min(1).max(80).optional(),
-  avatar_url: z.string().max(3_000_000).optional().nullable(),
+  avatar_url: z
+    .string()
+    .max(500)
+    .optional()
+    .nullable()
+    .refine((v) => !v || !v.startsWith("data:"), { message: "Upload photos via file upload, not embedded data" }),
   club_id: z.string().max(64).optional().nullable(),
   flag_id: z.string().min(1).max(64),
   position: z.string().min(1).max(32),

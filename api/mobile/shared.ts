@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { resolveMediaUrlAbsolute } from "../../src/lib/media/urls.ts";
 
 export const DEFAULT_VENUE_IMAGE =
   "https://images.unsplash.com/photo-1529900748604-0752a0770cc8?w=800&q=80";
@@ -15,6 +16,15 @@ export function getSupabaseAdmin() {
 export function resolveImageUrl(key?: string | null): string {
   if (!key) return DEFAULT_VENUE_IMAGE;
   if (key.startsWith("http://") || key.startsWith("https://")) return key;
+  if (
+    key.startsWith("/uploads/") ||
+    key.startsWith("/api/media/user/") ||
+    key.startsWith("/api/media/venue/") ||
+    key.startsWith("/api/media/asset/") ||
+    key.startsWith("venue-")
+  ) {
+    return resolveMediaUrlAbsolute(key, DEFAULT_VENUE_IMAGE);
+  }
   return DEFAULT_VENUE_IMAGE;
 }
 

@@ -1,0 +1,2 @@
+-- DEPRECATED: use hostinger-mysql-user-media-schema.sql instead.
+-- This file is kept for reference — user profile DB only.

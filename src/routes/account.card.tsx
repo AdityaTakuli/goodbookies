@@ -32,9 +32,9 @@ import {
   PLAYER_SKILL_LEVELS,
   type PlayerSkillLevel,
 } from "@/lib/player-card.utils";
-import { cn } from "@/lib/utils";
-
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+import { uploadMediaFile } from "@/lib/media.functions";
+import { uploadMediaFileToHostinger } from "@/lib/media/upload-client";
+import { resolveMediaUrl } from "@/lib/media/urls";
 
 export const Route = createFileRoute("/account/card")({
   component: MyBookiesDashboard,
@@ -46,6 +46,7 @@ function MyBookiesDashboard() {
   const clubsFn = useServerFn(listInventoryClubs);
   const flagsFn = useServerFn(listInventoryFlags);
   const avatarsFn = useServerFn(listAvatarInventory);
+  const uploadFn = useServerFn(uploadMediaFile);
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -65,6 +66,7 @@ function MyBookiesDashboard() {
   const [preferredFoot, setPreferredFoot] = useState<"left" | "right" | "both">("right");
   const [avatarInventoryId, setAvatarInventoryId] = useState<string | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [cardRatings, setCardRatings] = useState<Record<string, number>>({});
   const [skillLevel, setSkillLevel] = useState<PlayerSkillLevel>("beginner");
   const [isPublic, setIsPublic] = useState(true);
@@ -153,22 +155,19 @@ function MyBookiesDashboard() {
     config,
   ]);
 
-  const onAvatarPick = (file: File | undefined) => {
+  const onAvatarPick = async (file: File | undefined) => {
     if (!file) return;
-    if (!["image/jpeg", "image/png"].includes(file.type)) {
-      toast.error("Use JPEG or PNG");
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      toast.error("Image must be under 2MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatarPreviewUrl(reader.result as string);
+    setAvatarUploading(true);
+    try {
+      const result = await uploadMediaFileToHostinger(file, "avatars", uploadFn);
+      setAvatarPreviewUrl(result.path);
       setAvatarInventoryId(null);
-    };
-    reader.readAsDataURL(file);
+      toast.success("Photo uploaded");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   const onSave = async () => {
@@ -189,7 +188,8 @@ function MyBookiesDashboard() {
           username: username.toLowerCase(),
           full_name: fullName.trim(),
           avatar_inventory_id: avatarInventoryId,
-          avatar_url: avatarPreviewUrl?.startsWith("data:") ? avatarPreviewUrl : undefined,
+          avatar_url:
+            avatarPreviewUrl && !avatarPreviewUrl.startsWith("data:") ? avatarPreviewUrl : undefined,
           club_id: config.showClub ? clubId : null,
           flag_id: flagId,
           position,
@@ -292,10 +292,11 @@ function MyBookiesDashboard() {
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="relative mx-auto flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-primary/40 bg-[#0B130E] hover:border-primary sm:mx-0"
+                className="relative mx-auto flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-primary/40 bg-[#0B130E] hover:border-primary sm:mx-0 disabled:opacity-60"
+                disabled={avatarUploading}
               >
                 {avatarPreviewUrl ? (
-                  <img src={avatarPreviewUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={resolveMediaUrl(avatarPreviewUrl)} alt="" className="h-full w-full object-cover" />
                 ) : avatarInventoryId ? (
                   <span className="text-3xl">
                     {avatars?.avatars?.find((a) => a.id === avatarInventoryId)?.emoji ?? "👤"}

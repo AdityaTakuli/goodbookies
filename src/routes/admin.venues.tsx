@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MediaUploadField } from "@/components/media/MediaUploadField";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -115,7 +116,13 @@ function AdminVenues() {
                   <Field label="Price / hour (₹)"><Input type="number" value={editing.values.price_per_hour} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, price_per_hour: Number(e.target.value) } })} /></Field>
                 </div>
                 <Field label="Address"><Input value={editing.values.address} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, address: e.target.value } })} /></Field>
-                <Field label="Image URL"><Input value={editing.values.image_url ?? ""} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, image_url: e.target.value } })} placeholder="https://…" /></Field>
+                <MediaUploadField
+                  category="venues"
+                  label="Turf photo"
+                  hint="JPEG, PNG or WebP · max 5 MB · stored in venue MySQL (gb_venues)"
+                  value={editing.values.image_url ?? null}
+                  onChange={(path) => setEditing({ ...editing, values: { ...editing.values, image_url: path ?? "" } })}
+                />
                 <Field label="Description"><Textarea rows={3} value={editing.values.description ?? ""} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, description: e.target.value } })} /></Field>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Opens (0-23)"><Input type="number" min={0} max={23} value={editing.values.opening_hour} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, opening_hour: Number(e.target.value) } })} /></Field>

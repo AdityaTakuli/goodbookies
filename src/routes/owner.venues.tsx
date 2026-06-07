@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MediaUploadField } from "@/components/media/MediaUploadField";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -103,7 +104,13 @@ function OwnerVenues() {
                   />
                 </F>
                 <F label="Address"><Input value={editing.values.address} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, address: e.target.value } })} /></F>
-                <F label="Image URL"><Input value={editing.values.image_url ?? ""} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, image_url: e.target.value } })} /></F>
+                <MediaUploadField
+                  category="venues"
+                  label="Turf photo"
+                  hint="JPEG, PNG or WebP · max 5 MB · stored in venue MySQL (gb_venues)"
+                  value={editing.values.image_url ?? null}
+                  onChange={(path) => setEditing({ ...editing, values: { ...editing.values, image_url: path ?? "" } })}
+                />
                 <F label="Description"><Textarea rows={2} value={editing.values.description ?? ""} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, description: e.target.value } })} /></F>
                 <F label="Confirmation">
                   <select className="h-10 w-full rounded-md border border-input bg-input px-3 text-sm" value={editing.values.confirmation_mode} onChange={(e) => setEditing({ ...editing, values: { ...editing.values, confirmation_mode: e.target.value } })}>

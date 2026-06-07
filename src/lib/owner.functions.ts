@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { calculateBookingTotal } from "@/lib/pricing";
 import { sendEmail } from "@/lib/services/email";
+import { isAllowedImageReference } from "@/lib/media/paths";
 import { toCsv } from "@/lib/services/export";
 import { refundRazorpayPayment } from "@/lib/services/razorpay";
 
@@ -42,7 +43,14 @@ const venueSchema = z.object({
   city: z.string().min(2).max(80),
   address: z.string().min(2).max(255),
   description: z.string().max(2000).optional().nullable(),
-  image_url: z.string().url().max(500).optional().nullable(),
+  image_url: z
+    .string()
+    .max(500)
+    .optional()
+    .nullable()
+    .refine((v) => !v || isAllowedImageReference(v), {
+      message: "Use an uploaded media path or https URL",
+    }),
   price_per_hour: z.number().int().min(0),
   opening_hour: z.number().int().min(0).max(23),
   closing_hour: z.number().int().min(1).max(24),

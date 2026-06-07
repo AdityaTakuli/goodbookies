@@ -40,6 +40,26 @@
       "dest": "/api/v1/assets/avatar-inventory"
     },
     {
+      "src": "/api/media/upload",
+      "dest": "/api/media/upload"
+    },
+    {
+      "src": "/api/media/user/(.*)",
+      "dest": "/api/media/serve"
+    },
+    {
+      "src": "/api/media/venue/(.*)",
+      "dest": "/api/media/serve"
+    },
+    {
+      "src": "/api/media/asset/(.*)",
+      "dest": "/api/media/serve"
+    },
+    {
+      "src": "/uploads/(.*)",
+      "dest": "/uploads/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/render?path=$1"
     }

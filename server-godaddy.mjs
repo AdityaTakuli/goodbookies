@@ -5,6 +5,8 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getUploadsRoot, resolveUploadFilePath, uploadMimeFromExt } from "./src/lib/media/storage.server.ts";
+import { isMysqlMediaEnabled } from "./src/lib/media/mysql.server.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3000;
@@ -17,6 +19,11 @@ const MIME = {
   ".css": "text/css",
   ".ico": "image/x-icon",
   ".png": "image/png",
+  ".webp": "image/webp",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
   ".svg": "image/svg+xml",
   ".woff2": "font/woff2",
   ".json": "application/json",
@@ -41,6 +48,10 @@ const PAYMENT_ROUTES = {
   "/api/verify-payment": () => import("./api/payments/verify-payment.ts"),
 };
 
+const MEDIA_ROUTES = {
+  "/api/media/upload": () => import("./api/media/upload.ts"),
+};
+
 let serverEntryPromise;
 
 export function validateProductionBuild() {
@@ -51,6 +62,11 @@ export function validateProductionBuild() {
     throw new Error(
       `Build output missing (${missing.join(", ")}). Ensure "npm run build" completed successfully.`,
     );
+  }
+
+  if (!isMysqlMediaEnabled()) {
+    const uploadsRoot = getUploadsRoot();
+    fs.mkdirSync(uploadsRoot, { recursive: true });
   }
 }
 
@@ -66,6 +82,15 @@ function readBody(req) {
     const chunks = [];
     req.on("data", (c) => chunks.push(c));
     req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8") || undefined));
+    req.on("error", reject);
+  });
+}
+
+function readBodyBuffer(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (c) => chunks.push(c));
+    req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", reject);
   });
 }
@@ -101,6 +126,22 @@ function queryFromUrl(url) {
     query[key] = value;
   }
   return query;
+}
+
+function tryServeUploads(url, nodeRes) {
+  if (!url.pathname.startsWith("/uploads/")) return false;
+
+  const file = resolveUploadFilePath(url.pathname);
+  if (!file) return false;
+
+  const ext = path.extname(file);
+  const headers = {
+    "content-type": uploadMimeFromExt(ext) ?? MIME[ext] ?? "application/octet-stream",
+    "cache-control": "public, max-age=86400",
+  };
+  nodeRes.writeHead(200, headers);
+  fs.createReadStream(file).pipe(nodeRes);
+  return true;
 }
 
 function tryServeStatic(url, nodeRes) {
@@ -150,6 +191,61 @@ async function handleInventory(pathname, req, nodeRes) {
   const mod = await load();
   const handler = mod.default;
   await handler(req, createVercelResponse(nodeRes));
+  return true;
+}
+
+async function handleMediaAsset(pathname, req, nodeRes) {
+  const isMediaServe =
+    pathname.startsWith("/api/media/user/") ||
+    pathname.startsWith("/api/media/venue/") ||
+    pathname.startsWith("/api/media/asset/");
+  if (!isMediaServe) return false;
+
+  const mod = await import("./api/media/serve.ts");
+  const handler = mod.default;
+  if (typeof handler !== "function") {
+    nodeRes.writeHead(500).end("Media serve handler missing");
+    return true;
+  }
+
+  const res = {
+    status(code) {
+      nodeRes.statusCode = code;
+      return res;
+    },
+    setHeader(key, value) {
+      nodeRes.setHeader(key, value);
+      return res;
+    },
+    end(body) {
+      if (!nodeRes.headersSent) nodeRes.writeHead(nodeRes.statusCode || 200);
+      nodeRes.end(body ?? "");
+    },
+  };
+
+  await handler({ method: req.method, url: pathname }, res);
+  return true;
+}
+
+async function handleMedia(pathname, req, nodeRes) {
+  const load = MEDIA_ROUTES[pathname];
+  if (!load) return false;
+
+  const mod = await load();
+  const handler = mod.default;
+  if (typeof handler !== "function") {
+    nodeRes.writeHead(500).end("Media handler missing");
+    return true;
+  }
+
+  const body = await readBodyBuffer(req);
+  const vercelReq = {
+    method: req.method,
+    headers: req.headers,
+    body,
+  };
+
+  await handler(vercelReq, createVercelResponse(nodeRes));
   return true;
 }
 
@@ -215,8 +311,11 @@ export async function handleNodeRequest(req, nodeRes) {
   const url = new URL(req.url ?? "/", `${proto}://${host}`);
 
   if (await handlePayments(url.pathname, req, nodeRes)) return;
+  if (await handleMediaAsset(url.pathname, req, nodeRes)) return;
+  if (await handleMedia(url.pathname, req, nodeRes)) return;
   if (await handleMobile(url.pathname, req, nodeRes, url)) return;
   if (await handleInventory(url.pathname, req, nodeRes)) return;
+  if (tryServeUploads(url, nodeRes)) return;
   if (tryServeStatic(url, nodeRes)) return;
   await handleSsr(req, nodeRes, url);
 }

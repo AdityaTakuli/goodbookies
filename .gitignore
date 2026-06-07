@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 src/generated
+storage
 dist
 dist-ssr
 .output

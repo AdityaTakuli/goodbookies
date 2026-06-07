@@ -72,7 +72,30 @@ Optional (MySQL media):
 
 If the site shows **503** and Application Logs are empty:
 
-### 1. Read deploy status (File Manager)
+### Build log vs Runtime log
+
+The **deploy/build log** in hPanel usually shows **only `npm install`** (postinstall lines). That is normal.
+
+`node server.js` runs **after** install in a **separate runtime step**. If Runtime Logs are empty, the process never started or logs live elsewhere.
+
+**Also check File Manager:**
+
+```text
+domains/goodbookies.co.in/nodejs/stdout.log
+domains/goodbookies.co.in/nodejs/stderr.log
+```
+
+After a successful start, `DEPLOY_STATUS.txt` should include:
+
+```text
+[prelude] server.js module loading
+[server.js] Express entry file executed
+[startup] listening on...
+```
+
+If `DEPLOY_STATUS.txt` has **only** `postinstall-done` and **no** `[prelude]` line → Hostinger never ran `server.js`. Confirm Entry file = `server.js` and redeploy.
+
+### Read deploy status (File Manager)
 
 After redeploy, open **both** in your app root (same folder as `package.json`):
 

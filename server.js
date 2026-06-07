@@ -1,6 +1,7 @@
 /**
  * Hostinger Express entry (hPanel runs: node server.js).
  */
+import "./scripts/hostinger-prelude.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

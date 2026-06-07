@@ -1,5 +1,6 @@
 # Logs (keep logs/ dir; ignore runtime log files)
 logs/*.log
+DEPLOY_STATUS.txt
 *.log
 npm-debug.log*
 yarn-debug.log*

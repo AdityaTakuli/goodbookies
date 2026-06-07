@@ -1,0 +1,1 @@
+import{ac as a,Q as c,A as e}from"./index-DT53YWww.js";function n(o){const r=a();return c.useCallback(async(...s)=>{try{const t=await o(...s);if(e(t))throw t;return t}catch(t){if(e(t))return t.options._fromLocation=r.stores.location.get(),r.navigate(r.resolveRedirect(t).options);throw t}},[r,o])}export{n as u};

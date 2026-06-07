@@ -14,6 +14,8 @@ process.on("unhandledRejection", (reason) => {
 
 register();
 
+console.log("[startup] node", process.version, "cwd:", process.cwd());
+
 const { ensureProductionBuild } = await import("./scripts/ensure-build.mjs");
 const { validateProductionBuild, handleNodeRequest } = await import("./server-godaddy.mjs");
 

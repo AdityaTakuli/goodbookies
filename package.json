@@ -11,10 +11,11 @@
   },
   "scripts": {
     "dev": "vite dev",
-    "build": "node scripts/write-client-build-id.mjs && vite build && node scripts/clean-dist-secrets.mjs && node scripts/write-build-env-stamp.mjs",
+    "build": "node scripts/build-production.mjs",
+    "build:ci": "FORCE_REBUILD=1 node scripts/build-production.mjs",
     "build:hostinger": "node scripts/verify-dist.mjs",
     "postinstall": "node scripts/fix-esbuild-perms.mjs",
-    "start": "node server.js",
+    "start": "node --import tsx server.js",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

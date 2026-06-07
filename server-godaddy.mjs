@@ -5,10 +5,57 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getUploadsRoot, resolveUploadFilePath, uploadMimeFromExt } from "./src/lib/media/storage.server.ts";
-import { isMysqlMediaEnabled } from "./src/lib/media/mysql.server.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function isMysqlMediaEnabled() {
+  const hasUser = Boolean(
+    process.env.USER_MEDIA_DATABASE_URL ||
+      process.env.MEDIA_DATABASE_URL ||
+      (process.env.MYSQL_HOST &&
+        process.env.MYSQL_USER &&
+        process.env.MYSQL_PASSWORD &&
+        process.env.MYSQL_DATABASE),
+  );
+  const hasVenue = Boolean(
+    process.env.VENUE_MEDIA_DATABASE_URL ||
+      (process.env.VENUE_MEDIA_HOST &&
+        process.env.VENUE_MEDIA_USER &&
+        process.env.VENUE_MEDIA_PASSWORD &&
+        process.env.VENUE_MEDIA_DATABASE),
+  );
+  return hasUser || hasVenue;
+}
+
+function getUploadsRoot() {
+  if (process.env.UPLOADS_DIR) return path.resolve(process.env.UPLOADS_DIR);
+  return path.join(__dirname, "storage", "uploads");
+}
+
+function resolveUploadFilePath(urlPath) {
+  if (!urlPath.startsWith("/uploads/")) return null;
+  const relative = urlPath.replace(/^\/uploads\//, "");
+  if (relative.includes("..")) return null;
+
+  const file = path.join(getUploadsRoot(), relative);
+  const resolved = path.resolve(file);
+  const root = path.resolve(getUploadsRoot());
+  if (!resolved.startsWith(root)) return null;
+  if (!fs.existsSync(resolved) || fs.statSync(resolved).isDirectory()) return null;
+  return resolved;
+}
+
+function uploadMimeFromExt(ext) {
+  const map = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+  };
+  return map[ext.toLowerCase()];
+}
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST ?? "0.0.0.0";
 const CLIENT_ROOT = path.join(__dirname, "dist/client");

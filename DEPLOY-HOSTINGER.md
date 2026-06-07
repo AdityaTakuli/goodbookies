@@ -1,14 +1,19 @@
 # Deploy Good Bookies on Hostinger (Node.js Web App)
 
-## hPanel settings
+## hPanel settings (critical)
 
 | Setting | Value |
 |---------|--------|
 | **Repository** | `AdityaTakuli/goodbookies` branch `main` |
 | **Node version** | 20 or 22 |
+| **Framework** | **Express** or **Node.js** — NOT “Vite static” / “React static” |
 | **Build command** | `npm run build` or `npm run build:hostinger` |
 | **Start command** | `npm start` |
-| **Entry** | uses `package.json` → `scripts/hostinger-start.mjs` |
+| **Entry file** | **`app.js`** (must match — Hostinger often defaults to this) |
+| **Output directory** | **leave empty** or `.` — do NOT set to `dist/client` only (that deploys static files without Node SSR) |
+| **Root directory** | repository root (folder with `package.json`) |
+
+If `logs/startup.log` and `DEPLOY_STATUS.txt` are **empty after redeploy**, Hostinger is **not running your Node app** — fix Entry file + Framework above, then Redeploy.
 
 Do **not** run full Vite on Hostinger — `dist/` is pre-built by GitHub Actions and committed to `main`.
 
@@ -31,15 +36,25 @@ Optional (MySQL media):
 
 If the site shows **503** and Application Logs are empty:
 
-### 1. Read the file log (File Manager)
+### 1. Read deploy status (File Manager)
 
-After redeploy, open:
+After redeploy, open **both** in your app root (same folder as `package.json`):
 
 ```text
+DEPLOY_STATUS.txt    ← check this first
 logs/startup.log
 ```
 
-in your app root (same folder as `package.json`). The last lines show why Node exited.
+`DEPLOY_STATUS.txt` should show lines like:
+
+```text
+postinstall-done
+[build] skipped vite — using committed dist
+[app.js] Hostinger entry file executed
+[start] hostinger-start.mjs
+```
+
+If **both files are empty** → wrong Entry file / Framework in hPanel (see table above).
 
 ### 2. Debug URL (after partial start)
 

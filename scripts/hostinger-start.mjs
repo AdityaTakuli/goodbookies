@@ -5,11 +5,13 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { register } from "tsx/esm/api";
+import { deployHeartbeat } from "./deploy-heartbeat.mjs";
 import { startupLog } from "./startup-log.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const serverPath = path.join(root, "server.js");
 
+deployHeartbeat("[start] hostinger-start.mjs");
 startupLog(`[boot] hostinger-start cwd=${process.cwd()} node=${process.version}`);
 startupLog(`[boot] server=${serverPath}`);
 

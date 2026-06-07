@@ -1,0 +1,4 @@
+2026-06-07T10:12:45.900Z [build] build-production.mjs started | node=v22.22.0 cwd=/home/aditya/Desktop/Goodbookies/goodbookies dist=yes
+2026-06-07T10:12:45.902Z [build] skipped vite — using committed dist | node=v22.22.0 cwd=/home/aditya/Desktop/Goodbookies/goodbookies dist=yes
+2026-06-07T10:12:46.014Z [app.js] Hostinger entry file executed | node=v22.22.0 cwd=/home/aditya/Desktop/Goodbookies/goodbookies dist=yes
+2026-06-07T10:12:46.046Z [start] hostinger-start.mjs | node=v22.22.0 cwd=/home/aditya/Desktop/Goodbookies/goodbookies dist=yes

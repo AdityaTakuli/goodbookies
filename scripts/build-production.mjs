@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { deployHeartbeat } from "./deploy-heartbeat.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const serverBundle = path.join(root, "dist/server/index.js");
@@ -22,8 +23,11 @@ function run(cmd, args) {
   }
 }
 
+deployHeartbeat("[build] build-production.mjs started");
+
 if (distExists() && process.env.FORCE_REBUILD !== "1") {
   console.log("[build] pre-built dist found — skipping vite (set FORCE_REBUILD=1 to rebuild)");
+  deployHeartbeat("[build] skipped vite — using committed dist");
   process.exit(0);
 }
 

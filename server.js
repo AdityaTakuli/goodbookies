@@ -3,8 +3,6 @@
  */
 import express from "express";
 import { register } from "tsx/esm/api";
-import { ensureProductionBuild } from "./scripts/ensure-build.mjs";
-import { validateProductionBuild, handleNodeRequest } from "./server-godaddy.mjs";
 
 process.on("uncaughtException", (error) => {
   console.error("[startup] uncaughtException:", error);
@@ -14,8 +12,12 @@ process.on("unhandledRejection", (reason) => {
   console.error("[startup] unhandledRejection:", reason);
 });
 
+register();
+
+const { ensureProductionBuild } = await import("./scripts/ensure-build.mjs");
+const { validateProductionBuild, handleNodeRequest } = await import("./server-godaddy.mjs");
+
 try {
-  register();
   ensureProductionBuild();
   validateProductionBuild();
   console.log("[startup] Build output OK, starting Express…");

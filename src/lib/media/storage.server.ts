@@ -2,8 +2,8 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { MEDIA_CATEGORY_CONFIG, type MediaCategory } from "@/lib/media/config";
-import { isMysqlMediaEnabled, saveMediaToMysql } from "@/lib/media/mysql.server";
+import { MEDIA_CATEGORY_CONFIG, type MediaCategory } from "./config";
+import { isMysqlMediaEnabled, saveMediaToMysql } from "./mysql.server";
 
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
 

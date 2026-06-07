@@ -1,6 +1,6 @@
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { type MediaCategory } from "@/lib/media/config";
-import { saveMediaBuffer } from "@/lib/media/storage.server";
+import { supabaseAdmin } from "../../integrations/supabase/client.server";
+import { type MediaCategory } from "./config";
+import { saveMediaBuffer } from "./storage.server";
 
 async function assertCanUploadCategory(userId: string, category: MediaCategory) {
   if (category === "avatars") return;

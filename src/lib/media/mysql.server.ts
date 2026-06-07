@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import mysql from "mysql2/promise";
-import { MEDIA_CATEGORY_CONFIG, type MediaCategory } from "@/lib/media/config";
+import { MEDIA_CATEGORY_CONFIG, type MediaCategory } from "./config";
 
 export type MediaDbScope = "user" | "venue";
 

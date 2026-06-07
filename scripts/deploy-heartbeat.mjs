@@ -24,7 +24,8 @@ export function deployHeartbeat(step) {
     // read-only FS — still print to stdout for Hostinger build logs
   }
 
-  console.log(`[deploy] ${step}`);
+  // stderr is more likely to appear in Hostinger build/runtime log UIs
+  console.error(`[deploy] ${step}`);
 }
 
 if (process.argv[2]) {

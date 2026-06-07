@@ -14,7 +14,7 @@
     "build": "node scripts/verify-dist.mjs",
     "build:ci": "FORCE_REBUILD=1 node scripts/build-production.mjs",
     "build:hostinger": "node scripts/verify-dist.mjs",
-    "postinstall": "node scripts/fix-esbuild-perms.mjs && node scripts/deploy-heartbeat.mjs postinstall-done",
+    "postinstall": "node scripts/fix-esbuild-perms.mjs && node scripts/verify-dist.mjs && node scripts/deploy-heartbeat.mjs postinstall-done",
     "prestart": "node scripts/deploy-heartbeat.mjs prestart",
     "start": "node app.js",
     "build:dev": "vite build --mode development",

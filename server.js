@@ -1,9 +1,12 @@
 /**
  * Hostinger entry (Framework preset: Express).
  */
+import { deployHeartbeat } from "./scripts/deploy-heartbeat.mjs";
 import express from "express";
 import { register } from "tsx/esm/api";
 import { readStartupLog, startupLog } from "./scripts/startup-log.mjs";
+
+deployHeartbeat("[server.js] Express entry file executed");
 
 process.on("uncaughtException", (error) => {
   startupLog("[startup] uncaughtException", error);

@@ -15,7 +15,20 @@
 
 If `logs/startup.log` and `DEPLOY_STATUS.txt` are **empty after redeploy**, Hostinger is **not running your Node app** — fix Entry file + Framework above, then Redeploy.
 
-### If `DEPLOY_STATUS.txt` stops at `postinstall-done` only
+### If `DEPLOY_STATUS.txt` in `.builds/source/repository` stops at `postinstall-done`
+
+That folder is the **build checkout**. Hostinger may run `npm start` in a **different** runtime folder. Also open **Deployments → latest deploy → Build log** (not Runtime Logs) and search for `[deploy]`.
+
+After the latest `package.json`, `postinstall` also runs dist verify — you should see:
+
+```text
+[build] verify-dist OK — ready to start Node
+postinstall-done
+```
+
+If start ran, Runtime Logs should show `[deploy] [app.js]` or `[server.js]`.
+
+### If `DEPLOY_STATUS.txt` stops at `postinstall-done` only (no verify-dist line)
 
 That means `npm install` ran but **build and start never ran**. Hostinger is treating the site as a **static** deploy (common when Vite is auto-detected).
 

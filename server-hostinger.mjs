@@ -1,5 +1,5 @@
 /**
- * Production server: static assets, /api/mobile/*, SSR for all other routes.
+ * Hostinger production server: static assets, /api/mobile/*, SSR for all other routes.
  */
 import http from "node:http";
 import fs from "node:fs";
@@ -386,7 +386,7 @@ export function startHttpServer() {
     try {
       await handleNodeRequest(req, nodeRes);
     } catch (error) {
-      console.error("[server-godaddy]", error);
+      console.error("[server-hostinger]", error);
       if (!nodeRes.headersSent) {
         nodeRes.writeHead(500, { "content-type": "text/plain; charset=utf-8" });
         nodeRes.end("Internal Server Error");

@@ -1,8 +1,10 @@
-# Deploy Good Bookies on GoDaddy (VPS only)
+# Deploy Good Bookies on a Linux VPS (optional)
 
-This guide runs **everything on your GoDaddy VPS**: the website, PostgreSQL, and auth (via self-hosted Supabase Docker).
+> **Production (goodbookies.co.in):** use **[DEPLOY-HOSTINGER.md](./DEPLOY-HOSTINGER.md)** — Hostinger Node.js Web App + Supabase cloud + Hostinger MySQL for media.
 
-**Does not work on:** GoDaddy shared hosting, cPanel File Manager-only upload, or GoDaddy **MySQL** (this app needs PostgreSQL + Supabase Auth).
+This guide is an **optional** self-hosted path: everything on **your own VPS** (website, PostgreSQL, Supabase Docker).
+
+**Does not work on:** shared hosting / cPanel-only upload without Node.js.
 
 **Minimum VPS:** 4 GB RAM, 2 vCPU, Ubuntu 22.04.
 
@@ -14,8 +16,8 @@ This guide runs **everything on your GoDaddy VPS**: the website, PostgreSQL, and
 |---------|-------------|
 | Yes (Git or ZIP) | Full repo **except** `node_modules`, `dist`, `.env` |
 | No | `node_modules` — run `npm ci` on the server |
-| No | `.env` — create on server from `.env.godaddy.example` |
-| No | SQL into GoDaddy MySQL — use Supabase Postgres on the VPS |
+| No | `.env` — create on server from `.env.example` |
+| No | cPanel MySQL for app data — use Supabase Postgres on the VPS |
 
 On the server you run `npm run build` (creates `dist/`), then `npm start`.
 
@@ -23,7 +25,7 @@ On the server you run `npm run build` (creates `dist/`), then `npm start`.
 
 ## 1. Domain DNS
 
-In GoDaddy DNS for your domain:
+In your domain DNS (GoDaddy, Hostinger, etc.):
 
 | Type | Name | Value |
 |------|------|--------|
@@ -92,7 +94,7 @@ In Supabase Auth settings, add redirect URLs: `https://yourdomain.com/**`
 ```bash
 mkdir -p /var/www/goodbookies && cd /var/www/goodbookies
 git clone YOUR_REPO_URL .
-cp .env.godaddy.example .env
+cp .env.example .env
 nano .env   # paste keys from Supabase docker .env
 npm ci
 npm run build
@@ -161,6 +163,7 @@ pm2 restart goodbookies
 
 ---
 
-## GoDaddy MySQL product
+## Hostinger / cPanel MySQL (app database)
 
-Not used for this project. The database is **PostgreSQL inside Supabase Docker** on the same VPS.
+Not used on the VPS path. App data is **PostgreSQL in Supabase Docker**.  
+For **Hostinger production**, MySQL is only for **media uploads** — see `DEPLOY-HOSTINGER.md` and `scripts/hostinger-mysql-*.sql`.

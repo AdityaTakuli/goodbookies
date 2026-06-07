@@ -11,8 +11,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let tsxReady = false;
 async function ensureTsx() {
   if (tsxReady) return;
-  const { register } = await import("tsx/esm/api");
-  register();
+  // SSR bundle (unenv) can replace `process` before API routes run; tsx needs this stub.
+  if (typeof process.setSourceMapsEnabled !== "function") {
+    process.setSourceMapsEnabled = () => {};
+  }
+  if (!globalThis.__GOODBOOKIES_TSX__) {
+    const { register } = await import("tsx/esm/api");
+    register();
+    globalThis.__GOODBOOKIES_TSX__ = true;
+  }
   tsxReady = true;
 }
 

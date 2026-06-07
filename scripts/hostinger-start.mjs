@@ -16,7 +16,11 @@ startupLog(`[boot] hostinger-start cwd=${process.cwd()} node=${process.version}`
 startupLog(`[boot] server=${serverPath}`);
 
 try {
+  if (typeof process.setSourceMapsEnabled !== "function") {
+    process.setSourceMapsEnabled = () => {};
+  }
   register();
+  globalThis.__GOODBOOKIES_TSX__ = true;
   startupLog("[boot] tsx registered, loading server.js…");
   await import(serverPath);
 } catch (error) {

@@ -1,8 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
-import { resolveMediaUrlAbsolute } from "../../src/lib/media/urls.ts";
 
 export const DEFAULT_VENUE_IMAGE =
   "https://images.unsplash.com/photo-1529900748604-0752a0770cc8?w=800&q=80";
+
+function resolveMediaUrlAbsolute(key: string, fallback = DEFAULT_VENUE_IMAGE): string {
+  if (key.startsWith("http://") || key.startsWith("https://") || key.startsWith("data:")) {
+    return key;
+  }
+  if (
+    key.startsWith("/uploads/") ||
+    key.startsWith("/api/media/user/") ||
+    key.startsWith("/api/media/venue/") ||
+    key.startsWith("/api/media/asset/")
+  ) {
+    const base =
+      process.env.MEDIA_PUBLIC_URL?.replace(/\/$/, "") || "https://goodbookies.co.in";
+    return `${base}${key}`;
+  }
+  return fallback;
+}
 
 export function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL;

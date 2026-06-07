@@ -4,6 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { deployHeartbeat } from "./deploy-heartbeat.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const required = [
@@ -20,3 +21,4 @@ for (const file of required) {
 }
 
 console.log("[build:hostinger] pre-built dist OK");
+deployHeartbeat("[build] verify-dist OK — ready to start Node");

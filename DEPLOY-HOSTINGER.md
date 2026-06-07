@@ -15,6 +15,29 @@
 
 If `logs/startup.log` and `DEPLOY_STATUS.txt` are **empty after redeploy**, Hostinger is **not running your Node app** — fix Entry file + Framework above, then Redeploy.
 
+### If `DEPLOY_STATUS.txt` stops at `postinstall-done` only
+
+That means `npm install` ran but **build and start never ran**. Hostinger is treating the site as a **static** deploy (common when Vite is auto-detected).
+
+Fix in hPanel → Deployments → **Settings**:
+
+1. **Framework preset** → change to **Express.js** (not Vite / React / Other static)
+2. **Output directory** → **delete / leave blank** (do not use `dist` or `dist/client`)
+3. **Build command** → `npm run build`
+4. **Start command** → `npm start`
+5. **Entry file** → `app.js`
+6. Save → **Redeploy**
+
+After a good deploy, `DEPLOY_STATUS.txt` should show:
+
+```text
+postinstall-done
+[build] verify-dist OK — ready to start Node
+prestart
+[app.js] Hostinger entry file executed
+[start] hostinger-start.mjs
+```
+
 Do **not** run full Vite on Hostinger — `dist/` is pre-built by GitHub Actions and committed to `main`.
 
 ## Environment variables (hPanel → Environment)

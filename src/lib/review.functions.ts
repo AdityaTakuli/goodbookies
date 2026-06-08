@@ -184,7 +184,7 @@ export const submitVenueReview = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     if (!(await venueReviewsEnabled())) {
-      throw new Error("Reviews are not enabled yet — run the venue reviews database migration");
+      throw new Error("Reviews are not enabled yet. Run the venue reviews database migration.");
     }
 
     const completedBooking = await userHasCompletedBooking(context.userId, data.venueId);

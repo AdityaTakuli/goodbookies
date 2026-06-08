@@ -27,7 +27,7 @@ function ForgotPasswordPage() {
       });
       if (error) throw error;
       setSent(true);
-      toast.success("Password reset link sent — check your email");
+      toast.success("Password reset link sent. Check your email.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not send reset email");
     } finally {

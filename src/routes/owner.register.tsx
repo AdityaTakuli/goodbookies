@@ -11,7 +11,7 @@ import { buildPageMeta } from "@/lib/seo";
 export const Route = createFileRoute("/owner/register")({
   head: () =>
     buildPageMeta({
-      title: "List Your Turf — Partner with Good Bookies",
+      title: "List Your Turf | Partner with Good Bookies",
       description:
         "Register as a turf partner on Good Bookies. List your football, cricket or multi-sport venue, manage bookings, slots and payouts from one dashboard.",
       path: "/owner/register",
@@ -63,7 +63,7 @@ function OwnerRegister() {
     <div className="container mx-auto max-w-lg px-4 py-12">
       <h1 className="font-display text-4xl font-bold">List your venue</h1>
       <p className="mt-2 text-muted-foreground">
-        Use the same Gmail as your player account — we&apos;ll link partner access. You can book other turfs as a player, but not your own.
+        Use the same Gmail as your player account. We&apos;ll link partner access. You can book other turfs as a player, but not your own.
       </p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-2xl border border-border/60 bg-card p-6">
         <Field label="Full name"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>

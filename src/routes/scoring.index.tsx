@@ -22,7 +22,7 @@ function ScoringHome() {
         <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">Score your matches</h2>
         <p className="mt-2 text-sm text-white/70">
           Log in, build teams from registered players, and track cricket ball-by-ball or football goals. Stats
-          appear on your player card — separate per sport.
+          appear on your player card, separate per sport.
         </p>
         <Link to="/scoring/new" className="mt-4 inline-block">
           <Button className="glow-primary">Start a new match</Button>

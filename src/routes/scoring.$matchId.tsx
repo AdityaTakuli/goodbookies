@@ -48,7 +48,7 @@ function ScoringMatchPage() {
 
       {match.status === "completed" && (
         <p className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary">
-          Match completed — stats saved to each player&apos;s profile (this sport only).
+          Match completed. Stats saved to each player&apos;s profile (this sport only).
         </p>
       )}
 

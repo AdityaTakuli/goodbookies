@@ -38,7 +38,7 @@ export function FootballScorer({
         },
       });
       onUpdate(updated);
-      if (updated.status === "completed") toast.success("Full time — match saved!");
+      if (updated.status === "completed") toast.success("Full time. Match saved!");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Could not record goal");
     }
@@ -97,10 +97,10 @@ export function FootballScorer({
 
       <div className="grid gap-2 sm:grid-cols-2">
         <Button type="button" onClick={() => addGoal("a")} disabled={match.status !== "live"}>
-          Goal — {match.teamAName}
+          Goal: {match.teamAName}
         </Button>
         <Button type="button" onClick={() => addGoal("b")} disabled={match.status !== "live"}>
-          Goal — {match.teamBName}
+          Goal: {match.teamBName}
         </Button>
       </div>
 

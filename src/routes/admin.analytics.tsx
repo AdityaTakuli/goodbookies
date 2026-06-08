@@ -50,7 +50,7 @@ function AdminAnalytics() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sale of the month</p>
             <p className="font-display text-xl font-bold">
-              {monthly.bestMonth.label} — ₹{monthly.bestMonth.revenue.toLocaleString()}
+              {monthly.bestMonth.label}: ₹{monthly.bestMonth.revenue.toLocaleString()}
             </p>
           </div>
         </div>

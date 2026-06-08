@@ -45,12 +45,12 @@ function OwnerOverview() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Kpi icon={CalendarCheck} label="Bookings today" value={sum?.bookingsToday ?? "—"} accent />
-        <Kpi icon={IndianRupee} label="Revenue today" value={sum ? `₹${sum.revenueToday.toLocaleString()}` : "—"} accent />
-        <Kpi icon={IndianRupee} label="Revenue this month" value={sum ? `₹${sum.revenueMonth.toLocaleString()}` : "—"} />
-        <Kpi icon={Building2} label="Active venues" value={sum?.activeVenues ?? "—"} />
-        <Kpi icon={Clock} label="Pending bookings" value={sum?.pendingBookings ?? "—"} />
-        <Kpi icon={XCircle} label="Cancellations (mo)" value={sum?.cancelMonth ?? "—"} />
+        <Kpi icon={CalendarCheck} label="Bookings today" value={sum?.bookingsToday ?? "N/A"} accent />
+        <Kpi icon={IndianRupee} label="Revenue today" value={sum ? `₹${sum.revenueToday.toLocaleString()}` : "N/A"} accent />
+        <Kpi icon={IndianRupee} label="Revenue this month" value={sum ? `₹${sum.revenueMonth.toLocaleString()}` : "N/A"} />
+        <Kpi icon={Building2} label="Active venues" value={sum?.activeVenues ?? "N/A"} />
+        <Kpi icon={Clock} label="Pending bookings" value={sum?.pendingBookings ?? "N/A"} />
+        <Kpi icon={XCircle} label="Cancellations (mo)" value={sum?.cancelMonth ?? "N/A"} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -90,7 +90,7 @@ function OwnerOverview() {
             <tbody>
               {(recent ?? []).slice(0, 8).map((b: any) => (
                 <tr key={b.id} className="border-b border-border/30">
-                  <td className="py-3">{b.profile?.full_name || b.profile?.email || "—"}</td>
+                  <td className="py-3">{b.profile?.full_name || b.profile?.email || "N/A"}</td>
                   <td className="py-3">{b.venue?.name}</td>
                   <td className="py-3 text-muted-foreground">{b.booking_date} · {b.start_hour}:00</td>
                   <td className="py-3 text-right font-semibold">₹{b.total_price}</td>

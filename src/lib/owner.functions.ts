@@ -704,7 +704,7 @@ export const adminReviewOwnerRequest = createServerFn({ method: "POST" })
     if (owner?.email) {
       await sendEmail({
         to: owner.email,
-        subject: data.action === "approve" ? "Good Bookies — Partner approved" : "Good Bookies — Application update",
+        subject: data.action === "approve" ? "Good Bookies | Partner approved" : "Good Bookies | Application update",
         html: data.action === "approve"
           ? `<p>Hi ${owner.name},</p><p>Your venue partner account is approved. <a href="${process.env.APP_URL ?? ""}/owner/login">Log in to your dashboard</a>.</p>`
           : `<p>Hi ${owner.name},</p><p>Your application was not approved. ${data.reason ?? ""}</p>`,

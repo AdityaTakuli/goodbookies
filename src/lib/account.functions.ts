@@ -115,8 +115,8 @@ export const listMyPayments = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return (data ?? []).map((b: any) => ({
       booking_id: b.id,
-      venue: b.venue?.name ?? "—",
-      sport: b.venue?.sport?.name ?? "—",
+      venue: b.venue?.name ?? "N/A",
+      sport: b.venue?.sport?.name ?? "N/A",
       date: b.booking_date,
       amount: b.total_price,
       status: b.status === "cancelled" ? "refunded" : b.status === "confirmed" ? "success" : b.status,

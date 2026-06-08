@@ -23,7 +23,7 @@ export const Route = createFileRoute("/account/")({
 
 const queryStatusLabel: Record<string, string> = {
   pending: "Pending host approval",
-  accepted: "Approved — ready to play",
+  accepted: "Approved, ready to play",
   rejected: "Rejected",
   expired: "Expired / full",
 };

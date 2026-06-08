@@ -33,7 +33,7 @@ function AdminPayments() {
           <div key={c.label} className="rounded-2xl border border-border/60 bg-card p-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{c.label}</p>
             <p className={`mt-2 font-display text-2xl font-bold ${c.accent ? "text-primary" : ""}`}>
-              {c.value != null ? `₹${c.value.toLocaleString()}` : "—"}
+              {c.value != null ? `₹${c.value.toLocaleString()}` : "N/A"}
             </p>
           </div>
         ))}

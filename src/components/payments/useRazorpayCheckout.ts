@@ -106,7 +106,7 @@ export function useRazorpayCheckout() {
                   booking_id: input.bookingId,
                 },
               });
-              toast.success("Payment successful — booking confirmed!");
+              toast.success("Payment successful. Booking confirmed!");
               resolve(true);
             } catch (error) {
               toast.error(error instanceof Error ? error.message : "Payment verification failed");

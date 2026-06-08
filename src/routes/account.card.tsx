@@ -236,7 +236,7 @@ function MyBookiesDashboard() {
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-bold sm:text-3xl">My Player Card</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Build your multi-sport player card — stats are turf-verified, aesthetics are yours.
+            Build your multi-sport player card. Stats are turf-verified, aesthetics are yours.
           </p>
         </div>
         {username && (
@@ -421,7 +421,7 @@ function MyBookiesDashboard() {
           </CardBuilderSection>
 
           <CardBuilderSection title="Card attributes">
-            <p className="mb-3 text-xs text-muted-foreground">FIFA-style ratings — cosmetic only, separate from verified match stats.</p>
+            <p className="mb-3 text-xs text-muted-foreground">FIFA-style ratings, cosmetic only, separate from verified match stats.</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
               {config.attributes.map((attr) => (
                 <div key={attr.key}>

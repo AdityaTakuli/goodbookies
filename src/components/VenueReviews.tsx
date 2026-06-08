@@ -139,7 +139,7 @@ export function VenueReviews({ venueId, venueName }: { venueId: string; venueNam
             Reviews
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Player feedback for {venueName} — like Google reviews for turfs
+            Player feedback for {venueName}, like Google reviews for turfs
           </p>
         </div>
         {user && myState?.canReview && (
@@ -152,7 +152,7 @@ export function VenueReviews({ venueId, venueName }: { venueId: string; venueNam
       <div className="mt-6 grid gap-6 md:grid-cols-[220px_1fr]">
         <div className="rounded-xl border border-border/60 bg-background/50 p-4 text-center">
           <p className="font-display text-5xl font-bold">
-            {avg != null ? avg.toFixed(1) : "—"}
+            {avg != null ? avg.toFixed(1) : "N/A"}
           </p>
           <StarRow value={Math.round(avg ?? 0)} size="md" />
           <p className="mt-2 text-sm text-muted-foreground">
@@ -179,7 +179,7 @@ export function VenueReviews({ venueId, venueName }: { venueId: string; venueNam
 
       {user && !myState?.canReview && !myState?.myReview && (
         <p className="mt-4 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
-          Book and play here first — then you can leave a review for this turf.
+          Book and play here first, then you can leave a review for this turf.
         </p>
       )}
 

@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
   },
   head: () => {
     const { meta, links } = buildPageMeta({
-      title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+      title: `${SITE_NAME} | ${SITE_TAGLINE}`,
       description:
         "Book floodlit football turfs, cricket nets and indoor courts online. Live slot availability, instant confirmation, and open match lobbies across India.",
       path: "/",
@@ -55,7 +55,7 @@ function Index() {
           src={heroMobileWebp}
           srcSet={HERO_SRCSET}
           sizes="100vw"
-          alt="Floodlit sports turf at night — book on Good Bookies"
+          alt="Floodlit sports turf at night, book on Good Bookies"
           width={1600}
           height={900}
           fetchPriority="high"
@@ -73,7 +73,7 @@ function Index() {
               Book the <span className="text-gradient-turf">pitch</span>. Play the match.
             </h1>
             <p className="mt-6 max-w-xl text-base text-muted-foreground md:text-lg">
-              Floodlit turfs, cricket nets and indoor courts — find your slot, lock it in, and show up ready to play.
+              Floodlit turfs, cricket nets and indoor courts. Find your slot, lock it in, and show up ready to play.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/sports">

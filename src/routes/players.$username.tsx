@@ -36,7 +36,7 @@ export const Route = createFileRoute("/players/$username")({
     const displayName = firstCard?.fullName ?? params.username;
     const description = `View ${displayName}'s (@${params.username}) multi-sport player card, match history and stats on Good Bookies.`;
     return buildPageMeta({
-      title: `${displayName} (@${params.username}) — Player Card`,
+      title: `${displayName} (@${params.username}) | Player Card`,
       description,
       path: `/players/${params.username}`,
       type: "profile",

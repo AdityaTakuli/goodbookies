@@ -69,7 +69,7 @@ export function CardBuilderStatsPanel({
         <Lock className="h-3.5 w-3.5" />
         {sport === "football" || sport === "cricket"
           ? "Includes turf-verified games and your self-scored matches (this sport only)"
-          : "Turf-verified only — updated when venue owners confirm matches"}
+          : "Turf-verified only, updated when venue owners confirm matches"}
       </div>
 
       {sport === "football" && (

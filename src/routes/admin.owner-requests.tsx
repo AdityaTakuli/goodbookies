@@ -57,7 +57,7 @@ function AdminOwnerRequests() {
                   <td className="py-3 font-medium">{o.name}</td>
                   <td className="py-3">{o.email}</td>
                   <td className="py-3">{o.phone}</td>
-                  <td className="py-3">{o.business_name || "—"}</td>
+                  <td className="py-3">{o.business_name || "N/A"}</td>
                   <td className="py-3">{o.city}</td>
                   <td className="py-3 text-muted-foreground">{o.created_at?.slice(0, 10)}</td>
                   <td className="py-3 text-right space-x-2">

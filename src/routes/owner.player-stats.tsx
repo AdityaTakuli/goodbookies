@@ -105,7 +105,7 @@ function OwnerPlayerStats() {
           Verify player stats
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Turf owners only. This is the verified write path — players cannot edit match stats. Adds scoreline to match history.
+          Turf owners only. This is the verified write path. Players cannot edit match stats. Adds scoreline to match history.
         </p>
       </div>
 

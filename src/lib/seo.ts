@@ -31,10 +31,10 @@ export function absoluteUrl(path: string): string {
 }
 
 export function pageTitle(title: string): string {
-  if (title === SITE_NAME || title.endsWith(` — ${SITE_NAME}`) || title.endsWith(` | ${SITE_NAME}`)) {
+  if (title === SITE_NAME || title.endsWith(` | ${SITE_NAME}`)) {
     return title;
   }
-  return `${title} — ${SITE_NAME}`;
+  return `${title} | ${SITE_NAME}`;
 }
 
 export type PageMetaInput = {
@@ -136,7 +136,7 @@ export function sportsActivityVenueJsonLd(venue: {
     "@type": "SportsActivityLocation",
     name: venue.name,
     url,
-    description: venue.description || `${venue.name} — ${venue.sport?.name ?? "Sports"} turf in ${venue.city}. Book online on ${SITE_NAME}.`,
+    description: venue.description || `${venue.name}, ${venue.sport?.name ?? "Sports"} turf in ${venue.city}. Book online on ${SITE_NAME}.`,
     address: {
       "@type": "PostalAddress",
       streetAddress: venue.address,

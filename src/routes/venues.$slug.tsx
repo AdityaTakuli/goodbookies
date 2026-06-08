@@ -37,11 +37,11 @@ export const Route = createFileRoute("/venues/$slug")({
       `Book ${venue.name} in ${venue.city}. ${sportName} turf from ₹${venue.price_per_hour}/hr. Live slots, instant confirmation on Good Bookies.`;
     const image = resolveMediaUrlAbsolute(venue.image_url);
     return buildPageMeta({
-      title: `${venue.name} — ${sportName} in ${venue.city}`,
+      title: `${venue.name} | ${sportName} in ${venue.city}`,
       description,
       path: `/venues/${venue.slug}`,
       image,
-      imageAlt: `${venue.name} — ${sportName} turf in ${venue.city}`,
+      imageAlt: `${venue.name}, ${sportName} turf in ${venue.city}`,
       type: "article",
     });
   },

@@ -42,18 +42,18 @@ export const INVENTORY_CLUBS: InventoryClub[] = [
   { id: "man-city", sport: "football", name: "Manchester City", shortName: "MCI", city: "Manchester", colors: ["#6CABDD", "#1C2C5B"], badgeEmoji: "🌙" },
   { id: "real-madrid", sport: "football", name: "Real Madrid", shortName: "RMA", city: "Madrid", colors: ["#FEBE10", "#00529F"], badgeEmoji: "👑" },
   { id: "fc-barcelona", sport: "football", name: "FC Barcelona", shortName: "BAR", city: "Barcelona", colors: ["#A50044", "#004D98"], badgeEmoji: "🔵" },
-  { id: "free-agent-fb", sport: "football", name: "Free Agent", shortName: "FA", city: "—", colors: ["#142219", "#10B981"], badgeEmoji: "🆓" },
+  { id: "free-agent-fb", sport: "football", name: "Free Agent", shortName: "FA", city: "N/A", colors: ["#142219", "#10B981"], badgeEmoji: "🆓" },
   // Cricket — IPL
   { id: "mi", sport: "cricket", name: "Mumbai Indians", shortName: "MI", city: "Mumbai", colors: ["#004BA0", "#D1AB3E"], badgeEmoji: "💙" },
   { id: "csk", sport: "cricket", name: "Chennai Super Kings", shortName: "CSK", city: "Chennai", colors: ["#F9CD05", "#0081E9"], badgeEmoji: "🦁" },
   { id: "rcb", sport: "cricket", name: "Royal Challengers", shortName: "RCB", city: "Bengaluru", colors: ["#EC1C24", "#2B2A29"], badgeEmoji: "🔴" },
   { id: "kkr", sport: "cricket", name: "Kolkata Knight Riders", shortName: "KKR", city: "Kolkata", colors: ["#3A225D", "#B9975B"], badgeEmoji: "🟣" },
-  { id: "free-agent-cr", sport: "cricket", name: "Unaffiliated", shortName: "UA", city: "—", colors: ["#142219", "#10B981"], badgeEmoji: "🏏" },
+  { id: "free-agent-cr", sport: "cricket", name: "Unaffiliated", shortName: "UA", city: "N/A", colors: ["#142219", "#10B981"], badgeEmoji: "🏏" },
   // Basketball — NBA style
   { id: "lakers", sport: "basketball", name: "Lakers", shortName: "LAL", city: "Los Angeles", colors: ["#552583", "#FDB927"], badgeEmoji: "💜" },
   { id: "warriors", sport: "basketball", name: "Warriors", shortName: "GSW", city: "San Francisco", colors: ["#1D428A", "#FFC72C"], badgeEmoji: "🌉" },
   { id: "celtics", sport: "basketball", name: "Celtics", shortName: "BOS", city: "Boston", colors: ["#007A33", "#BA9653"], badgeEmoji: "☘️" },
-  { id: "free-agent-bb", sport: "basketball", name: "Free Agent", shortName: "FA", city: "—", colors: ["#142219", "#10B981"], badgeEmoji: "🏀" },
+  { id: "free-agent-bb", sport: "basketball", name: "Free Agent", shortName: "FA", city: "N/A", colors: ["#142219", "#10B981"], badgeEmoji: "🏀" },
 ];
 
 export const AVATAR_INVENTORY: AvatarInventoryItem[] = [

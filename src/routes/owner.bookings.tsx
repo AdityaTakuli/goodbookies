@@ -39,7 +39,7 @@ function OwnerBookings() {
           <tbody>
             {(data ?? []).map((b: any) => (
               <tr key={b.id} className="border-b border-border/30">
-                <td className="py-3">{b.profile?.full_name || b.profile?.phone || "—"}</td>
+                <td className="py-3">{b.profile?.full_name || b.profile?.phone || "N/A"}</td>
                 <td className="py-3">{b.venue?.name}</td>
                 <td className="py-3 text-muted-foreground">{b.booking_date} · {b.start_hour}:00–{b.end_hour}:00</td>
                 <td className="py-3 text-right font-semibold">₹{b.total_price}</td>

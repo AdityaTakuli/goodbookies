@@ -13,7 +13,7 @@ export function getBookingPlayerNames(booking: BookingPlayerInfo): string[] {
 
 export function formatBookingPlayerNames(booking: BookingPlayerInfo): string {
   const names = getBookingPlayerNames(booking);
-  return names.length ? names.join(", ") : "—";
+  return names.length ? names.join(", ") : "N/A";
 }
 
 export function bookingPlayerCount(booking: BookingPlayerInfo): number {

@@ -141,7 +141,7 @@ export async function confirmBookingAfterPayment(input: {
   await supabaseAdmin.from("notifications").insert({
     user_id: input.userId,
     title: "Booking confirmed",
-    message: `Payment received — your slot on ${booking.booking_date} is confirmed. See you on the turf!`,
+    message: `Payment received. Your slot on ${booking.booking_date} is confirmed. See you on the turf!`,
     type: "booking",
   });
 

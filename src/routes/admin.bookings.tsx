@@ -75,7 +75,7 @@ function AdminBookings() {
               {(data ?? []).map((b: any) => (
                 <tr key={b.id} className="border-b border-border/30 last:border-0">
                   <td className="py-3 font-mono text-xs text-muted-foreground">{b.id.slice(0, 8)}</td>
-                  <td className="py-3">{b.profile?.full_name || b.profile?.email || "—"}</td>
+                  <td className="py-3">{b.profile?.full_name || b.profile?.email || "N/A"}</td>
                   <td className="py-3">
                     <p>{formatBookingPlayerNames(b)}</p>
                     <p className="text-xs text-muted-foreground">{bookingPlayerCount(b)} player{bookingPlayerCount(b) === 1 ? "" : "s"}</p>

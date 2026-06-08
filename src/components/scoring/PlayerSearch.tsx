@@ -34,7 +34,7 @@ export function PlayerSearch({
     try {
       const rows = await searchFn({ data: { q: q.trim() } });
       setResults(rows);
-      if (!rows.length) toast.message("No players found — try username or phone");
+      if (!rows.length) toast.message("No players found. Try username or phone.");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Search failed");
     } finally {
@@ -77,7 +77,7 @@ export function PlayerSearch({
               <div className="min-w-0">
                 <p className="font-medium truncate">{r.fullName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {r.username ? `@${r.username}` : "—"}
+                  {r.username ? `@${r.username}` : "N/A"}
                   {r.phone ? ` · ${r.phone}` : ""}
                 </p>
               </div>

@@ -49,16 +49,16 @@ function AdminOverview() {
     <div className="space-y-8">
       <div>
         <h1 className="font-display text-3xl font-bold">Company dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Good Bookies operations — turfs, players, bookings & revenue.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Good Bookies operations: turfs, players, bookings & revenue.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Kpi icon={CalendarCheck} label="Bookings today" value={sum?.bookingsToday ?? "—"} accent />
-        <Kpi icon={IndianRupee} label="Revenue today" value={sum ? `₹${sum.revenueToday.toLocaleString()}` : "—"} accent />
-        <Kpi icon={TrendingUp} label="Revenue this month" value={sum ? `₹${sum.revenueMonth.toLocaleString()}` : "—"} />
-        <Kpi icon={Building2} label="Active venues" value={sum?.activeVenues ?? "—"} />
-        <Kpi icon={UserPlus} label="New users (7d)" value={sum?.newUsersWeek ?? "—"} />
-        <Kpi icon={XCircle} label="Cancellations (mo)" value={sum?.cancelMonth ?? "—"} />
+        <Kpi icon={CalendarCheck} label="Bookings today" value={sum?.bookingsToday ?? "N/A"} accent />
+        <Kpi icon={IndianRupee} label="Revenue today" value={sum ? `₹${sum.revenueToday.toLocaleString()}` : "N/A"} accent />
+        <Kpi icon={TrendingUp} label="Revenue this month" value={sum ? `₹${sum.revenueMonth.toLocaleString()}` : "N/A"} />
+        <Kpi icon={Building2} label="Active venues" value={sum?.activeVenues ?? "N/A"} />
+        <Kpi icon={UserPlus} label="New users (7d)" value={sum?.newUsersWeek ?? "N/A"} />
+        <Kpi icon={XCircle} label="Cancellations (mo)" value={sum?.cancelMonth ?? "N/A"} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -169,7 +169,7 @@ function AdminOverview() {
             <tbody>
               {(recent ?? []).slice(0, 10).map((b: any) => (
                 <tr key={b.id} className="border-b border-border/30 last:border-0">
-                  <td className="py-3">{b.profile?.full_name || b.profile?.email || "—"}</td>
+                  <td className="py-3">{b.profile?.full_name || b.profile?.email || "N/A"}</td>
                   <td className="py-3 text-muted-foreground">{formatBookingPlayerNames(b)}</td>
                   <td className="py-3">{b.venue?.name}</td>
                   <td className="py-3 text-muted-foreground">{b.booking_date} · {b.start_hour}:00–{b.end_hour}:00</td>

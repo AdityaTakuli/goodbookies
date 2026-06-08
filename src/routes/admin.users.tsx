@@ -70,9 +70,9 @@ function AdminUsers() {
             <tbody>
               {filtered.map((u: any) => (
                 <tr key={u.id} className="border-b border-border/30 last:border-0">
-                  <td className="py-3 font-medium">{u.full_name || "—"}</td>
+                  <td className="py-3 font-medium">{u.full_name || "N/A"}</td>
                   <td className="py-3 text-muted-foreground">{u.email}</td>
-                  <td className="py-3 text-muted-foreground">{u.phone || "—"}</td>
+                  <td className="py-3 text-muted-foreground">{u.phone || "N/A"}</td>
                   <td className="py-3 text-muted-foreground">{u.created_at?.slice(0, 10)}</td>
                   <td className="py-3 text-right">{u.stats.count}</td>
                   <td className="py-3 text-right font-semibold text-primary">₹{u.stats.spent.toLocaleString()}</td>

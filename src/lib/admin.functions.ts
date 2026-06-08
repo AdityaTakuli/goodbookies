@@ -99,7 +99,7 @@ export const adminTopVenues = createServerFn({ method: "GET" })
     const map = new Map<string, { name: string; sport: string; rating: number; bookings: number; revenue: number }>();
     (data ?? []).forEach((b: any) => {
       const k = b.venue_id;
-      const cur = map.get(k) ?? { name: b.venue?.name ?? "—", sport: b.venue?.sport?.name ?? "—", rating: Number(b.venue?.rating ?? 0), bookings: 0, revenue: 0 };
+      const cur = map.get(k) ?? { name: b.venue?.name ?? "N/A", sport: b.venue?.sport?.name ?? "N/A", rating: Number(b.venue?.rating ?? 0), bookings: 0, revenue: 0 };
       cur.bookings += 1;
       if (b.status === "confirmed") cur.revenue += b.total_price ?? 0;
       map.set(k, cur);
@@ -393,8 +393,8 @@ export const adminListPayments = createServerFn({ method: "GET" })
     return (rows ?? []).map((r: any) => ({
       id: r.id,
       booking_id: r.id,
-      user: pmap.get(r.user_id)?.full_name || pmap.get(r.user_id)?.email || "—",
-      venue: r.venue?.name ?? "—",
+      user: pmap.get(r.user_id)?.full_name || pmap.get(r.user_id)?.email || "N/A",
+      venue: r.venue?.name ?? "N/A",
       amount: r.total_price,
       method: "card",
       status: r.status === "confirmed" ? "success" : r.status,

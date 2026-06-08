@@ -129,7 +129,7 @@ function SignupPage() {
     <div className="container mx-auto flex max-w-md flex-col px-4 py-16">
       <h1 className="font-display text-3xl font-bold">Create account</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Player account — we&apos;ll email you a confirmation link. One phone per account.
+        Player account. We&apos;ll email you a confirmation link. One phone per account.
       </p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div>
@@ -152,7 +152,7 @@ function SignupPage() {
             onChange={(e) => setPhone(e.target.value)}
             className="mt-1"
           />
-          <p className="mt-1 text-xs text-muted-foreground">10-digit Indian mobile — one account per number</p>
+          <p className="mt-1 text-xs text-muted-foreground">10-digit Indian mobile, one account per number</p>
         </div>
         <div>
           <Label htmlFor="password">Password</Label>

@@ -49,7 +49,7 @@ export function BookingPaymentPortal({
         <p>
           {requiresPayment
             ? "Pay securely via Razorpay to confirm your slot. Your booking stays reserved until payment completes."
-            : "No payment required — your booking will be confirmed immediately."}
+            : "No payment required. Your booking will be confirmed immediately."}
         </p>
       </div>
 

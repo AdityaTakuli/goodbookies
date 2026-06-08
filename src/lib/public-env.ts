@@ -2,6 +2,7 @@ export type PublicSupabaseEnv = {
   VITE_SUPABASE_URL: string;
   VITE_SUPABASE_PUBLISHABLE_KEY: string;
   VITE_RAZORPAY_KEY_ID?: string;
+  MEDIA_PUBLIC_URL?: string;
 };
 
 declare global {
@@ -48,9 +49,15 @@ export function getPublicEnvInlineScript(): string | null {
 
   if (!url || !key) return null;
 
+  const siteUrl =
+    process.env.MEDIA_PUBLIC_URL?.replace(/\/$/, "") ||
+    process.env.SITE_URL?.replace(/\/$/, "") ||
+    "https://goodbookies.co.in";
+
   const payload = JSON.stringify({
     VITE_SUPABASE_URL: url,
     VITE_SUPABASE_PUBLISHABLE_KEY: key,
+    MEDIA_PUBLIC_URL: siteUrl,
     ...(razorpayKeyId ? { VITE_RAZORPAY_KEY_ID: razorpayKeyId } : {}),
   } satisfies PublicSupabaseEnv);
 

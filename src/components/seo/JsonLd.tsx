@@ -4,10 +4,12 @@ type JsonLdProps = {
 
 /** Embeds schema.org JSON-LD for crawlers (SSR-safe). */
 export function JsonLd({ data }: JsonLdProps) {
+  const json = JSON.stringify(data);
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: json }}
     />
   );
 }

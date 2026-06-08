@@ -4,6 +4,7 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -212,7 +213,7 @@ function tryServeUploads(url, nodeRes) {
   return true;
 }
 
-function tryServeStatic(url, nodeRes) {
+function tryServeStatic(url, nodeRes, req) {
   if (!url.pathname.startsWith("/assets/")) {
     for (const name of [
       "favicon.ico",
@@ -221,10 +222,11 @@ function tryServeStatic(url, nodeRes) {
       "apple-touch-icon.png",
       "robots.txt",
       "og-image.jpg",
+      "og-image.webp",
     ]) {
       if (url.pathname === `/${name}`) {
         const file = path.join(CLIENT_ROOT, name);
-        if (fs.existsSync(file)) return pipeFile(file, nodeRes);
+        if (fs.existsSync(file)) return pipeFile(file, nodeRes, req);
       }
     }
     return false;
@@ -235,17 +237,56 @@ function tryServeStatic(url, nodeRes) {
   const resolved = path.resolve(file);
   if (!resolved.startsWith(path.resolve(CLIENT_ROOT))) return false;
   if (!fs.existsSync(resolved) || fs.statSync(resolved).isDirectory()) return false;
-  return pipeFile(resolved, nodeRes);
+  return pipeFile(resolved, nodeRes, req);
 }
 
-function pipeFile(file, nodeRes) {
+function compressibleContentType(contentType = "") {
+  return (
+    contentType.includes("text/") ||
+    contentType.includes("javascript") ||
+    contentType.includes("json") ||
+    contentType.includes("xml") ||
+    contentType.includes("svg")
+  );
+}
+
+function maybeCompress(req, body, contentType) {
+  if (!Buffer.isBuffer(body) || body.length < 1024 || !compressibleContentType(contentType)) {
+    return { body, encoding: null };
+  }
+  const accept = String(req.headers["accept-encoding"] ?? "");
+  if (accept.includes("br")) {
+    return { body: zlib.brotliCompressSync(body), encoding: "br" };
+  }
+  if (accept.includes("gzip")) {
+    return { body: zlib.gzipSync(body), encoding: "gzip" };
+  }
+  return { body, encoding: null };
+}
+
+function sendBuffer(req, nodeRes, status, headers, body) {
+  const contentType = headers["content-type"] ?? "";
+  const { body: out, encoding } = maybeCompress(req, body, contentType);
+  if (encoding) {
+    headers["content-encoding"] = encoding;
+    headers.vary = "Accept-Encoding";
+  }
+  headers["content-length"] = String(out.length);
+  nodeRes.writeHead(status, headers);
+  nodeRes.end(out);
+}
+
+function pipeFile(file, nodeRes, req) {
   const ext = path.extname(file);
   const headers = { "content-type": MIME[ext] ?? "application/octet-stream" };
   if (ext === ".js" || ext === ".css") {
     headers["cache-control"] = "public, max-age=31536000, immutable";
+  } else if ([".jpg", ".jpeg", ".webp", ".png", ".svg", ".ico", ".woff2"].includes(ext)) {
+    headers["cache-control"] = "public, max-age=604800, stale-while-revalidate=86400";
+  } else if (ext === ".txt" || ext === ".xml") {
+    headers["cache-control"] = "public, max-age=86400";
   }
-  nodeRes.writeHead(200, headers);
-  fs.createReadStream(file).pipe(nodeRes);
+  sendBuffer(req, nodeRes, 200, headers, fs.readFileSync(file));
   return true;
 }
 
@@ -397,8 +438,8 @@ async function handleSsr(req, nodeRes, url) {
   const headers = Object.fromEntries(response.headers);
   headers["cache-control"] = "no-store, no-cache, must-revalidate";
   headers["pragma"] = "no-cache";
-  nodeRes.writeHead(response.status, headers);
-  nodeRes.end(Buffer.from(await response.arrayBuffer()));
+  const body = Buffer.from(await response.arrayBuffer());
+  sendBuffer(req, nodeRes, response.status, headers, body);
 }
 
 export async function handleNodeRequest(req, nodeRes) {
@@ -413,7 +454,7 @@ export async function handleNodeRequest(req, nodeRes) {
   if (await handleMobile(url.pathname, req, nodeRes, url)) return;
   if (await handleInventory(url.pathname, req, nodeRes)) return;
   if (tryServeUploads(url, nodeRes)) return;
-  if (tryServeStatic(url, nodeRes)) return;
+  if (tryServeStatic(url, nodeRes, req)) return;
   await handleSsr(req, nodeRes, url);
 }
 

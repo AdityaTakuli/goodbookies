@@ -5,15 +5,23 @@ export const SITE_TAGLINE = "Book sports turfs online in India";
 export const DEFAULT_DESCRIPTION =
   "Find and book floodlit football turfs, cricket nets, basketball courts and more across India. Real-time slot availability, instant confirmation, open match lobbies.";
 
+const DEFAULT_SITE_URL = "https://goodbookies.co.in";
+
+/** Canonical origin — must match on server and client to avoid hydration mismatches. */
 export function getSiteUrl(): string {
-  if (typeof window !== "undefined") {
-    return window.location.origin.replace(/\/$/, "");
+  if (typeof process !== "undefined") {
+    const fromProcess =
+      process.env.MEDIA_PUBLIC_URL?.replace(/\/$/, "") ||
+      process.env.SITE_URL?.replace(/\/$/, "") ||
+      process.env.VITE_SITE_URL?.replace(/\/$/, "");
+    if (fromProcess) return fromProcess;
   }
-  return (
-    process.env.MEDIA_PUBLIC_URL?.replace(/\/$/, "") ||
-    process.env.SITE_URL?.replace(/\/$/, "") ||
-    "https://goodbookies.co.in"
-  );
+
+  if (typeof window !== "undefined" && window.__GB_PUBLIC_ENV__?.MEDIA_PUBLIC_URL) {
+    return window.__GB_PUBLIC_ENV__.MEDIA_PUBLIC_URL.replace(/\/$/, "");
+  }
+
+  return DEFAULT_SITE_URL;
 }
 
 export function absoluteUrl(path: string): string {
@@ -50,7 +58,11 @@ export function buildPageMeta({
 }: PageMetaInput) {
   const fullTitle = pageTitle(title);
   const url = absoluteUrl(path);
-  const ogImage = image?.startsWith("http") ? image : image ? absoluteUrl(image) : absoluteUrl("/og-image.jpg");
+  const ogImage = image?.startsWith("http")
+    ? image
+    : image
+      ? absoluteUrl(image)
+      : absoluteUrl("/og-image.webp");
 
   const meta: Array<Record<string, string>> = [
     { title: fullTitle },

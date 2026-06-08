@@ -16,6 +16,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { SITE_NAME } from "@/lib/seo";
+import { useEffect, useState } from "react";
 
 function NotFoundComponent() {
   return (
@@ -88,12 +89,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico?v=6", sizes: "any" },
       { rel: "icon", href: "/favicon.png?v=6", type: "image/png", sizes: "32x32" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=6", sizes: "180x180" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
-      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -138,8 +133,22 @@ function RootComponent() {
           </main>
           <Footer />
         </div>
-        <Toaster />
+        <DeferredToaster />
       </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+function DeferredToaster() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(() => setReady(true));
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(() => setReady(true), 1);
+    return () => clearTimeout(id);
+  }, []);
+  if (!ready) return null;
+  return <Toaster />;
 }

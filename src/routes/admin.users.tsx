@@ -44,8 +44,10 @@ function AdminUsers() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-bold">Users</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{filtered.length} of {data?.length ?? 0}</p>
+          <h1 className="font-display text-3xl font-bold">Players</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            All registered players · {filtered.length} of {data?.length ?? 0} shown
+          </p>
         </div>
         <Input placeholder="Search name, email, phone" value={q} onChange={(e) => setQ(e.target.value)} className="w-64" />
       </div>

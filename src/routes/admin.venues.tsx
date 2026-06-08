@@ -89,7 +89,7 @@ function AdminVenues() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-bold">Venues</h1>
+          <h1 className="font-display text-3xl font-bold">Turfs</h1>
           <p className="mt-1 text-sm text-muted-foreground">{venues?.length ?? 0} venues</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>

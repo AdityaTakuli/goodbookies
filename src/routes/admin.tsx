@@ -11,9 +11,9 @@ export const Route = createFileRoute("/admin")({
 const nav = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/admin/bookings", label: "Bookings", icon: CalendarCheck },
-  { to: "/admin/venues", label: "Venues", icon: Building2 },
+  { to: "/admin/venues", label: "Turfs", icon: Building2 },
   { to: "/admin/sports", label: "Sports", icon: Trophy },
-  { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/users", label: "Players", icon: Users },
   { to: "/admin/payments", label: "Payments", icon: CreditCard },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/notifications", label: "Notifications", icon: Bell },
@@ -40,8 +40,10 @@ function AdminLayout() {
     return (
       <div className="container mx-auto flex max-w-md flex-col items-center px-4 py-24 text-center">
         <ShieldAlert className="h-12 w-12 text-destructive" />
-        <h1 className="mt-4 font-display text-2xl font-bold">Admin access only</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Your account doesn't have permission to view this area.</p>
+        <h1 className="mt-4 font-display text-2xl font-bold">Company dashboard access only</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This area is for Good Bookies staff. Ask a company admin to grant access, or run the Supabase setup query after signing up.
+        </p>
         <Link to="/" className="mt-6 text-sm font-medium text-primary hover:underline">← Back home</Link>
       </div>
     );
@@ -51,7 +53,7 @@ function AdminLayout() {
     <div className="container mx-auto grid gap-6 px-4 py-8 md:grid-cols-[220px_1fr]">
       <aside className="md:sticky md:top-20 md:self-start">
         <div className="rounded-2xl border border-border/60 bg-card p-3">
-          <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Admin</p>
+          <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Company dashboard</p>
           <nav className="flex flex-col gap-1">
             {nav.map((n) => {
               const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);

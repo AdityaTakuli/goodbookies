@@ -48,8 +48,8 @@ function AdminOverview() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-3xl font-bold">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Platform health at a glance.</p>
+        <h1 className="font-display text-3xl font-bold">Company dashboard</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Good Bookies operations — turfs, players, bookings & revenue.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

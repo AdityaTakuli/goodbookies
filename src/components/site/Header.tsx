@@ -19,7 +19,7 @@ export function Header() {
           { to: "/account/card", label: "My Player Card" },
         ]
       : []),
-    ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
+    ...(isAdmin ? [{ to: "/admin", label: "Company Dashboard" }] : []),
     ...(isOwner ? [{ to: "/owner", label: "Partner" }] : []),
   ];
 

@@ -17,6 +17,9 @@ export const Route = createFileRoute("/signup")({
 
 type Step = "form" | "otp";
 
+/** Supabase email OTP length (dashboard default is often 8). */
+const OTP_LENGTH = 8;
+
 function SignupPage() {
   const navigate = useNavigate();
   const checkPhoneFn = useServerFn(checkPhoneAvailable);
@@ -64,7 +67,7 @@ function SignupPage() {
       }
 
       setStep("otp");
-      toast.success(`Enter the 6-digit code sent to ${email}`);
+      toast.success(`Enter the ${OTP_LENGTH}-digit code sent to ${email}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sign up failed");
     } finally {
@@ -74,8 +77,8 @@ function SignupPage() {
 
   async function onVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
-    if (otp.length !== 6) {
-      toast.error("Enter the 6-digit code");
+    if (otp.length !== OTP_LENGTH) {
+      toast.error(`Enter the ${OTP_LENGTH}-digit code`);
       return;
     }
 
@@ -138,7 +141,7 @@ function SignupPage() {
       <div className="container mx-auto flex max-w-md flex-col px-4 py-16">
         <h1 className="font-display text-3xl font-bold">Verify your email</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>
+          We sent an {OTP_LENGTH}-digit code to <span className="font-medium text-foreground">{email}</span>
           {isValidIndianPhone(phone) && (
             <>
               {" "}
@@ -150,19 +153,16 @@ function SignupPage() {
         <form onSubmit={onVerifyOtp} className="mt-8 space-y-6">
           <div className="flex flex-col items-center gap-3">
             <Label htmlFor="otp">Verification code</Label>
-            <InputOTP id="otp" maxLength={6} value={otp} onChange={setOtp}>
+            <InputOTP id="otp" maxLength={OTP_LENGTH} value={otp} onChange={setOtp}>
               <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
+                {Array.from({ length: OTP_LENGTH }, (_, i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
               </InputOTPGroup>
             </InputOTP>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading || otp.length !== 6}>
+          <Button type="submit" className="w-full" disabled={loading || otp.length !== OTP_LENGTH}>
             {loading ? "Verifying…" : "Verify & create account"}
           </Button>
 

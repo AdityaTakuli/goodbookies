@@ -14,6 +14,7 @@ export function Header() {
     { to: "/lobbies", label: "Open Lobbies" },
     ...(user
       ? [
+          { to: "/scoring", label: "Match Scoring" },
           { to: "/account", label: "My Account" },
           { to: "/account/card", label: "My Player Card" },
         ]

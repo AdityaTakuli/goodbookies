@@ -33,4 +33,5 @@ export type MatchHistoryRow = {
   opponentName: string;
   opponentIcon: string | null;
   opponentScore: number;
+  source?: "verified" | "scoring";
 };

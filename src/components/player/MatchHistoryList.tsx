@@ -12,7 +12,7 @@ export function MatchHistoryList({
   if (rows.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border/60 px-4 py-6 text-center text-sm text-muted-foreground">
-        No verified match results yet. Scorelines appear when turf owners confirm your games.
+        No match results yet. Use Match Scoring for friendly games, or play at partner turfs for verified scorelines.
       </p>
     );
   }
@@ -35,7 +35,14 @@ export function MatchHistoryList({
               <span className="shrink-0 text-lg">{m.opponentIcon ?? "🔴"}</span>
               <span className="truncate text-muted-foreground">Opponent ({m.opponentName})</span>
             </div>
-            <span className="text-xs text-muted-foreground">{m.matchDate}</span>
+            <div className="flex items-center gap-2">
+              {m.source === "scoring" && (
+                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  Self-scored
+                </span>
+              )}
+              <span className="text-xs text-muted-foreground">{m.matchDate}</span>
+            </div>
           </div>
         );
       })}

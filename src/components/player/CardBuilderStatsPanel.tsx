@@ -67,7 +67,9 @@ export function CardBuilderStatsPanel({
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Lock className="h-3.5 w-3.5" />
-        Turf-verified only — updated when venue owners confirm matches
+        {sport === "football" || sport === "cricket"
+          ? "Includes turf-verified games and your self-scored matches (this sport only)"
+          : "Turf-verified only — updated when venue owners confirm matches"}
       </div>
 
       {sport === "football" && (

@@ -484,7 +484,9 @@ function MyBookiesDashboard() {
 
       <section className="rounded-xl border border-[#1E3A27]/80 bg-[#142219] p-4 sm:rounded-2xl sm:p-6">
         <h2 className="font-display text-lg font-semibold">Match history</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Verified scorelines from partner turfs</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Turf-verified scorelines and self-scored matches (filtered by sport)
+        </p>
         <div className="mt-4">
           <MatchHistoryList matches={data?.matches ?? []} sportFilter={sport} />
         </div>

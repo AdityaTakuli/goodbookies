@@ -11,17 +11,23 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SportsRouteImport } from './routes/sports'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ScoringRouteImport } from './routes/scoring'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LobbiesRouteImport } from './routes/lobbies'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ScoringIndexRouteImport } from './routes/scoring.index'
 import { Route as OwnerIndexRouteImport } from './routes/owner.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
+import { Route as ScoringNewRouteImport } from './routes/scoring.new'
+import { Route as ScoringMatchIdRouteImport } from './routes/scoring.$matchId'
 import { Route as PlayersUsernameRouteImport } from './routes/players.$username'
 import { Route as OwnerVenuesRouteImport } from './routes/owner.venues'
 import { Route as OwnerSlotsRouteImport } from './routes/owner.slots'
@@ -60,6 +66,16 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScoringRoute = ScoringRouteImport.update({
+  id: '/scoring',
+  path: '/scoring',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OwnerRoute = OwnerRouteImport.update({
   id: '/owner',
   path: '/owner',
@@ -73,6 +89,11 @@ const LoginRoute = LoginRouteImport.update({
 const LobbiesRoute = LobbiesRouteImport.update({
   id: '/lobbies',
   path: '/lobbies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -95,6 +116,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScoringIndexRoute = ScoringIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ScoringRoute,
+} as any)
 const OwnerIndexRoute = OwnerIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -114,6 +140,16 @@ const VenuesSlugRoute = VenuesSlugRouteImport.update({
   id: '/venues/$slug',
   path: '/venues/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ScoringNewRoute = ScoringNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => ScoringRoute,
+} as any)
+const ScoringMatchIdRoute = ScoringMatchIdRouteImport.update({
+  id: '/$matchId',
+  path: '/$matchId',
+  getParentRoute: () => ScoringRoute,
 } as any)
 const PlayersUsernameRoute = PlayersUsernameRouteImport.update({
   id: '/players/$username',
@@ -256,9 +292,12 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/lobbies': typeof LobbiesRoute
   '/login': typeof LoginRoute
   '/owner': typeof OwnerRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
+  '/scoring': typeof ScoringRouteWithChildren
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
   '/account/card': typeof AccountCardRoute
@@ -288,16 +327,21 @@ export interface FileRoutesByFullPath {
   '/owner/slots': typeof OwnerSlotsRoute
   '/owner/venues': typeof OwnerVenuesRoute
   '/players/$username': typeof PlayersUsernameRoute
+  '/scoring/$matchId': typeof ScoringMatchIdRoute
+  '/scoring/new': typeof ScoringNewRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/owner/': typeof OwnerIndexRoute
+  '/scoring/': typeof ScoringIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/lobbies': typeof LobbiesRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
   '/account/card': typeof AccountCardRoute
@@ -327,10 +371,13 @@ export interface FileRoutesByTo {
   '/owner/slots': typeof OwnerSlotsRoute
   '/owner/venues': typeof OwnerVenuesRoute
   '/players/$username': typeof PlayersUsernameRoute
+  '/scoring/$matchId': typeof ScoringMatchIdRoute
+  '/scoring/new': typeof ScoringNewRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/account': typeof AccountIndexRoute
   '/admin': typeof AdminIndexRoute
   '/owner': typeof OwnerIndexRoute
+  '/scoring': typeof ScoringIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -338,9 +385,12 @@ export interface FileRoutesById {
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/lobbies': typeof LobbiesRoute
   '/login': typeof LoginRoute
   '/owner': typeof OwnerRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
+  '/scoring': typeof ScoringRouteWithChildren
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
   '/account/card': typeof AccountCardRoute
@@ -370,10 +420,13 @@ export interface FileRoutesById {
   '/owner/slots': typeof OwnerSlotsRoute
   '/owner/venues': typeof OwnerVenuesRoute
   '/players/$username': typeof PlayersUsernameRoute
+  '/scoring/$matchId': typeof ScoringMatchIdRoute
+  '/scoring/new': typeof ScoringNewRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/account/': typeof AccountIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/owner/': typeof OwnerIndexRoute
+  '/scoring/': typeof ScoringIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -382,9 +435,12 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/dashboard'
+    | '/forgot-password'
     | '/lobbies'
     | '/login'
     | '/owner'
+    | '/reset-password'
+    | '/scoring'
     | '/signup'
     | '/sports'
     | '/account/card'
@@ -414,16 +470,21 @@ export interface FileRouteTypes {
     | '/owner/slots'
     | '/owner/venues'
     | '/players/$username'
+    | '/scoring/$matchId'
+    | '/scoring/new'
     | '/venues/$slug'
     | '/account/'
     | '/admin/'
     | '/owner/'
+    | '/scoring/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
+    | '/forgot-password'
     | '/lobbies'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/sports'
     | '/account/card'
@@ -453,19 +514,25 @@ export interface FileRouteTypes {
     | '/owner/slots'
     | '/owner/venues'
     | '/players/$username'
+    | '/scoring/$matchId'
+    | '/scoring/new'
     | '/venues/$slug'
     | '/account'
     | '/admin'
     | '/owner'
+    | '/scoring'
   id:
     | '__root__'
     | '/'
     | '/account'
     | '/admin'
     | '/dashboard'
+    | '/forgot-password'
     | '/lobbies'
     | '/login'
     | '/owner'
+    | '/reset-password'
+    | '/scoring'
     | '/signup'
     | '/sports'
     | '/account/card'
@@ -495,10 +562,13 @@ export interface FileRouteTypes {
     | '/owner/slots'
     | '/owner/venues'
     | '/players/$username'
+    | '/scoring/$matchId'
+    | '/scoring/new'
     | '/venues/$slug'
     | '/account/'
     | '/admin/'
     | '/owner/'
+    | '/scoring/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -506,9 +576,12 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   DashboardRoute: typeof DashboardRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LobbiesRoute: typeof LobbiesRoute
   LoginRoute: typeof LoginRoute
   OwnerRoute: typeof OwnerRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  ScoringRoute: typeof ScoringRouteWithChildren
   SignupRoute: typeof SignupRoute
   SportsRoute: typeof SportsRoute
   BookingSuccessRoute: typeof BookingSuccessRoute
@@ -532,6 +605,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scoring': {
+      id: '/scoring'
+      path: '/scoring'
+      fullPath: '/scoring'
+      preLoaderRoute: typeof ScoringRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/owner': {
       id: '/owner'
       path: '/owner'
@@ -551,6 +638,13 @@ declare module '@tanstack/react-router' {
       path: '/lobbies'
       fullPath: '/lobbies'
       preLoaderRoute: typeof LobbiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -581,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scoring/': {
+      id: '/scoring/'
+      path: '/'
+      fullPath: '/scoring/'
+      preLoaderRoute: typeof ScoringIndexRouteImport
+      parentRoute: typeof ScoringRoute
+    }
     '/owner/': {
       id: '/owner/'
       path: '/'
@@ -608,6 +709,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/venues/$slug'
       preLoaderRoute: typeof VenuesSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/scoring/new': {
+      id: '/scoring/new'
+      path: '/new'
+      fullPath: '/scoring/new'
+      preLoaderRoute: typeof ScoringNewRouteImport
+      parentRoute: typeof ScoringRoute
+    }
+    '/scoring/$matchId': {
+      id: '/scoring/$matchId'
+      path: '/$matchId'
+      fullPath: '/scoring/$matchId'
+      preLoaderRoute: typeof ScoringMatchIdRouteImport
+      parentRoute: typeof ScoringRoute
     }
     '/players/$username': {
       id: '/players/$username'
@@ -882,14 +997,32 @@ const OwnerRouteChildren: OwnerRouteChildren = {
 
 const OwnerRouteWithChildren = OwnerRoute._addFileChildren(OwnerRouteChildren)
 
+interface ScoringRouteChildren {
+  ScoringMatchIdRoute: typeof ScoringMatchIdRoute
+  ScoringNewRoute: typeof ScoringNewRoute
+  ScoringIndexRoute: typeof ScoringIndexRoute
+}
+
+const ScoringRouteChildren: ScoringRouteChildren = {
+  ScoringMatchIdRoute: ScoringMatchIdRoute,
+  ScoringNewRoute: ScoringNewRoute,
+  ScoringIndexRoute: ScoringIndexRoute,
+}
+
+const ScoringRouteWithChildren =
+  ScoringRoute._addFileChildren(ScoringRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   DashboardRoute: DashboardRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LobbiesRoute: LobbiesRoute,
   LoginRoute: LoginRoute,
   OwnerRoute: OwnerRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
+  ScoringRoute: ScoringRouteWithChildren,
   SignupRoute: SignupRoute,
   SportsRoute: SportsRoute,
   BookingSuccessRoute: BookingSuccessRoute,

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile, updateMyProfile } from "@/lib/account.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,9 @@ function AccountProfile() {
   const { data: profile, isLoading } = useQuery({ queryKey: ["my-profile"], queryFn: () => getFn() });
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -34,6 +38,29 @@ function AccountProfile() {
       qc.invalidateQueries({ queryKey: ["my-profile"] });
     } catch (e: any) {
       toast.error(e.message);
+    }
+  };
+
+  const onChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords don't match");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Password updated");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not update password");
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -65,6 +92,49 @@ function AccountProfile() {
             Open My Player Card →
           </Link>
         </p>
+      </div>
+
+      <div className="max-w-md space-y-4 rounded-2xl border border-border/60 bg-card p-6">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Change password</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Update while logged in, or use{" "}
+            <Link to="/forgot-password" className="font-medium text-primary hover:underline">
+              forgot password
+            </Link>{" "}
+            if you can&apos;t sign in.
+          </p>
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="new-password">New password</Label>
+          <Input
+            id="new-password"
+            type="password"
+            minLength={6}
+            autoComplete="new-password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="confirm-password">Confirm new password</Label>
+          <Input
+            id="confirm-password"
+            type="password"
+            minLength={6}
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onChangePassword}
+          disabled={changingPassword || !newPassword}
+        >
+          {changingPassword ? "Updating…" : "Update password"}
+        </Button>
       </div>
     </div>
   );

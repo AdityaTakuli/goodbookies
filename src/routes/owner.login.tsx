@@ -49,7 +49,15 @@ function OwnerLogin() {
       <p className="mt-2 text-muted-foreground">Same email as your player account works here too.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-2xl border border-border/60 bg-card p-6">
         <div className="grid gap-1.5"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-        <div className="grid gap-1.5"><Label>Password</Label><Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+        <div className="grid gap-1.5">
+          <div className="flex items-center justify-between">
+            <Label>Password</Label>
+            <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+          <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        </div>
         <Button type="submit" className="w-full">Log in</Button>
         <p className="text-center text-sm text-muted-foreground">
           Need a partner account? <Link to="/owner/register" className="text-primary hover:underline">Register</Link>

@@ -1,0 +1,1 @@
+import{am as s,$ as a,an as c,a2 as i}from"./index-CJxfR1tk.js";function f(r){const o=s({warn:r?.router===void 0}),t=r?.router||o,u=a.useRef(void 0);return c(t.stores.__store,e=>{if(r?.select){if(r.structuralSharing??t.options.defaultStructuralSharing){const n=i(u.current,r.select(e));return u.current=n,n}return r.select(e)}return e})}export{f as u};

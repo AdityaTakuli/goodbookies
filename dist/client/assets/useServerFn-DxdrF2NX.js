@@ -1,0 +1,1 @@
+import{ae as a,U as i,D as o}from"./index-QitgbuoK.js";function c(e){const r=a();return i.useCallback(async(...s)=>{try{const t=await e(...s);if(o(t))throw t;return t}catch(t){if(o(t))return t.options._fromLocation=r.stores.location.get(),r.navigate(r.resolveRedirect(t).options);throw t}},[r,e])}export{c as u};

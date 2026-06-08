@@ -1,0 +1,1 @@
+import{ae as s,U as c,af as a,Y as i}from"./index-QitgbuoK.js";function f(e){const n=s({warn:e?.router===void 0}),t=e?.router||n,u=c.useRef(void 0);return a(t.stores.__store,r=>{if(e?.select){if(e.structuralSharing??t.options.defaultStructuralSharing){const o=i(u.current,e.select(r));return u.current=o,o}return e.select(r)}return r})}export{f as u};

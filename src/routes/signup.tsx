@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { checkPhoneAvailable } from "@/lib/auth.functions";
 import { formatIndianPhoneDisplay, isValidIndianPhone, normalizeIndianPhone } from "@/lib/phone";
+import { authRedirectUrl } from "@/lib/auth-redirect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +45,8 @@ function SignupPage() {
         email: email.trim().toLowerCase(),
         password,
         options: {
+          // Supabase may still require a redirect URL while generating confirmation payloads
+          emailRedirectTo: authRedirectUrl("/account"),
           data: {
             full_name: fullName.trim(),
             phone: normalized,

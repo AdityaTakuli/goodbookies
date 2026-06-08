@@ -12,9 +12,9 @@ export function Header() {
     { to: "/", label: "Home" },
     { to: "/sports", label: "Sports" },
     { to: "/lobbies", label: "Open Lobbies" },
+    { to: "/scoring", label: "Match Scoring" },
     ...(user
       ? [
-          { to: "/scoring", label: "Match Scoring" },
           { to: "/account", label: "My Account" },
           { to: "/account/card", label: "My Player Card" },
         ]

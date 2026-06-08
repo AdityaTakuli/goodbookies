@@ -208,7 +208,7 @@ function tryServeUploads(url, nodeRes) {
 
 function tryServeStatic(url, nodeRes) {
   if (!url.pathname.startsWith("/assets/")) {
-    for (const name of ["favicon.ico", "favicon.png"]) {
+    for (const name of ["favicon.ico", "favicon.png", "favicon.svg", "apple-touch-icon.png"]) {
       if (url.pathname === `/${name}`) {
         const file = path.join(CLIENT_ROOT, name);
         if (fs.existsSync(file)) return pipeFile(file, nodeRes);

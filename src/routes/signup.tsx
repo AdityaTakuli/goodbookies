@@ -8,31 +8,25 @@ import { authRedirectUrl } from "@/lib/auth-redirect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
+import { Mail } from "lucide-react";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
 
-type Step = "form" | "otp";
-
-/** Supabase email OTP length (dashboard default is often 8). */
-const OTP_LENGTH = 8;
-
 function SignupPage() {
   const navigate = useNavigate();
   const checkPhoneFn = useServerFn(checkPhoneAvailable);
 
-  const [step, setStep] = useState<Step>("form");
+  const [sent, setSent] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function onSendOtp(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValidIndianPhone(phone)) {
       toast.error("Enter a valid 10-digit Indian mobile number");
@@ -48,7 +42,6 @@ function SignupPage() {
         email: email.trim().toLowerCase(),
         password,
         options: {
-          // Supabase may still require a redirect URL while generating confirmation payloads
           emailRedirectTo: authRedirectUrl("/account"),
           data: {
             full_name: fullName.trim(),
@@ -66,8 +59,8 @@ function SignupPage() {
         return;
       }
 
-      setStep("otp");
-      toast.success(`Enter the ${OTP_LENGTH}-digit code sent to ${email}`);
+      setSent(true);
+      toast.success("Check your email for the confirmation link");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sign up failed");
     } finally {
@@ -75,118 +68,57 @@ function SignupPage() {
     }
   }
 
-  async function onVerifyOtp(e: React.FormEvent) {
-    e.preventDefault();
-    if (otp.length !== OTP_LENGTH) {
-      toast.error(`Enter the ${OTP_LENGTH}-digit code`);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: email.trim().toLowerCase(),
-        token: otp,
-        type: "signup",
-      });
-
-      if (error) {
-        const retry = await supabase.auth.verifyOtp({
-          email: email.trim().toLowerCase(),
-          token: otp,
-          type: "email",
-        });
-        if (retry.error) throw retry.error;
-        if (retry.data.session) {
-          toast.success("Email verified — welcome!");
-          navigate({ to: "/account" });
-          return;
-        }
-        throw error;
-      }
-
-      if (data.session) {
-        toast.success("Email verified — welcome!");
-        navigate({ to: "/account" });
-        return;
-      }
-
-      toast.success("Verified! You can log in now.");
-      navigate({ to: "/login" });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Invalid or expired code");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function onResendOtp() {
+  async function onResendLink() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: email.trim().toLowerCase(),
+        options: { emailRedirectTo: authRedirectUrl("/account") },
       });
       if (error) throw error;
-      toast.success("New code sent to your email");
+      toast.success("Confirmation link sent again");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not resend code");
+      toast.error(error instanceof Error ? error.message : "Could not resend link");
     } finally {
       setLoading(false);
     }
   }
 
-  if (step === "otp") {
+  if (sent) {
     return (
       <div className="container mx-auto flex max-w-md flex-col px-4 py-16">
-        <h1 className="font-display text-3xl font-bold">Verify your email</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          We sent an {OTP_LENGTH}-digit code to <span className="font-medium text-foreground">{email}</span>
-          {isValidIndianPhone(phone) && (
-            <>
-              {" "}
-              · Phone <span className="font-medium text-foreground">{formatIndianPhoneDisplay(normalizeIndianPhone(phone))}</span>
-            </>
-          )}
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
+          <Mail className="h-6 w-6 text-primary" />
+        </div>
+        <h1 className="mt-4 font-display text-3xl font-bold">Check your email</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>. Click the link
+          to activate your account and you&apos;ll land on My Account.
         </p>
+        {isValidIndianPhone(phone) && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Phone on file:{" "}
+            <span className="font-medium text-foreground">{formatIndianPhoneDisplay(normalizeIndianPhone(phone))}</span>
+          </p>
+        )}
 
-        <form onSubmit={onVerifyOtp} className="mt-8 space-y-6">
-          <div className="flex flex-col items-center gap-3">
-            <Label htmlFor="otp">Verification code</Label>
-            <InputOTP id="otp" maxLength={OTP_LENGTH} value={otp} onChange={setOtp}>
-              <InputOTPGroup>
-                {Array.from({ length: OTP_LENGTH }, (_, i) => (
-                  <InputOTPSlot key={i} index={i} />
-                ))}
-              </InputOTPGroup>
-            </InputOTP>
-          </div>
-
-          <Button type="submit" className="w-full" disabled={loading || otp.length !== OTP_LENGTH}>
-            {loading ? "Verifying…" : "Verify & create account"}
+        <div className="mt-8 space-y-3">
+          <Button type="button" variant="outline" className="w-full" onClick={onResendLink} disabled={loading}>
+            {loading ? "Sending…" : "Resend confirmation link"}
           </Button>
+          <button
+            type="button"
+            className="w-full text-center text-sm text-muted-foreground hover:underline"
+            onClick={() => setSent(false)}
+          >
+            ← Back to sign up
+          </button>
+        </div>
 
-          <div className="flex flex-col gap-2 text-center text-sm">
-            <button
-              type="button"
-              className="text-primary hover:underline disabled:opacity-50"
-              onClick={onResendOtp}
-              disabled={loading}
-            >
-              Resend code
-            </button>
-            <button
-              type="button"
-              className="text-muted-foreground hover:underline"
-              onClick={() => {
-                setStep("form");
-                setOtp("");
-              }}
-            >
-              ← Back to sign up
-            </button>
-          </div>
-        </form>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Already confirmed? <Link to="/login" className="font-semibold text-primary hover:underline">Log in</Link>
+        </p>
       </div>
     );
   }
@@ -195,9 +127,9 @@ function SignupPage() {
     <div className="container mx-auto flex max-w-md flex-col px-4 py-16">
       <h1 className="font-display text-3xl font-bold">Create account</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Player account — we verify your email with a one-time code (no link required). One phone per account.
+        Player account — we&apos;ll email you a confirmation link. One phone per account.
       </p>
-      <form onSubmit={onSendOtp} className="mt-8 space-y-4">
+      <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div>
           <Label htmlFor="name">Full name</Label>
           <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1" />
@@ -233,7 +165,7 @@ function SignupPage() {
           />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Sending code…" : "Send verification code"}
+          {loading ? "Creating account…" : "Create account"}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">

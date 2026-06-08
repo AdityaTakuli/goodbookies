@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { assertPhoneAvailable } from "@/lib/phone.server";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -25,10 +26,15 @@ export const updateMyProfile = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("profiles")
-      .update({ ...data, updated_at: new Date().toISOString() })
-      .eq("id", context.userId);
+    const patch: { full_name?: string; phone?: string; updated_at: string } = {
+      updated_at: new Date().toISOString(),
+    };
+    if (data.full_name !== undefined) patch.full_name = data.full_name;
+    if (data.phone !== undefined) {
+      patch.phone = data.phone.trim() ? await assertPhoneAvailable(data.phone, context.userId) : "";
+    }
+
+    const { error } = await context.supabase.from("profiles").update(patch).eq("id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

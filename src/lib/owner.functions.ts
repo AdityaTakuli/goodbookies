@@ -8,6 +8,7 @@ import { sendEmail } from "@/lib/services/email";
 import { isAllowedImageReference } from "@/lib/media/paths";
 import { toCsv } from "@/lib/services/export";
 import { refundRazorpayPayment } from "@/lib/services/razorpay";
+import { assertPhoneAvailable } from "@/lib/phone.server";
 
 async function assertAdmin(userId: string) {
   const { data } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
@@ -83,7 +84,7 @@ export const registerOwner = createServerFn({ method: "POST" })
     const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
     const supabaseAnon = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-    const linkPartnerToUser = async (userId: string) => {
+    const linkPartnerToUser = async (userId: string, phone: string) => {
       const { data: existingOwner } = await supabaseAdmin.from("owners").select("id").eq("id", userId).maybeSingle();
       if (existingOwner) throw new Error("This account already has partner access.");
 
@@ -91,7 +92,7 @@ export const registerOwner = createServerFn({ method: "POST" })
         id: userId,
         name: data.name,
         email: data.email,
-        phone: data.phone,
+        phone,
         business_name: data.business_name ?? null,
         city: data.city,
         status: "approved",
@@ -102,7 +103,7 @@ export const registerOwner = createServerFn({ method: "POST" })
       await supabaseAdmin.from("profiles").update({
         account_type: "both",
         full_name: data.name,
-        phone: data.phone,
+        phone,
         updated_at: new Date().toISOString(),
       }).eq("id", userId);
 
@@ -120,29 +121,32 @@ export const registerOwner = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (existingProfile) {
+      const normalizedPhone = await assertPhoneAvailable(data.phone, existingProfile.id);
       if (!supabaseUrl || !supabaseAnon) throw new Error("Server auth not configured");
       const verifyClient = createClient(supabaseUrl, supabaseAnon, { auth: { persistSession: false, autoRefreshToken: false } });
       const { error: pwErr } = await verifyClient.auth.signInWithPassword({ email: data.email, password: data.password });
       if (pwErr) {
         throw new Error("This email already has a player account. Log in first, or enter the correct password to add partner access.");
       }
-      await linkPartnerToUser(existingProfile.id);
+      await linkPartnerToUser(existingProfile.id, normalizedPhone);
       return {
         ok: true,
         message: "Partner access linked to your existing account. Log in to use both My Account and Partner.",
       };
     }
 
+    const normalizedPhone = await assertPhoneAvailable(data.phone);
+
     const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
-      user_metadata: { full_name: data.name, phone: data.phone, account_type: "both" },
+      user_metadata: { full_name: data.name, phone: normalizedPhone, account_type: "both" },
     });
     if (authErr) throw new Error(authErr.message);
 
     await supabaseAdmin.from("profiles").update({ account_type: "both" }).eq("id", authUser.user.id);
-    await linkPartnerToUser(authUser.user.id);
+    await linkPartnerToUser(authUser.user.id, normalizedPhone);
     return { ok: true, message: "Partner account created. You can book turfs and manage venues with the same login." };
   });
 

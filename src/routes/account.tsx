@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { CalendarCheck, User, Bell, CreditCard, IdCard } from "lucide-react";
+import { CalendarCheck, User, Bell, CreditCard, IdCard, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/account")({
@@ -12,6 +12,7 @@ const nav = [
   { to: "/account", label: "My Bookings", icon: CalendarCheck, exact: true },
   { to: "/account/profile", label: "Profile", icon: User },
   { to: "/account/card", label: "My Player Card", icon: IdCard },
+  { to: "/scoring", label: "Match Scoring", icon: Trophy },
   { to: "/account/notifications", label: "Notifications", icon: Bell },
   { to: "/account/payments", label: "Payment History", icon: CreditCard },
 ];

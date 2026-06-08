@@ -11,6 +11,8 @@ import {
   INVENTORY_FLAGS,
 } from "@/lib/inventory/catalog";
 import type { MatchHistoryRow, PlayerCardView } from "@/lib/player-card.types";
+import { listScoringHistoryForUser } from "@/lib/scoring/scoring.functions";
+import type { ScoringSportSlug } from "@/lib/scoring/types";
 import { parseSkillLevel } from "@/lib/player-card.utils";
 import {
   getSportConfig,
@@ -150,6 +152,48 @@ async function loadVerified(userId: string, sport: PlayerSportSlug) {
   return aggregateVerifiedStats(sport, data ?? []);
 }
 
+async function loadScoringStats(userId: string, sport: ScoringSportSlug) {
+  const { data } = await supabaseAdmin
+    .from("scoring_player_stats")
+    .select("stats")
+    .eq("user_id", userId)
+    .eq("sport_slug", sport)
+    .maybeSingle();
+  return (data?.stats as Record<string, number>) ?? {};
+}
+
+function mergeScoringIntoVerified(
+  sport: PlayerSportSlug,
+  verified: Record<string, number>,
+  scoring: Record<string, number>,
+): Record<string, number> {
+  if (sport !== "cricket" && sport !== "football") return verified;
+  const merged = { ...verified };
+  for (const [k, v] of Object.entries(scoring)) {
+    merged[k] = (merged[k] ?? 0) + v;
+  }
+  return merged;
+}
+
+async function loadMatchHistory(userId: string): Promise<MatchHistoryRow[]> {
+  const { data: verifiedRows } = await supabaseAdmin
+    .from("player_match_history")
+    .select("*")
+    .eq("player_user_id", userId)
+    .order("match_date", { ascending: false })
+    .limit(20);
+
+  const verified = mapMatches(verifiedRows ?? []).map((m) => ({ ...m, source: "verified" as const }));
+  let scoring: MatchHistoryRow[] = [];
+  try {
+    scoring = (await listScoringHistoryForUser(userId)).map((m) => ({ ...m, source: "scoring" as const }));
+  } catch {
+    scoring = [];
+  }
+
+  return [...verified, ...scoring].sort((a, b) => b.matchDate.localeCompare(a.matchDate)).slice(0, 30);
+}
+
 async function loadGoalsByTurf(userId: string): Promise<{ venueName: string; goals: number }[]> {
   const { data, error } = await supabaseAdmin
     .from("player_verified_stats")
@@ -202,25 +246,24 @@ export const getMyPlayerDashboard = createServerFn({ method: "GET" })
       for (const sport of PLAYER_SPORT_SLUGS) {
         const row = await loadSportCard(context.userId, sport);
         const verified = await loadVerified(context.userId, sport);
-        const view = enrichCard(sport, row, profile, verified);
+        const scoring =
+          sport === "cricket" || sport === "football"
+            ? await loadScoringStats(context.userId, sport)
+            : {};
+        const stats = mergeScoringIntoVerified(sport, verified, scoring);
+        const view = enrichCard(sport, row, profile, stats);
         if (view) cards[sport] = view;
       }
     }
 
-    const { data: matches } = await supabaseAdmin
-      .from("player_match_history")
-      .select("*")
-      .eq("player_user_id", context.userId)
-      .order("match_date", { ascending: false })
-      .limit(20);
-
+    const matches = await loadMatchHistory(context.userId);
     const goalsByTurf = enabled ? await loadGoalsByTurf(context.userId) : [];
 
     return {
       profile,
       cards,
       sports: PLAYER_SPORT_SLUGS.map((slug) => SPORT_CONFIGS[slug]),
-      matches: mapMatches(matches ?? []),
+      matches,
       goalsByTurf,
       publicUrl: profile?.username ? `/players/${profile.username}` : null,
       migrationRequired: !enabled,
@@ -239,7 +282,11 @@ export const getPlayerProfileBySport = createServerFn({ method: "GET" })
       .maybeSingle();
     const row = await loadSportCard(context.userId, data.sport);
     const verified = await loadVerified(context.userId, data.sport);
-    return enrichCard(data.sport, row, profile, verified);
+    const scoring =
+      data.sport === "cricket" || data.sport === "football"
+        ? await loadScoringStats(context.userId, data.sport)
+        : {};
+    return enrichCard(data.sport, row, profile, mergeScoringIntoVerified(data.sport, verified, scoring));
   });
 
 export const updatePlayerProfileSettings = createServerFn({ method: "POST" })
@@ -307,8 +354,10 @@ export const updatePlayerProfileSettings = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const verified = await loadVerified(context.userId, sport);
+    const scoring =
+      sport === "cricket" || sport === "football" ? await loadScoringStats(context.userId, sport) : {};
     return {
-      card: enrichCard(sport, row, profile, verified),
+      card: enrichCard(sport, row, profile, mergeScoringIntoVerified(sport, verified, scoring)),
       publicUrl: profile?.username ? `/players/${profile.username}?sport=${sport}` : null,
     };
   });
@@ -329,23 +378,23 @@ export const getPublicPlayerProfile = createServerFn({ method: "GET" })
       const row = await loadSportCard(profile.id, sport, true);
       if (!row) continue;
       const verified = await loadVerified(profile.id, sport);
-      const view = enrichCard(sport, row, profile, verified);
+      const scoring =
+        sport === "cricket" || sport === "football"
+          ? await loadScoringStats(profile.id, sport)
+          : {};
+      const stats = mergeScoringIntoVerified(sport, verified, scoring);
+      const view = enrichCard(sport, row, profile, stats);
       if (view) cards[sport] = view;
     }
 
     if (Object.keys(cards).length === 0) return null;
 
-    const { data: matches } = await supabaseAdmin
-      .from("player_match_history")
-      .select("*")
-      .eq("player_user_id", profile.id)
-      .order("match_date", { ascending: false })
-      .limit(12);
+    const matches = await loadMatchHistory(profile.id);
 
     return {
       activeSport: cards[activeSport] ? activeSport : (Object.keys(cards)[0] as PlayerSportSlug),
       cards,
-      matches: mapMatches(matches ?? []),
+      matches,
       publicUrl: `/players/${profile.username}`,
     };
   });

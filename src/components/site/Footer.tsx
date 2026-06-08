@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 export function Footer() {
   return (
     <footer className="mt-24 border-t border-border/60 bg-background">
-      <div className="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-3">
+      <div className="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-4">
         <div>
           <div className="flex items-center gap-2 font-display text-lg font-bold">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">GB</span>
@@ -14,12 +14,43 @@ export function Footer() {
           </p>
         </div>
         <div>
-          <h4 className="text-sm font-semibold">Sports</h4>
+          <h4 className="text-sm font-semibold">Book</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li>Football</li>
-            <li>Cricket</li>
-            <li>Basketball</li>
-            <li>Badminton</li>
+            <li>
+              <Link to="/sports" className="transition-colors hover:text-primary">
+                Browse all venues
+              </Link>
+            </li>
+            <li>
+              <Link to="/sports" search={{ sport: "football" }} className="transition-colors hover:text-primary">
+                Football turfs
+              </Link>
+            </li>
+            <li>
+              <Link to="/sports" search={{ sport: "cricket" }} className="transition-colors hover:text-primary">
+                Cricket nets
+              </Link>
+            </li>
+            <li>
+              <Link to="/lobbies" className="transition-colors hover:text-primary">
+                Open match lobbies
+              </Link>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold">More sports</h4>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            <li>
+              <Link to="/sports" search={{ sport: "basketball" }} className="transition-colors hover:text-primary">
+                Basketball
+              </Link>
+            </li>
+            <li>
+              <Link to="/sports" search={{ sport: "badminton" }} className="transition-colors hover:text-primary">
+                Badminton
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
@@ -32,7 +63,7 @@ export function Footer() {
             </li>
             <li>
               <Link to="/owner/login" className="transition-colors hover:text-primary">
-                Owner login
+                Partner login
               </Link>
             </li>
           </ul>

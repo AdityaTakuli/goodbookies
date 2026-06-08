@@ -13,14 +13,37 @@ import { resolveVenueImage } from "@/lib/images";
 import { VenueReviews } from "@/components/VenueReviews";
 import { BookingPaymentPortal } from "@/components/payments/BookingPaymentPortal";
 import { useRazorpayCheckout } from "@/components/payments/useRazorpayCheckout";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildPageMeta, breadcrumbJsonLd, sportsActivityVenueJsonLd } from "@/lib/seo";
+import { resolveMediaUrlAbsolute } from "@/lib/media/urls";
 
 const venueQO = (slug: string) =>
   queryOptions({ queryKey: ["venue", slug], queryFn: () => getVenue({ data: { slug } }) });
 
 export const Route = createFileRoute("/venues/$slug")({
   loader: async ({ context, params }) => {
-    const v = await context.queryClient.ensureQueryData(venueQO(params.slug));
-    if (!v) throw notFound();
+    const venue = await context.queryClient.ensureQueryData(venueQO(params.slug));
+    if (!venue) throw notFound();
+    return { venue };
+  },
+  head: ({ loaderData, params }) => {
+    const venue = loaderData?.venue;
+    if (!venue) {
+      return buildPageMeta({ title: "Venue not found", path: `/venues/${params.slug}`, noIndex: true });
+    }
+    const sportName = venue.sport?.name ?? "Sports";
+    const description =
+      venue.description?.slice(0, 155) ||
+      `Book ${venue.name} in ${venue.city}. ${sportName} turf from ₹${venue.price_per_hour}/hr. Live slots, instant confirmation on Good Bookies.`;
+    const image = resolveMediaUrlAbsolute(venue.image_url);
+    return buildPageMeta({
+      title: `${venue.name} — ${sportName} in ${venue.city}`,
+      description,
+      path: `/venues/${venue.slug}`,
+      image,
+      imageAlt: `${venue.name} — ${sportName} turf in ${venue.city}`,
+      type: "article",
+    });
   },
   component: VenuePage,
 });
@@ -185,6 +208,19 @@ function VenuePage() {
 
   return (
     <div className="container mx-auto px-4 py-10">
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Venues", path: "/sports" },
+            { name: venue.name, path: `/venues/${venue.slug}` },
+          ]),
+          sportsActivityVenueJsonLd({
+            ...venue,
+            image_url: resolveMediaUrlAbsolute(venue.image_url),
+          }),
+        ]}
+      />
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="overflow-hidden rounded-2xl border border-border/60">

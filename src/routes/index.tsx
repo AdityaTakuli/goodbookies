@@ -6,11 +6,22 @@ import { Button } from "@/components/ui/button";
 import { listSports } from "@/lib/booking.functions";
 import heroImg from "@/assets/hero-turf.jpg";
 import { Calendar, MapPin, Zap } from "lucide-react";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildPageMeta, organizationJsonLd, websiteJsonLd, SITE_NAME, SITE_TAGLINE } from "@/lib/seo";
 
 const sportsQO = queryOptions({ queryKey: ["sports"], queryFn: () => listSports() });
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(sportsQO),
+  head: () => {
+    const { meta, links } = buildPageMeta({
+      title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+      description:
+        "Book floodlit football turfs, cricket nets and indoor courts online. Live slot availability, instant confirmation, and open match lobbies across India.",
+      path: "/",
+    });
+    return { meta, links };
+  },
   component: Index,
 });
 
@@ -19,9 +30,10 @@ function Index() {
 
   return (
     <div>
+      <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
       {/* Hero */}
       <section className="relative isolate overflow-hidden">
-        <img src={heroImg} alt="" width={1920} height={1080} className="absolute inset-0 -z-10 h-full w-full object-cover" />
+        <img src={heroImg} alt="Floodlit sports turf at night — book on Good Bookies" width={1920} height={1080} className="absolute inset-0 -z-10 h-full w-full object-cover" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/40 via-background/70 to-background" />
         <div className="container mx-auto px-4 py-24 md:py-36">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="max-w-3xl">

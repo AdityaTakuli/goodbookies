@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/forgot-password")({
+  head: () => buildPageMeta({ title: "Forgot password", path: "/forgot-password", noIndex: true }),
   component: ForgotPasswordPage,
 });
 

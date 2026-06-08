@@ -89,6 +89,8 @@ const MIME = {
   ".svg": "image/svg+xml",
   ".woff2": "font/woff2",
   ".json": "application/json",
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
 };
 
 const INVENTORY_ROUTES = {
@@ -112,6 +114,10 @@ const PAYMENT_ROUTES = {
 
 const MEDIA_ROUTES = {
   "/api/media/upload": () => import("./api/media/upload.ts"),
+};
+
+const SEO_ROUTES = {
+  "/sitemap.xml": () => import("./api/seo/sitemap.ts"),
 };
 
 let serverEntryPromise;
@@ -208,7 +214,14 @@ function tryServeUploads(url, nodeRes) {
 
 function tryServeStatic(url, nodeRes) {
   if (!url.pathname.startsWith("/assets/")) {
-    for (const name of ["favicon.ico", "favicon.png", "favicon.svg", "apple-touch-icon.png"]) {
+    for (const name of [
+      "favicon.ico",
+      "favicon.png",
+      "favicon.svg",
+      "apple-touch-icon.png",
+      "robots.txt",
+      "og-image.jpg",
+    ]) {
       if (url.pathname === `/${name}`) {
         const file = path.join(CLIENT_ROOT, name);
         if (fs.existsSync(file)) return pipeFile(file, nodeRes);
@@ -337,6 +350,22 @@ async function handlePayments(pathname, req, nodeRes) {
   return true;
 }
 
+async function handleSeo(pathname, req, nodeRes) {
+  const load = SEO_ROUTES[pathname];
+  if (!load) return false;
+
+  await ensureTsx();
+  const mod = await load();
+  const handler = mod.default;
+  if (typeof handler !== "function") {
+    nodeRes.writeHead(500).end("SEO handler missing");
+    return true;
+  }
+
+  await handler(req, createVercelResponse(nodeRes));
+  return true;
+}
+
 async function handleMobile(pathname, req, nodeRes, url) {
   const load = MOBILE_ROUTES[pathname];
   if (!load) return false;
@@ -377,6 +406,7 @@ export async function handleNodeRequest(req, nodeRes) {
   const proto = (req.headers["x-forwarded-proto"] ?? "http").toString().split(",")[0];
   const url = new URL(req.url ?? "/", `${proto}://${host}`);
 
+  if (await handleSeo(url.pathname, req, nodeRes)) return;
   if (await handlePayments(url.pathname, req, nodeRes)) return;
   if (await handleMediaAsset(url.pathname, req, nodeRes)) return;
   if (await handleMedia(url.pathname, req, nodeRes)) return;

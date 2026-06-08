@@ -8,6 +8,7 @@ import { MatchHistoryList } from "@/components/player/MatchHistoryList";
 import { ShareCardButton } from "@/components/player/ShareCardButton";
 import { PLAYER_SPORT_SLUGS, SPORT_CONFIGS, isPlayerSportSlug, type PlayerSportSlug } from "@/lib/sports/player-sports";
 import { cn } from "@/lib/utils";
+import { buildPageMeta } from "@/lib/seo";
 
 const searchSchema = z.object({
   sport: z.string().optional(),
@@ -27,14 +28,20 @@ export const Route = createFileRoute("/players/$username")({
       profileQO(params.username, deps.sport),
     );
     if (!profile) throw notFound();
+    return { profile };
   },
-  head: ({ params }) => ({
-    meta: [
-      { title: `@${params.username} · Player Card` },
-      { name: "description", content: `Public multi-sport player profile for @${params.username}` },
-      { property: "og:type", content: "profile" },
-    ],
-  }),
+  head: ({ loaderData, params }) => {
+    const profile = loaderData?.profile;
+    const firstCard = profile?.cards ? Object.values(profile.cards)[0] : undefined;
+    const displayName = firstCard?.fullName ?? params.username;
+    const description = `View ${displayName}'s (@${params.username}) multi-sport player card, match history and stats on Good Bookies.`;
+    return buildPageMeta({
+      title: `${displayName} (@${params.username}) — Player Card`,
+      description,
+      path: `/players/${params.username}`,
+      type: "profile",
+    });
+  },
   component: PublicPlayerPage,
 });
 

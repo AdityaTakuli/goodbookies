@@ -2,8 +2,10 @@ import { createFileRoute, Outlet, Link, useNavigate } from "@tanstack/react-rout
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Trophy } from "lucide-react";
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/scoring")({
+  head: () => buildPageMeta({ title: "Match Scoring", path: "/scoring", noIndex: true }),
   component: ScoringLayout,
 });
 

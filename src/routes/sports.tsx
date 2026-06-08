@@ -4,6 +4,8 @@ import { z } from "zod";
 import { listSports, listVenues } from "@/lib/booking.functions";
 import { VenueCard } from "@/components/VenueCard";
 import { cn } from "@/lib/utils";
+import { buildPageMeta, breadcrumbJsonLd } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 const searchSchema = z.object({ sport: z.string().optional() });
 
@@ -18,12 +20,18 @@ export const Route = createFileRoute("/sports")({
     context.queryClient.ensureQueryData(sportsQO);
     context.queryClient.ensureQueryData(venuesQO(deps.sport));
   },
-  head: () => ({
-    meta: [
-      { title: "Sports & Venues — Good Bookies" },
-      { name: "description", content: "Browse all sports venues. Filter by football, cricket, basketball and more." },
-    ],
-  }),
+  head: ({ loaderDeps }) => {
+    const sport = loaderDeps?.sport;
+    const title = sport
+      ? `${sport.charAt(0).toUpperCase()}${sport.slice(1)} Turfs & Venues`
+      : "Sports Turfs & Venues";
+    const description = sport
+      ? `Browse and book ${sport} turfs and venues near you. Compare prices, ratings, and live slot availability on Good Bookies.`
+      : "Browse and book football turfs, cricket nets, basketball courts, badminton courts and more. Filter by sport, city and price.";
+    const path = sport ? `/sports?sport=${encodeURIComponent(sport)}` : "/sports";
+    const { meta, links } = buildPageMeta({ title, description, path });
+    return { meta, links };
+  },
   component: SportsPage,
 });
 
@@ -34,6 +42,12 @@ function SportsPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Venues", path: "/sports" },
+        ])}
+      />
       <h1 className="font-display text-4xl font-bold md:text-5xl">All venues</h1>
       <p className="mt-2 text-muted-foreground">
         {venues.length} venue{venues.length === 1 ? "" : "s"} available {sport ? `for ${sport}` : "across all sports"}.

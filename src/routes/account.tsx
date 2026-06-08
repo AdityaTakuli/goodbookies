@@ -3,8 +3,10 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { CalendarCheck, User, Bell, CreditCard, IdCard, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/account")({
+  head: () => buildPageMeta({ title: "My Account", path: "/account", noIndex: true }),
   component: AccountLayout,
 });
 

@@ -15,6 +15,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { Toaster } from "@/components/ui/sonner";
+import { SITE_NAME } from "@/lib/seo";
 
 function NotFoundComponent() {
   return (
@@ -78,18 +79,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Good Bookies" },
-      { name: "description", content: "Find and book floodlit football turfs, cricket nets, basketball courts and more. Real-time slot availability, instant confirmation." },
-      { property: "og:title", content: "Good Bookies" },
-      { property: "og:description", content: "Find and book floodlit football turfs, cricket nets, basketball courts and more. Real-time slot availability, instant confirmation." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Good Bookies" },
-      { name: "twitter:description", content: "Find and book floodlit football turfs, cricket nets, basketball courts and more. Real-time slot availability, instant confirmation." },
+      { name: "theme-color", content: "#16a34a" },
+      { name: "author", content: SITE_NAME },
       { name: "gb-build", content: CLIENT_BUILD_ID },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8bee6680-9518-4611-88e8-ad651670a130/id-preview-a5108356--72920ab1-64f0-4a04-a6e6-628a335ada58.lovable.app-1779783257235.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8bee6680-9518-4611-88e8-ad651670a130/id-preview-a5108356--72920ab1-64f0-4a04-a6e6-628a335ada58.lovable.app-1779783257235.png" },
     ],
     links: [
       { rel: "icon", href: "/favicon.svg?v=6", type: "image/svg+xml" },
@@ -98,7 +90,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=6", sizes: "180x180" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,

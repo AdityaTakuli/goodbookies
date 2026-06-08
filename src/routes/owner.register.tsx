@@ -6,8 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/owner/register")({
+  head: () =>
+    buildPageMeta({
+      title: "List Your Turf — Partner with Good Bookies",
+      description:
+        "Register as a turf partner on Good Bookies. List your football, cricket or multi-sport venue, manage bookings, slots and payouts from one dashboard.",
+      path: "/owner/register",
+    }),
   component: OwnerRegister,
 });
 

@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/reset-password")({
+  head: () => buildPageMeta({ title: "Reset password", path: "/reset-password", noIndex: true }),
   component: ResetPasswordPage,
 });
 

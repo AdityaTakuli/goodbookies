@@ -9,8 +9,10 @@ import {
   CreditCard, Settings, Ticket, ShieldAlert, BadgeCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/owner")({
+  head: () => buildPageMeta({ title: "Partner Dashboard", path: "/owner", noIndex: true }),
   component: OwnerLayout,
 });
 

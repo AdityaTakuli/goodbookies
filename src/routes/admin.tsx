@@ -3,8 +3,10 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { LayoutDashboard, CalendarCheck, Building2, Trophy, Users, ShieldAlert, BarChart3, CreditCard, Bell, Settings, UserCheck, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/admin")({
+  head: () => buildPageMeta({ title: "Company Dashboard", path: "/admin", noIndex: true }),
   component: AdminLayout,
 });
 

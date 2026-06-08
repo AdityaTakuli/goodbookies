@@ -9,8 +9,16 @@ import { listSports } from "@/lib/booking.functions";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/lobbies")({
+  head: () =>
+    buildPageMeta({
+      title: "Open Match Lobbies",
+      description:
+        "Find open match lobbies and join games near you. Filter by sport and date, then request to fill remaining spots on booked turf slots.",
+      path: "/lobbies",
+    }),
   component: LobbiesPage,
 });
 

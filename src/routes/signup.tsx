@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
+import { buildPageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/signup")({
+  head: () => buildPageMeta({ title: "Sign up", path: "/signup", noIndex: true }),
   component: SignupPage,
 });
 

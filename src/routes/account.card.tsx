@@ -35,6 +35,7 @@ import {
 import { uploadMediaFile } from "@/lib/media.functions";
 import { uploadMediaFileToHostinger } from "@/lib/media/upload-client";
 import { resolveMediaUrl } from "@/lib/media/urls";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/account/card")({
   component: MyBookiesDashboard,

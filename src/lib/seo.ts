@@ -30,7 +30,12 @@ export function absoluteUrl(path: string): string {
   return `${base}${normalized}`;
 }
 
-export function pageTitle(title: string): string {
+/** Browser tab title — always the brand name. */
+export function pageTitle(): string {
+  return SITE_NAME;
+}
+
+function socialTitle(title: string): string {
   if (title === SITE_NAME || title.endsWith(` | ${SITE_NAME}`)) {
     return title;
   }
@@ -56,7 +61,8 @@ export function buildPageMeta({
   type = "website",
   noIndex = false,
 }: PageMetaInput) {
-  const fullTitle = pageTitle(title);
+  const tabTitle = pageTitle();
+  const shareTitle = socialTitle(title);
   const url = absoluteUrl(path);
   const ogImage = image?.startsWith("http")
     ? image
@@ -65,11 +71,11 @@ export function buildPageMeta({
       : absoluteUrl("/og-image.webp");
 
   const meta: Array<Record<string, string>> = [
-    { title: fullTitle },
+    { title: tabTitle },
     { name: "description", content: description },
     { name: "robots", content: noIndex ? "noindex, nofollow" : "index, follow" },
     { property: "og:site_name", content: SITE_NAME },
-    { property: "og:title", content: fullTitle },
+    { property: "og:title", content: shareTitle },
     { property: "og:description", content: description },
     { property: "og:type", content: type },
     { property: "og:url", content: url },
@@ -77,7 +83,7 @@ export function buildPageMeta({
     { property: "og:image", content: ogImage },
     { property: "og:image:alt", content: imageAlt },
     { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: fullTitle },
+    { name: "twitter:title", content: shareTitle },
     { name: "twitter:description", content: description },
     { name: "twitter:image", content: ogImage },
   ];

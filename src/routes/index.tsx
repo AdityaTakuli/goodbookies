@@ -7,7 +7,7 @@ import heroMobileWebp from "@/assets/hero-turf-mobile.webp";
 import heroWebp from "@/assets/hero-turf.webp";
 import { Calendar, MapPin, Zap } from "lucide-react";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { buildPageMeta, organizationJsonLd, websiteJsonLd, SITE_NAME, SITE_TAGLINE } from "@/lib/seo";
+import { buildPageMeta, organizationJsonLd, websiteJsonLd, SITE_NAME } from "@/lib/seo";
 
 const sportsQO = queryOptions({ queryKey: ["sports"], queryFn: () => listSports() });
 const HERO_SRCSET = `${heroMobileWebp} 800w, ${heroWebp} 1600w`;
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
   },
   head: () => {
     const { meta, links } = buildPageMeta({
-      title: `${SITE_NAME} | ${SITE_TAGLINE}`,
+      title: SITE_NAME,
       description:
         "Book floodlit football turfs, cricket nets and indoor courts online. Live slot availability, instant confirmation, and open match lobbies across India.",
       path: "/",

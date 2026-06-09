@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { resolvePartnerLoginPath } from "@/lib/auth-landing";
 
 export const Route = createFileRoute("/owner/login")({
   component: OwnerLogin,
@@ -37,7 +38,7 @@ function OwnerLogin() {
       } else if (owner.status === "suspended") {
         toast.message("Your partner account is suspended.");
       }
-      navigate({ to: "/owner" });
+      navigate({ to: resolvePartnerLoginPath() });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Login failed");
     }
@@ -45,8 +46,8 @@ function OwnerLogin() {
 
   return (
     <div className="container mx-auto max-w-md px-4 py-12">
-      <h1 className="font-display text-4xl font-bold">Owner Login</h1>
-      <p className="mt-2 text-muted-foreground">Same email as your player account works here too.</p>
+      <h1 className="font-display text-4xl font-bold">Partner login</h1>
+      <p className="mt-2 text-muted-foreground">Turf owners land on the Partner dashboard after sign in.</p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-2xl border border-border/60 bg-card p-6">
         <div className="grid gap-1.5"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         <div className="grid gap-1.5">

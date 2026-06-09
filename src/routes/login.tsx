@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { buildPageMeta } from "@/lib/seo";
+import { resolvePlayerLoginPath } from "@/lib/auth-landing";
 
 export const Route = createFileRoute("/login")({
   validateSearch: z.object({ redirect: z.string().optional() }),
@@ -27,14 +28,32 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return toast.error(error.message);
+
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id;
+    let destination = resolvePlayerLoginPath(redirect);
+
+    if (!redirect && uid) {
+      const { data: adminRow } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", uid)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (adminRow) destination = "/admin";
+    }
+
     toast.success("Welcome back!");
-    navigate({ to: redirect ?? "/account" });
+    navigate({ to: destination });
   }
 
   return (
     <div className="container mx-auto flex max-w-md flex-col px-4 py-16">
       <h1 className="font-display text-3xl font-bold">Log in</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Log in to book turfs, manage My Player Card, or access Partner if you list venues.</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Log in to browse and book turfs. Turf partners should use{" "}
+        <Link to="/owner/login" className="font-medium text-primary hover:underline">Partner login</Link>.
+      </p>
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div>
           <Label htmlFor="email">Email</Label>

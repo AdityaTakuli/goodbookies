@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { checkPhoneAvailable } from "@/lib/auth.functions";
 import { formatIndianPhoneDisplay, isValidIndianPhone, normalizeIndianPhone } from "@/lib/phone";
 import { authRedirectUrl } from "@/lib/auth-redirect";
+import { PLAYER_HOME } from "@/lib/auth-landing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,7 +45,7 @@ function SignupPage() {
         email: email.trim().toLowerCase(),
         password,
         options: {
-          emailRedirectTo: authRedirectUrl("/account"),
+          emailRedirectTo: authRedirectUrl(PLAYER_HOME),
           data: {
             full_name: fullName.trim(),
             phone: normalized,
@@ -57,7 +58,7 @@ function SignupPage() {
 
       if (data.session) {
         toast.success("Account created!");
-        navigate({ to: "/account" });
+        navigate({ to: PLAYER_HOME });
         return;
       }
 
@@ -76,7 +77,7 @@ function SignupPage() {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: email.trim().toLowerCase(),
-        options: { emailRedirectTo: authRedirectUrl("/account") },
+        options: { emailRedirectTo: authRedirectUrl(PLAYER_HOME) },
       });
       if (error) throw error;
       toast.success("Confirmation link sent again");
@@ -96,7 +97,7 @@ function SignupPage() {
         <h1 className="mt-4 font-display text-3xl font-bold">Check your email</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>. Click the link
-          to activate your account and you&apos;ll land on My Account.
+          to activate your account and browse available turfs.
         </p>
         {isValidIndianPhone(phone) && (
           <p className="mt-2 text-sm text-muted-foreground">

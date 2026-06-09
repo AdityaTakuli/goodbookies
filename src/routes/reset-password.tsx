@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { buildPageMeta } from "@/lib/seo";
+import { PLAYER_HOME } from "@/lib/auth-landing";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => buildPageMeta({ title: "Reset password", path: "/reset-password", noIndex: true }),
@@ -82,7 +83,7 @@ function ResetPasswordPage() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast.success("Password updated. You're logged in.");
-      navigate({ to: "/account" });
+      navigate({ to: PLAYER_HOME });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not update password");
     } finally {

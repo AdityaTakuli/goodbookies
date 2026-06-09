@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { ownerSummary, ownerRevenueSeries, ownerBookingsVolume, ownerListBookings } from "@/lib/owner.functions";
+import { ownerSummary, ownerRevenueSeries, ownerBookingsVolume, ownerListBookings, ownerListVenues } from "@/lib/owner.functions";
 import { CalendarCheck, IndianRupee, Building2, Clock, XCircle } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 
@@ -29,19 +29,26 @@ function OwnerOverview() {
   const revFn = useServerFn(ownerRevenueSeries);
   const volFn = useServerFn(ownerBookingsVolume);
   const recentFn = useServerFn(ownerListBookings);
+  const venuesFn = useServerFn(ownerListVenues);
 
   const { data: sum } = useQuery({ queryKey: ["owner-sum"], queryFn: () => sumFn() });
   const { data: rev } = useQuery({ queryKey: ["owner-rev", range], queryFn: () => revFn({ data: { days: range } }) });
   const { data: vol } = useQuery({ queryKey: ["owner-vol", range], queryFn: () => volFn({ data: { days: range } }) });
   const { data: recent } = useQuery({ queryKey: ["owner-recent"], queryFn: () => recentFn({ data: { status: "all" } }) });
+  const { data: venues } = useQuery({ queryKey: ["owner-venues"], queryFn: () => venuesFn() });
 
   const tip = { background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 };
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-3xl font-bold">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Your venues at a glance.</p>
+        <h1 className="font-display text-3xl font-bold">
+          Dashboard
+          {venues && venues.length > 0 && (
+            <span className="text-primary"> · {venues.map((v) => v.name.replace(/^Yorker Yard /i, "")).join(" · ")}</span>
+          )}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">Yorker yard turf at a glance.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

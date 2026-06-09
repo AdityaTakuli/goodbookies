@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/useAuth";
-import { getOwnerStatus } from "@/lib/owner.functions";
+import { getOwnerStatus, ownerListVenues } from "@/lib/owner.functions";
 import {
   LayoutDashboard, Building2, Calendar, IndianRupee, BarChart3,
   CreditCard, Settings, Ticket, ShieldAlert, BadgeCheck,
@@ -38,10 +38,16 @@ function OwnerLayout() {
     pathname === "/owner/register" ||
     pathname === "/owner/register/";
   const statusFn = useServerFn(getOwnerStatus);
+  const venuesFn = useServerFn(ownerListVenues);
   const { data: owner, isLoading: ownerLoading } = useQuery({
     queryKey: ["owner-status", user?.id],
     queryFn: () => statusFn(),
     enabled: !!user,
+  });
+  const { data: venues } = useQuery({
+    queryKey: ["owner-venues", user?.id],
+    queryFn: () => venuesFn(),
+    enabled: !!user && owner?.status === "approved",
   });
 
   useEffect(() => {
@@ -82,8 +88,18 @@ function OwnerLayout() {
       <aside className="md:sticky md:top-20 md:self-start">
         <div className="rounded-2xl border border-border/60 bg-card p-3">
           <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Partner</p>
-          <p className="px-3 pb-2 text-sm font-medium truncate">{owner.business_name || owner.name}</p>
-          <nav className="flex flex-col gap-1">
+          <p className="px-3 text-sm font-semibold truncate">{owner.business_name || owner.name}</p>
+          {venues && venues.length > 0 && (
+            <ul className="mt-2 space-y-1 border-t border-border/40 px-3 pt-2">
+              {venues.map((v) => (
+                <li key={v.id} className="truncate text-xs text-muted-foreground">
+                  <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+                  {v.name}
+                </li>
+              ))}
+            </ul>
+          )}
+          <nav className="mt-3 flex flex-col gap-1 border-t border-border/40 pt-3">
             {nav.map((n) => {
               const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
               return (

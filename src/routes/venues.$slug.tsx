@@ -11,11 +11,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveVenueImage } from "@/lib/images";
 import { VenueReviews } from "@/components/VenueReviews";
+import { VenueDetailSpecs, isOpen24Hours } from "@/components/VenueDetailSpecs";
 import { BookingPaymentPortal } from "@/components/payments/BookingPaymentPortal";
 import { useRazorpayCheckout } from "@/components/payments/useRazorpayCheckout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildPageMeta, breadcrumbJsonLd, sportsActivityVenueJsonLd } from "@/lib/seo";
 import { resolveMediaUrlAbsolute } from "@/lib/media/urls";
+import { withVenueExtras } from "@/lib/venue-extras";
+import {
+  isContiguousSlots,
+  slotDurationHours,
+  slotPriceTotal,
+  slotStepMinutes,
+} from "@/lib/slot-time";
 
 const venueQO = (slug: string) =>
   queryOptions({ queryKey: ["venue", slug], queryFn: () => getVenue({ data: { slug } }) });
@@ -55,7 +63,8 @@ function todayISO() {
 
 function VenuePage() {
   const { slug } = Route.useParams();
-  const { data: venue } = useSuspenseQuery(venueQO(slug));
+  const { data: rawVenue } = useSuspenseQuery(venueQO(slug));
+  const venue = rawVenue ? withVenueExtras(rawVenue) : null;
   const { user, isOwner, session } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -83,19 +92,26 @@ function VenuePage() {
 
   if (!venue) return null;
 
+  const open24 = isOpen24Hours(venue.opening_hour, venue.closing_hour);
+  const hasStructuredDetails = Boolean(
+    venue.area_sq_ft || venue.map_url || venue.venue_type || venue.water_available,
+  );
+
   const isOwnVenue = Boolean(user && venue.owner_id && user.id === venue.owner_id);
 
+  const stepMinutes = slotStepMinutes(venue.slot_duration_minutes);
   const sortedSel = [...selected].sort((a, b) => a - b);
-  const isContiguous = sortedSel.every((h, i) => i === 0 || h === sortedSel[i - 1] + 1);
-  const total = venue.price_per_hour * selected.length;
+  const isContiguous = isContiguousSlots(selected, stepMinutes);
+  const total = slotPriceTotal(venue.price_per_hour, selected.length, stepMinutes);
+  const selectedHours = slotDurationHours(selected.length, stepMinutes);
   const maxPlayersAllowed = Math.max(1, Number(venue.max_players_allowed ?? 1));
-  const slotByHour = new Map((slotsQuery.data ?? []).map((s) => [s.hour, s]));
+  const slotByMinute = new Map((slotsQuery.data ?? []).map((s) => [s.startMinute, s]));
   const minRemainingOnSelection = sortedSel.length
-    ? Math.min(...sortedSel.map((h) => slotByHour.get(h)?.remaining_capacity ?? maxPlayersAllowed))
+    ? Math.min(...sortedSel.map((m) => slotByMinute.get(m)?.remaining_capacity ?? maxPlayersAllowed))
     : maxPlayersAllowed;
   const maxSelectablePlayers = Math.max(1, Math.min(maxPlayersAllowed, minRemainingOnSelection));
   const alreadyBookedOnSelection = sortedSel.length
-    ? Math.max(...sortedSel.map((h) => slotByHour.get(h)?.booked_players ?? 0))
+    ? Math.max(...sortedSel.map((m) => slotByMinute.get(m)?.booked_players ?? 0))
     : 0;
   const perPersonPrice = total > 0 ? Math.ceil(total / maxPlayersAllowed) : 0;
   const selectedSplitPrice = total > 0 ? Math.ceil(total / playerCount) : 0;
@@ -121,12 +137,12 @@ function VenuePage() {
   }, [maxSelectablePlayers, playerCount]);
 
   useEffect(() => {
-    const availableSet = new Set((slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.hour));
-    setSelected((prev) => prev.filter((h) => availableSet.has(h)));
+    const availableSet = new Set((slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.startMinute));
+    setSelected((prev) => prev.filter((m) => availableSet.has(m)));
   }, [slotsQuery.data]);
 
-  const toggle = (h: number) => {
-    setSelected((prev) => (prev.includes(h) ? prev.filter((x) => x !== h) : [...prev, h]));
+  const toggle = (m: number) => {
+    setSelected((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]));
   };
 
   async function handleOpenPayment() {
@@ -156,7 +172,7 @@ function VenuePage() {
     }
     if (selected.length === 0) return;
     if (!isContiguous) {
-      toast.error("Please select consecutive hours only");
+      toast.error("Please select consecutive slots only");
       return;
     }
     const trimmedNames = playerNames.map((name) => name.trim());
@@ -175,8 +191,8 @@ function VenuePage() {
         data: {
           venueId: venue!.id,
           date,
-          startHour: sortedSel[0],
-          endHour: sortedSel[sortedSel.length - 1] + 1,
+          startMinute: sortedSel[0],
+          endMinute: sortedSel[sortedSel.length - 1] + stepMinutes,
           playerCount,
           playerNames: trimmedNames,
           isOpenLobby: isOpenLobby && playerCount < maxPlayersAllowed,
@@ -238,19 +254,41 @@ function VenuePage() {
             </span>
             <h1 className="mt-3 font-display text-4xl font-bold">{venue.name}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {venue.address}, {venue.city}</span>
+              <span className="flex items-center gap-1">
+                <MapPin className="h-4 w-4 shrink-0" />
+                {venue.map_url ? (
+                  <a
+                    href={venue.map_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    {venue.address}
+                  </a>
+                ) : (
+                  venue.address
+                )}
+              </span>
               <span className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-primary text-primary" />
                 {venue.rating != null ? Number(venue.rating).toFixed(1) : "New"}
                 {venue.review_count ? ` (${venue.review_count} reviews)` : ""}
               </span>
-              <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {venue.opening_hour}:00 – {venue.closing_hour}:00</span>
+              {!open24 && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  {venue.opening_hour}:00 – {venue.closing_hour}:00
+                </span>
+              )}
             </div>
             <p className="mt-2 text-sm font-semibold text-primary">
               <IndianRupee className="mb-0.5 mr-1 inline h-4 w-4" />
               {venue.price_per_hour.toLocaleString()} per hour
             </p>
-            {venue.description && <p className="mt-4 text-muted-foreground">{venue.description}</p>}
+            <VenueDetailSpecs venue={venue} />
+            {!hasStructuredDetails && venue.description && (
+              <p className="mt-4 text-muted-foreground">{venue.description}</p>
+            )}
             <div className="mt-4 flex flex-wrap gap-2">
               {venue.amenities?.map((a) => (
                 <span key={a} className="rounded-full border border-border bg-card px-3 py-1 text-xs">{a}</span>
@@ -367,7 +405,7 @@ function VenuePage() {
               <BookingPaymentPortal
                 amount={payableForSelectedPlayers}
                 playerCount={playerCount}
-                hours={selected.length}
+                hours={selectedHours}
                 venueName={venue.name}
                 disabled={selected.length === 0}
                 loading={submitting || paying}
@@ -385,7 +423,7 @@ function VenuePage() {
                 </p>
               </div>
               {selected.length > 0 && !isContiguous && (
-                <p className="text-xs text-destructive">Pick consecutive hours to book a continuous slot.</p>
+                <p className="text-xs text-destructive">Pick consecutive slots to book a continuous window.</p>
               )}
             </motion.div>
           )}

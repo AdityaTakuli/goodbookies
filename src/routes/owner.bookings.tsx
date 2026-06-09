@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { formatBookingSlotLabel } from "@/lib/slot-time";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -41,7 +42,7 @@ function OwnerBookings() {
               <tr key={b.id} className="border-b border-border/30">
                 <td className="py-3">{b.profile?.full_name || b.profile?.phone || "N/A"}</td>
                 <td className="py-3">{b.venue?.name}</td>
-                <td className="py-3 text-muted-foreground">{b.booking_date} · {b.start_hour}:00–{b.end_hour}:00</td>
+                <td className="py-3 text-muted-foreground">{b.booking_date} · {formatBookingSlotLabel(b)}</td>
                 <td className="py-3 text-right font-semibold">₹{b.total_price}</td>
                 <td className="py-3"><StatusBadge status={b.status} /></td>
                 <td className="py-3 text-right space-x-1">

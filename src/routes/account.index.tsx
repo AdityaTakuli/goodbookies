@@ -16,6 +16,7 @@ import { resolveVenueImage } from "@/lib/images";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "sonner";
+import { formatBookingSlotLabel, formatBookingStartLabel } from "@/lib/slot-time";
 
 export const Route = createFileRoute("/account/")({
   component: AccountBookings,
@@ -121,7 +122,7 @@ function AccountBookings() {
                 <div key={q.id} className="rounded-xl border border-border/60 bg-card p-4">
                   <p className="text-sm">
                     <span className="font-semibold">{seeker}</span> wants to join your{" "}
-                    <span className="font-semibold">{b?.start_hour}:00</span> game on{" "}
+                    <span className="font-semibold">{formatBookingStartLabel(b)}</span> game on{" "}
                     <span className="font-semibold">{b?.booking_date}</span> with{" "}
                     <span className="font-semibold">{q.player_count}</span> player{q.player_count === 1 ? "" : "s"}
                     {names ? ` (${names})` : ""}.
@@ -148,7 +149,7 @@ function AccountBookings() {
                   <div>
                     <p className="font-semibold">{(q.booking as any)?.venue?.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {(q.booking as any)?.booking_date} · {(q.booking as any)?.start_hour}:00 · {q.player_count} players
+                      {(q.booking as any)?.booking_date} · {formatBookingStartLabel((q.booking as any) ?? { start_hour: 0 })} · {q.player_count} players
                     </p>
                   </div>
                   <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium">
@@ -217,7 +218,7 @@ function BookingSection({
               </div>
               <div className="mt-1 flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{(b.venue as any)?.city}</span>
-                <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{b.booking_date} · {b.start_hour}:00 – {b.end_hour}:00</span>
+                <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{b.booking_date} · {formatBookingSlotLabel(b)}</span>
                 <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{b.player_count} players</span>
               </div>
             </div>

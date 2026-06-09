@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { formatSlotTime } from "@/lib/slot-time";
 
 export type Slot = {
-  hour: number;
+  startMinute: number;
   available: boolean;
   status?: string;
   remaining_capacity?: number;
@@ -12,12 +13,6 @@ export type Slot = {
   is_private_game?: boolean;
 };
 
-function fmt(h: number) {
-  const ampm = h < 12 ? "AM" : "PM";
-  const hh = h % 12 === 0 ? 12 : h % 12;
-  return `${hh}:00 ${ampm}`;
-}
-
 export function SlotPicker({
   slots,
   selected,
@@ -25,31 +20,30 @@ export function SlotPicker({
 }: {
   slots: Slot[];
   selected: number[];
-  onToggle: (h: number) => void;
+  onToggle: (startMinute: number) => void;
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card p-6 shadow-[var(--shadow-card)]">
-      {/* pitch backdrop */}
       <div className="pointer-events-none absolute inset-0 bg-pitch opacity-25" />
       <div className="pointer-events-none absolute inset-x-6 top-1/2 h-px bg-white/20" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/20" />
 
       <div className="relative grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
         <AnimatePresence>
-          {slots.map((slot) => {
-            const isSelected = selected.includes(slot.hour);
+          {slots.map((slot, index) => {
+            const isSelected = selected.includes(slot.startMinute);
             const isFull = slot.status === "booked" || (slot.remaining_capacity ?? 0) <= 0;
             const isVacant = !isFull && (slot.booked_players ?? 0) === 0;
             const isPartial = !isFull && (slot.booked_players ?? 0) > 0;
             const hasOpenLobby = Boolean(slot.open_lobby_booking_id);
             return (
               <motion.button
-                key={slot.hour}
+                key={slot.startMinute}
                 disabled={!slot.available}
-                onClick={() => onToggle(slot.hour)}
+                onClick={() => onToggle(slot.startMinute)}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: slot.hour * 0.015 }}
+                transition={{ duration: 0.2, delay: index * 0.012 }}
                 whileHover={slot.available ? { scale: 1.05 } : {}}
                 whileTap={slot.available ? { scale: 0.95 } : {}}
                 className={cn(
@@ -61,7 +55,7 @@ export function SlotPicker({
                   isSelected && "border-primary bg-primary text-primary-foreground glow-primary",
                 )}
               >
-                <div>{fmt(slot.hour)}</div>
+                <div>{formatSlotTime(slot.startMinute)}</div>
                 <div className="mt-1 text-[10px] opacity-80">
                   {isFull
                     ? "Full"

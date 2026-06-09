@@ -5,6 +5,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { calculateBookingTotal, loadVenuePricing } from "@/lib/pricing";
 import { MIN_ORDER_PAISE } from "@/lib/payments/checkout";
 import { createRazorpayOrder, isRazorpayConfigured } from "@/lib/services/razorpay";
+import {
+  bookingEndMinute,
+  bookingStartMinute,
+  formatSlotTime,
+  isMinuteBlocked,
+  iterateBookingMinutes,
+  slotStepMinutes,
+  venueCloseMinutes,
+  venueOpenMinutes,
+} from "@/lib/slot-time";
 
 let reviewCountColumnReady: boolean | null = null;
 
@@ -18,7 +28,29 @@ async function venueHasReviewCountColumn() {
 const VENUE_CARD_FIELDS =
   "id, name, slug, description, address, city, image_url, price_per_hour, rating, amenities, sport:sports(name, slug, icon)";
 const VENUE_DETAIL_FIELDS =
-  "id, name, slug, description, address, city, image_url, price_per_hour, opening_hour, closing_hour, slot_duration_minutes, max_players_allowed, amenities, rating, owner_id, sport:sports(name, slug, icon)";
+  "id, name, slug, description, address, city, image_url, price_per_hour, opening_hour, closing_hour, slot_duration_minutes, max_players_allowed, venue_type, amenities, rating, owner_id, sport:sports(name, slug, icon)";
+
+const VENUE_DETAIL_FIELDS_EXTENDED =
+  `${VENUE_DETAIL_FIELDS}, map_url, area_sq_ft, water_available`;
+
+let venueDetailFieldsReady: boolean | null = null;
+let bookingMinuteColumnsReady: boolean | null = null;
+
+async function venueHasBookingMinuteColumns() {
+  if (bookingMinuteColumnsReady != null) return bookingMinuteColumnsReady;
+  const { error } = await supabaseAdmin.from("bookings").select("start_minute, end_minute").limit(1);
+  bookingMinuteColumnsReady = !error?.message?.includes("start_minute");
+  return bookingMinuteColumnsReady;
+}
+
+async function venueDetailSelectFields() {
+  if (venueDetailFieldsReady != null) {
+    return venueDetailFieldsReady ? VENUE_DETAIL_FIELDS_EXTENDED : VENUE_DETAIL_FIELDS;
+  }
+  const { error } = await supabaseAdmin.from("venues").select("map_url, area_sq_ft, water_available").limit(1);
+  venueDetailFieldsReady = !error?.message?.includes("map_url");
+  return venueDetailFieldsReady ? VENUE_DETAIL_FIELDS_EXTENDED : VENUE_DETAIL_FIELDS;
+}
 
 function withReviewCount<T extends Record<string, unknown>>(row: T) {
   return { ...row, review_count: Number(row.review_count ?? 0) };
@@ -82,9 +114,10 @@ export const getVenue = createServerFn({ method: "GET" })
     z.object({ slug: z.string().min(1).max(120) }).parse(input),
   )
   .handler(async ({ data }) => {
+    const baseFields = await venueDetailSelectFields();
     const fields = (await venueHasReviewCountColumn())
-      ? `${VENUE_DETAIL_FIELDS.replace("rating,", "rating, review_count,")}`
-      : VENUE_DETAIL_FIELDS;
+      ? `${baseFields.replace("rating,", "rating, review_count,")}`
+      : baseFields;
     const { data: venue, error } = await supabaseAdmin
       .from("venues")
       .select(fields)
@@ -107,10 +140,14 @@ export const getSlots = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: venue } = await supabaseAdmin
       .from("venues")
-      .select("opening_hour, closing_hour, operating_days, holiday_dates, max_players_allowed")
+      .select("opening_hour, closing_hour, operating_days, holiday_dates, max_players_allowed, slot_duration_minutes")
       .eq("id", data.venueId)
       .maybeSingle();
     if (!venue) throw new Error("Venue not found");
+
+    const stepMinutes = slotStepMinutes(venue.slot_duration_minutes);
+    const openMin = venueOpenMinutes(venue.opening_hour);
+    const closeMin = venueCloseMinutes(venue.closing_hour);
 
     const dow = new Date(data.date + "T12:00:00").getDay();
     const holidays: string[] = (venue.holiday_dates as string[]) ?? [];
@@ -119,52 +156,44 @@ export const getSlots = createServerFn({ method: "GET" })
     const opDays: number[] = (venue.operating_days as number[]) ?? [0, 1, 2, 3, 4, 5, 6];
     if (!opDays.includes(dow)) return [];
 
+    const bookingFields = (await venueHasBookingMinuteColumns())
+      ? "id, start_hour, end_hour, start_minute, end_minute, status, player_count, is_open_lobby"
+      : "id, start_hour, end_hour, status, player_count, is_open_lobby";
+
     const [{ data: bookings }, { data: blocks }] = await Promise.all([
       supabaseAdmin
         .from("bookings")
-        .select("id, start_hour, end_hour, status, player_count, is_open_lobby")
+        .select(bookingFields)
         .eq("venue_id", data.venueId)
         .eq("booking_date", data.date)
         .in("status", ["confirmed", "pending"]),
       supabaseAdmin.from("slot_blocks").select("*").eq("venue_id", data.venueId),
     ]);
 
-    const bookedPlayersByHour = new Map<number, number>();
+    const bookedPlayersByMinute = new Map<number, number>();
     bookings?.forEach((b) => {
-      for (let h = b.start_hour; h < b.end_hour; h++) {
-        bookedPlayersByHour.set(h, (bookedPlayersByHour.get(h) ?? 0) + (b.player_count ?? 1));
-      }
+      const bStart = bookingStartMinute(b);
+      const bEnd = bookingEndMinute(b);
+      iterateBookingMinutes(bStart, bEnd, stepMinutes, (m) => {
+        bookedPlayersByMinute.set(m, (bookedPlayersByMinute.get(m) ?? 0) + (b.player_count ?? 1));
+      });
     });
-
-    const isBlocked = (hour: number) => {
-      for (const bl of blocks ?? []) {
-        if (bl.is_recurring && bl.recurrence_day === dow) {
-          const sh = Number(String(bl.start_time).slice(0, 2));
-          const eh = Number(String(bl.end_time).slice(0, 2));
-          if (hour >= sh && hour < eh) return true;
-        }
-        if (bl.block_date === data.date) {
-          const sh = Number(String(bl.start_time).slice(0, 2));
-          const eh = Number(String(bl.end_time).slice(0, 2));
-          if (hour >= sh && hour < eh) return true;
-        }
-      }
-      return false;
-    };
 
     const totalCapacity = Math.max(1, Number(venue.max_players_allowed ?? 1));
 
-    const openLobbyByHour = new Map<number, { bookingId: string; isOpen: boolean }>();
+    const openLobbyByMinute = new Map<number, { bookingId: string; isOpen: boolean }>();
     bookings?.forEach((b) => {
       if (!b.is_open_lobby) return;
-      for (let h = b.start_hour; h < b.end_hour; h++) {
-        const rem = totalCapacity - (bookedPlayersByHour.get(h) ?? 0);
-        if (rem > 0) openLobbyByHour.set(h, { bookingId: b.id, isOpen: true });
-      }
+      const bStart = bookingStartMinute(b);
+      const bEnd = bookingEndMinute(b);
+      iterateBookingMinutes(bStart, bEnd, stepMinutes, (m) => {
+        const rem = totalCapacity - (bookedPlayersByMinute.get(m) ?? 0);
+        if (rem > 0) openLobbyByMinute.set(m, { bookingId: b.id, isOpen: true });
+      });
     });
 
     const slots: {
-      hour: number;
+      startMinute: number;
       available: boolean;
       status?: string;
       remaining_capacity: number;
@@ -174,21 +203,21 @@ export const getSlots = createServerFn({ method: "GET" })
       is_private_game?: boolean;
     }[] = [];
     const requestedPlayers = Math.max(1, data.playerCount ?? 1);
-    for (let h = venue.opening_hour; h < venue.closing_hour; h++) {
-      const blocked = isBlocked(h);
-      const bookedPlayers = Math.max(0, bookedPlayersByHour.get(h) ?? 0);
+    for (let m = openMin; m < closeMin; m += stepMinutes) {
+      const blocked = isMinuteBlocked(m, blocks ?? [], data.date, dow);
+      const bookedPlayers = Math.max(0, bookedPlayersByMinute.get(m) ?? 0);
       const remainingCapacity = Math.max(0, totalCapacity - bookedPlayers);
       const full = remainingCapacity <= 0;
       const enoughForSelection = remainingCapacity >= requestedPlayers;
-      const hasPartialPrivate = bookedPlayers > 0 && !openLobbyByHour.has(h);
+      const hasPartialPrivate = bookedPlayers > 0 && !openLobbyByMinute.has(m);
       slots.push({
-        hour: h,
+        startMinute: m,
         available: !blocked && enoughForSelection,
         status: blocked ? "blocked" : full ? "booked" : bookedPlayers > 0 ? "partial" : "available",
         remaining_capacity: remainingCapacity,
         booked_players: bookedPlayers,
         total_capacity: totalCapacity,
-        open_lobby_booking_id: openLobbyByHour.get(h)?.bookingId ?? null,
+        open_lobby_booking_id: openLobbyByMinute.get(m)?.bookingId ?? null,
         is_private_game: hasPartialPrivate,
       });
     }
@@ -197,18 +226,18 @@ export const getSlots = createServerFn({ method: "GET" })
 
 export const createBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { venueId: string; date: string; startHour: number; endHour: number; playerCount?: number; playerNames?: string[]; isOpenLobby?: boolean; couponCode?: string }) =>
+  .inputValidator((input: { venueId: string; date: string; startMinute: number; endMinute: number; playerCount?: number; playerNames?: string[]; isOpenLobby?: boolean; couponCode?: string }) =>
     z.object({
       venueId: z.string().uuid(),
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      startHour: z.number().int().min(0).max(23),
-      endHour: z.number().int().min(1).max(24),
+      startMinute: z.number().int().min(0).max(1410),
+      endMinute: z.number().int().min(30).max(1440),
       playerCount: z.number().int().min(1).max(100).default(1),
       playerNames: z.array(z.string().trim().min(1).max(60)).default([]),
       isOpenLobby: z.boolean().default(false),
       couponCode: z.string().optional(),
     })
-      .refine((v) => v.endHour > v.startHour, { message: "endHour must be > startHour" })
+      .refine((v) => v.endMinute > v.startMinute, { message: "endMinute must be > startMinute" })
       .refine((v) => v.playerNames.length === v.playerCount, {
         message: "Please provide one player name per selected player",
       })
@@ -217,12 +246,16 @@ export const createBooking = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: venue, error: vErr } = await supabaseAdmin
       .from("venues")
-      .select("price_per_hour, confirmation_mode, owner_id, max_players_allowed")
+      .select("price_per_hour, confirmation_mode, owner_id, max_players_allowed, slot_duration_minutes")
       .eq("id", data.venueId)
       .eq("is_active", true)
       .eq("approval_status", "approved")
       .maybeSingle();
     if (vErr || !venue) throw new Error("Venue not found");
+    const stepMinutes = slotStepMinutes(venue.slot_duration_minutes);
+    if ((data.endMinute - data.startMinute) % stepMinutes !== 0) {
+      throw new Error("Invalid slot duration for this turf");
+    }
     if (venue.owner_id && venue.owner_id === context.userId) {
       throw new Error("Partners cannot book their own turf. Book other venues as a player, or manage slots from Partner.");
     }
@@ -239,21 +272,27 @@ export const createBooking = createServerFn({ method: "POST" })
     }
     const { data: overlaps, error: overlapErr } = await supabaseAdmin
       .from("bookings")
-      .select("start_hour, end_hour, player_count")
+      .select(
+        (await venueHasBookingMinuteColumns())
+          ? "start_hour, end_hour, start_minute, end_minute, player_count"
+          : "start_hour, end_hour, player_count",
+      )
       .eq("venue_id", data.venueId)
       .eq("booking_date", data.date)
       .in("status", ["confirmed", "pending"]);
     if (overlapErr) throw new Error(overlapErr.message);
     const maxCapacity = Math.max(1, Number(venue.max_players_allowed ?? 1));
-    for (let h = data.startHour; h < data.endHour; h++) {
+    iterateBookingMinutes(data.startMinute, data.endMinute, stepMinutes, (m) => {
       const used = (overlaps ?? []).reduce((sum, b) => {
-        if (h >= b.start_hour && h < b.end_hour) return sum + (b.player_count ?? 1);
+        const bStart = bookingStartMinute(b);
+        const bEnd = bookingEndMinute(b);
+        if (m >= bStart && m < bEnd) return sum + (b.player_count ?? 1);
         return sum;
       }, 0);
       if (used + data.playerCount > maxCapacity) {
-        throw new Error(`Not enough capacity at ${h}:00. Please pick another slot.`);
+        throw new Error(`Not enough capacity at ${formatSlotTime(m)}. Please pick another slot.`);
       }
-    }
+    });
 
     const pricing = await loadVenuePricing(data.venueId);
     let coupon = null;
@@ -270,8 +309,9 @@ export const createBooking = createServerFn({ method: "POST" })
     const total = calculateBookingTotal({
       basePricePerHour: venue.price_per_hour,
       bookingDate: data.date,
-      startHour: data.startHour,
-      endHour: data.endHour,
+      startMinute: data.startMinute,
+      endMinute: data.endMinute,
+      slotStepMinutes: stepMinutes,
       dayPricing: pricing.dayPricing,
       datePricing: pricing.datePricing,
       peakRules: pricing.peakRules,
@@ -300,22 +340,32 @@ export const createBooking = createServerFn({ method: "POST" })
       .single();
     if (payErr) throw new Error(payErr.message);
 
+    const bookingInsert: Record<string, unknown> = {
+      user_id: context.userId,
+      venue_id: data.venueId,
+      booking_date: data.date,
+      player_count: data.playerCount,
+      player_names: normalizedNames,
+      is_open_lobby: openLobby,
+      total_price: total,
+      status,
+      coupon_code: data.couponCode?.toUpperCase() ?? null,
+      payment_id: payment.id,
+    };
+
+    if (await venueHasBookingMinuteColumns()) {
+      bookingInsert.start_hour = Math.floor(data.startMinute / 60);
+      bookingInsert.end_hour = Math.ceil(data.endMinute / 60);
+      bookingInsert.start_minute = data.startMinute;
+      bookingInsert.end_minute = data.endMinute;
+    } else {
+      bookingInsert.start_hour = data.startMinute;
+      bookingInsert.end_hour = data.endMinute;
+    }
+
     const { data: booking, error } = await context.supabase
       .from("bookings")
-      .insert({
-        user_id: context.userId,
-        venue_id: data.venueId,
-        booking_date: data.date,
-        start_hour: data.startHour,
-        end_hour: data.endHour,
-        player_count: data.playerCount,
-        player_names: normalizedNames,
-        is_open_lobby: openLobby,
-        total_price: total,
-        status,
-        coupon_code: data.couponCode?.toUpperCase() ?? null,
-        payment_id: payment.id,
-      })
+      .insert(bookingInsert)
       .select("id")
       .single();
     if (error) throw new Error(error.message.includes("bookings_no_double_book") ? "One of those slots was just booked. Pick another." : error.message);

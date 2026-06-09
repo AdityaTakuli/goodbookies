@@ -8,20 +8,6 @@ const OWNER_EMAIL = "palanuragpal94@gmail.com";
 const PLACEHOLDER_IMAGE =
   "https://images.unsplash.com/photo-1531416517826-7fa583ad264d?w=1200&q=80";
 
-const INSTAGRAM = "https://www.instagram.com/yorker_yard__the_turf?igsh=eHY4djg0eWduaDh0";
-const MAPS = "https://maps.app.goo.gl/vVjrCR1oKQUhu4ks6";
-
-function venueDescription({ shape, areaSqFt }) {
-  return [
-    `Yorker Yard turf · ${shape} · ${areaSqFt.toLocaleString()} sq ft`,
-    "Ideal capacity: 20 players · Cricket equipment on site",
-    "Owner: Anurag Pal · Phone: +91 9548987966",
-    `Instagram: ${INSTAGRAM}`,
-    `Location: ${MAPS}`,
-    "Open 24 hours · Min booking: 60 minutes",
-  ].join("\n");
-}
-
 const TURFS = [
   {
     name: "Yorker Yard Rectangular",
@@ -29,7 +15,9 @@ const TURFS = [
     price_per_hour: 600,
     venue_type: "rectangle",
     max_players_allowed: 20,
-    description: venueDescription({ shape: "Rectangle", areaSqFt: 7000 }),
+    area_sq_ft: 7000,
+    description: null,
+    map_url: "https://maps.app.goo.gl/vVjrCR1oKQUhu4ks6",
   },
   {
     name: "Yorker Yard OVAL 360",
@@ -37,7 +25,9 @@ const TURFS = [
     price_per_hour: 700,
     venue_type: "circular",
     max_players_allowed: 20,
-    description: venueDescription({ shape: "Circular (OVAL 360)", areaSqFt: 15600 }),
+    area_sq_ft: 15600,
+    description: null,
+    map_url: "https://maps.app.goo.gl/RYbitkFExqU65NCa6",
   },
 ];
 
@@ -88,14 +78,14 @@ async function main() {
       sport_id: sport.id,
       name: turf.name,
       slug: turf.slug,
-      description: turf.description,
+      description: null,
       address: "Madhavan colony, Maplewood school",
       city: "Jhelum",
       image_url: PLACEHOLDER_IMAGE,
       price_per_hour: turf.price_per_hour,
       opening_hour: 0,
       closing_hour: 24,
-      slot_duration_minutes: 60,
+      slot_duration_minutes: 30,
       max_players_allowed: turf.max_players_allowed,
       venue_type: turf.venue_type,
       amenities: ["Cricket", "Cricket equipment", "Floodlights"],

@@ -4,8 +4,9 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 export type PricingContext = {
   basePricePerHour: number;
   bookingDate: string;
-  startHour: number;
-  endHour: number;
+  startMinute: number;
+  endMinute: number;
+  slotStepMinutes?: number;
   dayPricing?: { day_of_week: number; price_override: number }[];
   datePricing?: { date: string; price_override: number }[];
   peakRules?: {
@@ -20,8 +21,8 @@ export type PricingContext = {
 };
 
 function parseTimeToHour(t: string): number {
-  const [h] = t.split(":");
-  return Number(h);
+  const [h, m = "0"] = t.split(":");
+  return Number(h) + Number(m) / 60;
 }
 
 function hourInRange(hour: number, start: string, end: string): boolean {
@@ -51,12 +52,14 @@ export function hourlyRateForSlot(ctx: PricingContext, hour: number): number {
 }
 
 export function calculateBookingTotal(ctx: PricingContext): number {
+  const step = ctx.slotStepMinutes ?? 60;
   let subtotal = 0;
-  for (let h = ctx.startHour; h < ctx.endHour; h++) {
-    subtotal += hourlyRateForSlot(ctx, h);
+  for (let m = ctx.startMinute; m < ctx.endMinute; m += step) {
+    const hour = m / 60;
+    subtotal += hourlyRateForSlot(ctx, hour) * (step / 60);
   }
 
-  const hours = ctx.endHour - ctx.startHour;
+  const hours = (ctx.endMinute - ctx.startMinute) / 60;
   let discountPct = 0;
   for (const d of ctx.durationDiscounts ?? []) {
     if (hours >= d.min_hours) discountPct = Math.max(discountPct, Number(d.discount_percent));

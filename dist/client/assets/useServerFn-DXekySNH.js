@@ -1,1 +1,0 @@
-import{ap as s,a0 as i,G as e}from"./index-BXL7Gx_4.js";function c(o){const r=s();return i.useCallback(async(...a)=>{try{const t=await o(...a);if(e(t))throw t;return t}catch(t){if(e(t))return t.options._fromLocation=r.stores.location.get(),r.navigate(r.resolveRedirect(t).options);throw t}},[r,o])}export{c as u};

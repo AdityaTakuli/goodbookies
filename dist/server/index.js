@@ -1,4 +1,4 @@
-import { w } from "./assets/worker-entry-MxszBcFo.js";
+import { w } from "./assets/worker-entry-R528AZUt.js";
 import "node:events";
 export {
   w as default

@@ -1,10 +1,14 @@
 import { ExternalLink } from "lucide-react";
+import { formatMinBookingDuration } from "@/lib/slot-time";
+import { resolveMinBookingMinutes } from "@/lib/venue-extras";
 
 type VenueSpecs = {
+  slug?: string;
   venue_type?: string | null;
   area_sq_ft?: number | null;
   max_players_allowed?: number | null;
   slot_duration_minutes?: number | null;
+  min_booking_minutes?: number | null;
   opening_hour?: number | null;
   closing_hour?: number | null;
   amenities?: string[] | null;
@@ -24,12 +28,7 @@ function formatShape(venueType?: string | null) {
 }
 
 function formatMinBooking(minutes?: number | null) {
-  if (!minutes) return null;
-  if (minutes % 60 === 0) {
-    const hours = minutes / 60;
-    return hours === 1 ? "1 hour" : `${hours} hours`;
-  }
-  return `${minutes} minutes`;
+  return formatMinBookingDuration(minutes);
 }
 
 export function isOpen24Hours(opening?: number | null, closing?: number | null) {
@@ -57,7 +56,9 @@ export function VenueDetailSpecs({ venue }: { venue: VenueSpecs }) {
     venue.max_players_allowed != null
       ? `${venue.max_players_allowed} player${venue.max_players_allowed === 1 ? "" : "s"}`
       : null;
-  const minBooking = formatMinBooking(venue.slot_duration_minutes);
+  const minBooking = formatMinBooking(
+    venue.slug ? resolveMinBookingMinutes(venue as { slug: string; min_booking_minutes?: number | null; slot_duration_minutes?: number | null }) : venue.min_booking_minutes ?? venue.slot_duration_minutes,
+  );
   const open24 = isOpen24Hours(venue.opening_hour, venue.closing_hour);
   const cricketGear = hasCricketEquipment(venue.amenities) ? "Yes" : null;
   const water = venue.water_available?.trim() || null;

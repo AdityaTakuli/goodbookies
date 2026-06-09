@@ -93,6 +93,16 @@ export function formatBookingStartLabel(row: {
   return formatSlotTime(bookingStartMinute(row));
 }
 
+/** Format duration for display (e.g. 60 → "1 hour"). */
+export function formatMinBookingDuration(minutes?: number | null) {
+  if (!minutes) return null;
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60;
+    return hours === 1 ? "1 hour" : `${hours} hours`;
+  }
+  return `${minutes} minutes`;
+}
+
 export function iterateBookingMinutes(
   startMinute: number,
   endMinute: number,

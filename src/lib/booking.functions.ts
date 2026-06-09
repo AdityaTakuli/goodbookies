@@ -8,6 +8,7 @@ import { createRazorpayOrder, isRazorpayConfigured } from "@/lib/services/razorp
 import {
   bookingEndMinute,
   bookingStartMinute,
+  formatMinBookingDuration,
   formatSlotTime,
   isMinuteBlocked,
   iterateBookingMinutes,
@@ -15,6 +16,7 @@ import {
   venueCloseMinutes,
   venueOpenMinutes,
 } from "@/lib/slot-time";
+import { resolveMinBookingMinutes } from "@/lib/venue-extras";
 
 let reviewCountColumnReady: boolean | null = null;
 
@@ -246,13 +248,17 @@ export const createBooking = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: venue, error: vErr } = await supabaseAdmin
       .from("venues")
-      .select("price_per_hour, confirmation_mode, owner_id, max_players_allowed, slot_duration_minutes")
+      .select("slug, price_per_hour, confirmation_mode, owner_id, max_players_allowed, slot_duration_minutes")
       .eq("id", data.venueId)
       .eq("is_active", true)
       .eq("approval_status", "approved")
       .maybeSingle();
     if (vErr || !venue) throw new Error("Venue not found");
     const stepMinutes = slotStepMinutes(venue.slot_duration_minutes);
+    const minBookingMinutes = resolveMinBookingMinutes(venue);
+    if (data.endMinute - data.startMinute < minBookingMinutes) {
+      throw new Error(`Minimum booking is ${formatMinBookingDuration(minBookingMinutes)}`);
+    }
     if ((data.endMinute - data.startMinute) % stepMinutes !== 0) {
       throw new Error("Invalid slot duration for this turf");
     }

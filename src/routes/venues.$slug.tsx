@@ -17,8 +17,9 @@ import { useRazorpayCheckout } from "@/components/payments/useRazorpayCheckout";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildPageMeta, breadcrumbJsonLd, sportsActivityVenueJsonLd } from "@/lib/seo";
 import { resolveMediaUrlAbsolute } from "@/lib/media/urls";
-import { withVenueExtras } from "@/lib/venue-extras";
+import { withVenueExtras, resolveMinBookingMinutes } from "@/lib/venue-extras";
 import {
+  formatMinBookingDuration,
   isContiguousSlots,
   slotDurationHours,
   slotPriceTotal,
@@ -100,6 +101,8 @@ function VenuePage() {
   const isOwnVenue = Boolean(user && venue.owner_id && user.id === venue.owner_id);
 
   const stepMinutes = slotStepMinutes(venue.slot_duration_minutes);
+  const minBookingMinutes = resolveMinBookingMinutes(venue);
+  const minSlotCount = Math.max(1, Math.ceil(minBookingMinutes / stepMinutes));
   const sortedSel = [...selected].sort((a, b) => a - b);
   const isContiguous = isContiguousSlots(selected, stepMinutes);
   const total = slotPriceTotal(venue.price_per_hour, selected.length, stepMinutes);
@@ -173,6 +176,10 @@ function VenuePage() {
     if (selected.length === 0) return;
     if (!isContiguous) {
       toast.error("Please select consecutive slots only");
+      return;
+    }
+    if (sortedSel.length < minSlotCount) {
+      toast.error(`Minimum booking is ${formatMinBookingDuration(minBookingMinutes)}`);
       return;
     }
     const trimmedNames = playerNames.map((name) => name.trim());
@@ -375,6 +382,9 @@ function VenuePage() {
             <h2 className="mb-1 font-display text-xl font-semibold">Available slots</h2>
             <p className="mb-3 text-xs text-muted-foreground">
               Live empty spots left today: {emptySpotsNow}
+              {minSlotCount > 1 && (
+                <> · Min booking: {formatMinBookingDuration(minBookingMinutes)}</>
+              )}
             </p>
             {slotsQuery.isLoading ? (
               <div className="rounded-2xl border border-border/60 bg-card p-10 text-center text-muted-foreground">Loading the pitch…</div>
@@ -424,6 +434,11 @@ function VenuePage() {
               </div>
               {selected.length > 0 && !isContiguous && (
                 <p className="text-xs text-destructive">Pick consecutive slots to book a continuous window.</p>
+              )}
+              {selected.length > 0 && isContiguous && sortedSel.length < minSlotCount && (
+                <p className="text-xs text-destructive">
+                  Select at least {formatMinBookingDuration(minBookingMinutes)} ({minSlotCount} slots).
+                </p>
               )}
             </motion.div>
           )}

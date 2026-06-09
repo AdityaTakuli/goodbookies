@@ -1,1 +1,0 @@
-import{J as r}from"./index-BQAnSeot.js";function d({status:e}){const t=e==="confirmed"?"bg-primary/15 text-primary":e==="cancelled"?"bg-destructive/15 text-destructive":e==="pending"?"bg-amber-500/15 text-amber-400":"bg-muted text-muted-foreground";return r.jsx("span",{className:`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${t}`,children:e})}export{d as S};

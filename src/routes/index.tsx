@@ -8,7 +8,6 @@ import heroWebp from "@/assets/hero-turf.webp";
 import { Calendar, MapPin, Zap } from "lucide-react";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildPageMeta, organizationJsonLd, websiteJsonLd, SITE_NAME } from "@/lib/seo";
-import { cn } from "@/lib/utils";
 
 const sportsQO = queryOptions({ queryKey: ["sports"], queryFn: () => listSports() });
 const HERO_SRCSET = `${heroMobileWebp} 800w, ${heroWebp} 1600w`;
@@ -17,6 +16,7 @@ const SPORT_COVER_IMAGES: Record<string, string> = {
   cricket: "/venues/yorker-yard-cricket.webp",
   badminton: "/venues/badminton-cover.webp",
   basketball: "/venues/basketball-cover.webp",
+  football: "/venues/football-cover.webp",
 };
 
 export const Route = createFileRoute("/")({
@@ -107,10 +107,7 @@ function Index() {
               key={s.id}
               to="/sports"
               search={{ sport: s.slug }}
-              className={cn(
-                "group relative flex aspect-square flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/60 transition-colors hover:border-primary",
-                cover ? "bg-card" : "bg-card",
-              )}
+              className="group relative flex aspect-square flex-col items-center justify-end overflow-hidden rounded-2xl border border-border/60 bg-card pb-4 transition-colors hover:border-primary"
             >
               {cover ? (
                 <>
@@ -120,11 +117,10 @@ function Index() {
                     loading="lazy"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-background/15" />
                 </>
               ) : null}
-              <span className="relative text-4xl">{s.icon}</span>
-              <span className="relative mt-3 text-sm font-semibold">{s.name}</span>
+              <span className="relative text-sm font-semibold">{s.name}</span>
             </Link>
             );
           })}

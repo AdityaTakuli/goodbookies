@@ -5,8 +5,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 const OWNER_EMAIL = "palanuragpal94@gmail.com";
-const PLACEHOLDER_IMAGE =
-  "https://images.unsplash.com/photo-1531416517826-7fa583ad264d?w=1200&q=80";
+const PLACEHOLDER_IMAGE = "/venues/yorker-yard-cricket.webp";
 
 const TURFS = [
   {

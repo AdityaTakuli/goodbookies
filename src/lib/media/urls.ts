@@ -17,6 +17,7 @@ export function resolveMediaUrl(key?: string | null, fallback = football): strin
   if (key.startsWith("/api/media/venue/")) return key;
   if (key.startsWith("/api/media/asset/")) return key;
   if (key.startsWith("/uploads/")) return key;
+  if (key.startsWith("/venues/")) return key;
   return LEGACY_VENUE_KEYS[key] ?? fallback;
 }
 
@@ -32,6 +33,7 @@ export function resolveMediaUrlAbsolute(key?: string | null, fallback?: string):
   }
   if (
     key.startsWith("/uploads/") ||
+    key.startsWith("/venues/") ||
     key.startsWith("/api/media/user/") ||
     key.startsWith("/api/media/venue/") ||
     key.startsWith("/api/media/asset/")

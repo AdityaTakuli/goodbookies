@@ -12,6 +12,12 @@ import { buildPageMeta, organizationJsonLd, websiteJsonLd, SITE_NAME } from "@/l
 const sportsQO = queryOptions({ queryKey: ["sports"], queryFn: () => listSports() });
 const HERO_SRCSET = `${heroMobileWebp} 800w, ${heroWebp} 1600w`;
 
+const SPORT_COVER_IMAGES: Record<string, string> = {
+  cricket: "/venues/yorker-yard-cricket.webp",
+  badminton: "/venues/badminton-cover.webp",
+  basketball: "/venues/basketball-cover.webp",
+};
+
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
     const sports = await context.queryClient.ensureQueryData(sportsQO);
@@ -93,17 +99,34 @@ function Index() {
           <p className="mt-2 text-muted-foreground">Tap a sport to see venues near you.</p>
         </div>
         <div className="mt-10 grid min-h-[280px] grid-cols-2 gap-4 sm:grid-cols-3 md:min-h-0 md:grid-cols-5">
-          {sports.map((s) => (
+          {sports.map((s) => {
+            const cover = SPORT_COVER_IMAGES[s.slug] ?? null;
+            return (
             <Link
               key={s.id}
               to="/sports"
               search={{ sport: s.slug }}
-              className="group flex aspect-square flex-col items-center justify-center rounded-2xl border border-border/60 bg-card transition-colors hover:border-primary"
+              className={cn(
+                "group relative flex aspect-square flex-col items-center justify-center overflow-hidden rounded-2xl border border-border/60 transition-colors hover:border-primary",
+                cover ? "bg-card" : "bg-card",
+              )}
             >
-              <span className="text-4xl">{s.icon}</span>
-              <span className="mt-3 text-sm font-semibold">{s.name}</span>
+              {cover ? (
+                <>
+                  <img
+                    src={cover}
+                    alt=""
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
+                </>
+              ) : null}
+              <span className="relative text-4xl">{s.icon}</span>
+              <span className="relative mt-3 text-sm font-semibold">{s.name}</span>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </section>
 

@@ -8,6 +8,7 @@ import heroWebp from "@/assets/hero-turf.webp";
 import { Calendar, MapPin, Zap } from "lucide-react";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildPageMeta, organizationJsonLd, websiteJsonLd, SITE_NAME } from "@/lib/seo";
+import { cn } from "@/lib/utils";
 
 const sportsQO = queryOptions({ queryKey: ["sports"], queryFn: () => listSports() });
 const HERO_SRCSET = `${heroMobileWebp} 800w, ${heroWebp} 1600w`;

@@ -2,6 +2,7 @@
 export function isStoredMediaPath(value: string): boolean {
   return (
     value.startsWith("/uploads/") ||
+    value.startsWith("/venues/") ||
     value.startsWith("/api/media/user/") ||
     value.startsWith("/api/media/venue/") ||
     value.startsWith("/api/media/asset/")

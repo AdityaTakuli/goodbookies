@@ -21,9 +21,9 @@ import { computeBookingCharge, INDIVIDUAL_BOOKING_SURCHARGE } from "@/lib/pricin
 import {
   formatMinBookingDuration,
   isContiguousSlots,
-  slotDurationHours,
   slotPriceTotal,
   slotStepMinutes,
+  bookingDurationHours,
 } from "@/lib/slot-time";
 
 type BookingMode = "individual" | "full";
@@ -110,7 +110,10 @@ function VenuePage() {
   const sortedSel = [...selected].sort((a, b) => a - b);
   const isContiguous = isContiguousSlots(selected, stepMinutes);
   const total = slotPriceTotal(venue.price_per_hour, selected.length, stepMinutes);
-  const selectedHours = slotDurationHours(selected.length, stepMinutes);
+  const selectedDurationMinutes = sortedSel.length
+    ? sortedSel[sortedSel.length - 1] + stepMinutes - sortedSel[0]
+    : 0;
+  const selectedHours = bookingDurationHours(selectedDurationMinutes);
   const showBookingModeChoice = maxPlayersAllowed > 1;
   const slotByMinute = new Map((slotsQuery.data ?? []).map((s) => [s.startMinute, s]));
   const minRemainingOnSelection = sortedSel.length
@@ -140,12 +143,11 @@ function VenuePage() {
 
   useEffect(() => {
     const availableSet = new Set((slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.startMinute));
-    setSelected((prev) => prev.filter((m) => availableSet.has(m)));
+    setSelected((prev) => {
+      const next = prev.filter((m) => availableSet.has(m));
+      return next.length === prev.length ? prev : next;
+    });
   }, [slotsQuery.data]);
-
-  const toggle = (m: number) => {
-    setSelected((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]));
-  };
 
   async function handleOpenPayment() {
     if (!pendingCheckout || !venue) return;
@@ -178,6 +180,10 @@ function VenuePage() {
       return;
     }
     if (sortedSel.length < minSlotCount) {
+      toast.error(`Minimum booking is ${formatMinBookingDuration(minBookingMinutes)}`);
+      return;
+    }
+    if (selectedDurationMinutes < minBookingMinutes) {
       toast.error(`Minimum booking is ${formatMinBookingDuration(minBookingMinutes)}`);
       return;
     }
@@ -405,16 +411,19 @@ function VenuePage() {
             <p className="mb-3 text-xs text-muted-foreground">
               Live empty spots left today: {emptySpotsNow}
               {minSlotCount > 1 && (
-                <> · Min booking: {formatMinBookingDuration(minBookingMinutes)}</>
+                <> · Min booking: {formatMinBookingDuration(minBookingMinutes)} — select a continuous range</>
               )}
             </p>
             {slotsQuery.isLoading ? (
               <div className="rounded-2xl border border-border/60 bg-card p-10 text-center text-muted-foreground">Loading the pitch…</div>
             ) : (
               <SlotPicker
+                key={`${date}-${bookingMode}`}
                 slots={slotsQuery.data ?? []}
                 selected={selected}
-                onToggle={toggle}
+                stepMinutes={stepMinutes}
+                minBookingMinutes={minBookingMinutes}
+                onChange={setSelected}
               />
             )}
           </div>

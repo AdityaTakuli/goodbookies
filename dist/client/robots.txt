@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /owner/register
+Disallow: /admin
+Disallow: /account
+Disallow: /owner/
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /dashboard
+Disallow: /scoring
+Disallow: /booking/success
+Disallow: /api/
+
+Sitemap: https://goodbookies.co.in/sitemap.xml

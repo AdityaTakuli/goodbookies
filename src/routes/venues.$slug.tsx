@@ -17,7 +17,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { buildPageMeta, breadcrumbJsonLd, sportsActivityVenueJsonLd } from "@/lib/seo";
 import { resolveMediaUrlAbsolute } from "@/lib/media/urls";
 import { withVenueExtras, resolveMinBookingMinutes } from "@/lib/venue-extras";
-import { computeBookingCharge, INDIVIDUAL_BOOKING_SURCHARGE } from "@/lib/pricing";
+import { computeBookingCharge, INDIVIDUAL_BOOKING_SURCHARGE, resolvePayableAmount, type FullTurfPaymentPlan } from "@/lib/pricing";
 import {
   formatMinBookingDuration,
   isContiguousSlots,
@@ -77,6 +77,8 @@ function VenuePage() {
   const [date, setDate] = useState(todayISO());
   const [selected, setSelected] = useState<number[]>([]);
   const [bookingMode, setBookingMode] = useState<BookingMode>("individual");
+  const [paymentPlan, setPaymentPlan] = useState<FullTurfPaymentPlan>("full");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState<{
     bookingId: string;
@@ -127,6 +129,8 @@ function VenuePage() {
     maxPlayersAllowed,
     playerCount,
   );
+  const paymentQuote = resolvePayableAmount(total, maxPlayersAllowed, playerCount, paymentPlan);
+  const displayPayable = paymentQuote.payable;
   const capacityAfterBooking = alreadyBookedOnSelection + playerCount;
   const capacityPercent = Math.round((capacityAfterBooking / maxPlayersAllowed) * 100);
   const canBookFullTurf = minRemainingOnSelection >= maxPlayersAllowed;
@@ -140,6 +144,11 @@ function VenuePage() {
       setBookingMode("individual");
     }
   }, [canBookFullTurf, bookingMode]);
+
+  useEffect(() => {
+    setPaymentPlan("full");
+    setTermsAccepted(false);
+  }, [bookingMode]);
 
   useEffect(() => {
     const availableSet = new Set((slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.startMinute));
@@ -191,6 +200,10 @@ function VenuePage() {
       toast.error("Full turf booking requires an empty slot");
       return;
     }
+    if (!isFullTurf && !termsAccepted) {
+      toast.error("Please accept the individual booking terms to continue");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await bookFn({
@@ -200,6 +213,7 @@ function VenuePage() {
           startMinute: sortedSel[0],
           endMinute: sortedSel[sortedSel.length - 1] + stepMinutes,
           playerCount,
+          paymentPlan: isFullTurf ? paymentPlan : "full",
         },
       });
 
@@ -444,13 +458,21 @@ function VenuePage() {
           ) : (
             <div className="space-y-3">
               <BookingPaymentPortal
-                amount={payableAmount}
+                amount={displayPayable}
+                fullAmount={payableAmount}
+                balanceDue={paymentQuote.balanceDue}
                 bookingLabel={isFullTurf ? "Full turf" : "Individual spot"}
                 hours={selectedHours}
                 venueName={venue.name}
+                isIndividual={!isFullTurf}
+                isFullTurf={isFullTurf}
+                paymentPlan={paymentPlan}
+                onPaymentPlanChange={setPaymentPlan}
+                termsAccepted={termsAccepted}
+                onTermsAcceptedChange={setTermsAccepted}
                 disabled={selected.length === 0}
                 loading={submitting || paying}
-                requiresPayment={payableAmount >= 1}
+                requiresPayment={displayPayable >= 1}
                 awaitingCheckout={Boolean(pendingCheckout)}
                 onPay={handleBook}
                 onOpenCheckout={handleOpenPayment}

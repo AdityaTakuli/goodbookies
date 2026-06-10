@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { calculateBookingTotal, computeBookingCharge, loadVenuePricing } from "@/lib/pricing";
+import { calculateBookingTotal, loadVenuePricing, resolvePayableAmount, type FullTurfPaymentPlan } from "@/lib/pricing";
 import { MIN_ORDER_PAISE } from "@/lib/payments/checkout";
 import { createRazorpayOrder, isRazorpayConfigured } from "@/lib/services/razorpay";
 import {
@@ -228,7 +228,7 @@ export const getSlots = createServerFn({ method: "GET" })
 
 export const createBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { venueId: string; date: string; startMinute: number; endMinute: number; playerCount?: number; playerNames?: string[]; isOpenLobby?: boolean; couponCode?: string }) =>
+  .inputValidator((input: { venueId: string; date: string; startMinute: number; endMinute: number; playerCount?: number; playerNames?: string[]; isOpenLobby?: boolean; couponCode?: string; paymentPlan?: FullTurfPaymentPlan }) =>
     z.object({
       venueId: z.string().uuid(),
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -238,6 +238,7 @@ export const createBooking = createServerFn({ method: "POST" })
       playerNames: z.array(z.string().trim().min(1).max(60)).optional(),
       isOpenLobby: z.boolean().default(false),
       couponCode: z.string().optional(),
+      paymentPlan: z.enum(["full", "token"]).default("full"),
     })
       .refine((v) => v.endMinute > v.startMinute, { message: "endMinute must be > startMinute" })
       .parse(input),
@@ -330,7 +331,12 @@ export const createBooking = createServerFn({ method: "POST" })
     });
 
     const openLobby = false;
-    const { charge: chargeAmount } = computeBookingCharge(total, maxCap, data.playerCount);
+    const pricingResult = resolvePayableAmount(total, maxCap, data.playerCount, data.paymentPlan);
+    if (!pricingResult.isFullTurf && data.paymentPlan === "token") {
+      throw new Error("Token payment is only available for full turf bookings");
+    }
+    const chargeAmount = pricingResult.payable;
+    const balanceDue = pricingResult.balanceDue;
 
     const amountPaise = chargeAmount * 100;
     const requiresPayment = isRazorpayConfigured() && amountPaise >= MIN_ORDER_PAISE;
@@ -406,6 +412,8 @@ export const createBooking = createServerFn({ method: "POST" })
       bookingId: booking.id,
       total: chargeAmount,
       fullTotal: total,
+      balanceDue,
+      paymentPlan: pricingResult.paymentPlan,
       amountPaise,
       razorpayOrderId: order.id,
       razorpayKeyId: process.env.VITE_RAZORPAY_KEY_ID ?? process.env.RAZORPAY_KEY_ID ?? null,

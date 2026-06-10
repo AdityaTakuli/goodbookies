@@ -74,6 +74,7 @@ export function calculateBookingTotal(ctx: PricingContext): number {
 }
 
 export const INDIVIDUAL_BOOKING_SURCHARGE = 0.15;
+export const FULL_TURF_TOKEN_PERCENT = 0.20;
 
 /** Charge for individual spot (1 player + 15%) or full turf (entire slot total). */
 export function computeBookingCharge(slotTotal: number, maxPlayers: number, playerCount: number) {
@@ -85,6 +86,38 @@ export function computeBookingCharge(slotTotal: number, maxPlayers: number, play
   }
   const charge = Math.ceil(perPersonBase * (1 + INDIVIDUAL_BOOKING_SURCHARGE));
   return { charge, perPersonBase, isFullTurf: false as const };
+}
+
+export function computeFullTurfTokenAmount(fullCharge: number) {
+  return Math.max(1, Math.ceil(fullCharge * FULL_TURF_TOKEN_PERCENT));
+}
+
+export type FullTurfPaymentPlan = "full" | "token";
+
+export function resolvePayableAmount(
+  fullCharge: number,
+  maxPlayers: number,
+  playerCount: number,
+  paymentPlan: FullTurfPaymentPlan = "full",
+) {
+  const { charge, isFullTurf } = computeBookingCharge(fullCharge, maxPlayers, playerCount);
+  if (isFullTurf && paymentPlan === "token") {
+    const tokenAmount = computeFullTurfTokenAmount(charge);
+    return {
+      payable: tokenAmount,
+      fullCharge: charge,
+      balanceDue: charge - tokenAmount,
+      isFullTurf: true as const,
+      paymentPlan: "token" as const,
+    };
+  }
+  return {
+    payable: charge,
+    fullCharge: charge,
+    balanceDue: 0,
+    isFullTurf,
+    paymentPlan: "full" as const,
+  };
 }
 
 export async function loadVenuePricing(venueId: string) {

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { calculateBookingTotal, loadVenuePricing } from "@/lib/pricing";
+import { calculateBookingTotal, computeBookingCharge, loadVenuePricing } from "@/lib/pricing";
 import { MIN_ORDER_PAISE } from "@/lib/payments/checkout";
 import { createRazorpayOrder, isRazorpayConfigured } from "@/lib/services/razorpay";
 import {
@@ -235,14 +235,11 @@ export const createBooking = createServerFn({ method: "POST" })
       startMinute: z.number().int().min(0).max(1410),
       endMinute: z.number().int().min(30).max(1440),
       playerCount: z.number().int().min(1).max(100).default(1),
-      playerNames: z.array(z.string().trim().min(1).max(60)).default([]),
+      playerNames: z.array(z.string().trim().min(1).max(60)).optional(),
       isOpenLobby: z.boolean().default(false),
       couponCode: z.string().optional(),
     })
       .refine((v) => v.endMinute > v.startMinute, { message: "endMinute must be > startMinute" })
-      .refine((v) => v.playerNames.length === v.playerCount, {
-        message: "Please provide one player name per selected player",
-      })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -265,16 +262,23 @@ export const createBooking = createServerFn({ method: "POST" })
     if (venue.owner_id && venue.owner_id === context.userId) {
       throw new Error("Partners cannot book their own turf. Book other venues as a player, or manage slots from Partner.");
     }
-    if (data.playerCount > (venue.max_players_allowed ?? 1)) {
-      throw new Error(`Only ${venue.max_players_allowed} players are allowed for this turf`);
+    const maxCap = Math.max(1, Number(venue.max_players_allowed ?? 1));
+    if (data.playerCount !== 1 && data.playerCount !== maxCap) {
+      throw new Error("Book an individual spot for yourself or reserve the full turf");
     }
-    const normalizedNames = data.playerNames.map((name) => name.trim()).filter(Boolean);
-    const uniqueNames = new Set(normalizedNames.map((name) => name.toLowerCase()));
-    if (normalizedNames.length !== data.playerCount) {
-      throw new Error("Please provide one player name per selected player");
+    if (data.playerCount > maxCap) {
+      throw new Error(`Only ${maxCap} players are allowed for this turf`);
     }
-    if (uniqueNames.size !== normalizedNames.length) {
-      throw new Error("Each player name must be unique");
+    let normalizedNames = (data.playerNames ?? []).map((name) => name.trim()).filter(Boolean);
+    if (normalizedNames.length === 0) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", context.userId)
+        .maybeSingle();
+      const bookerName =
+        profile?.full_name?.trim() || profile?.email?.split("@")[0] || "Player";
+      normalizedNames = [bookerName];
     }
     const { data: overlaps, error: overlapErr } = await supabaseAdmin
       .from("bookings")
@@ -325,10 +329,8 @@ export const createBooking = createServerFn({ method: "POST" })
       coupon: coupon ? { discount_type: coupon.discount_type, discount_value: coupon.discount_value } : null,
     });
 
-    const maxCap = Math.max(1, Number(venue.max_players_allowed ?? 1));
-    const openLobby = data.isOpenLobby && data.playerCount < maxCap;
-    const perPerson = total > 0 ? Math.ceil(total / maxCap) : 0;
-    const chargeAmount = perPerson * data.playerCount;
+    const openLobby = false;
+    const { charge: chargeAmount } = computeBookingCharge(total, maxCap, data.playerCount);
 
     const amountPaise = chargeAmount * 100;
     const requiresPayment = isRazorpayConfigured() && amountPaise >= MIN_ORDER_PAISE;

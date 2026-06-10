@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 type BookingPaymentPortalProps = {
   amount: number;
-  playerCount: number;
+  bookingLabel: string;
   hours: number;
   venueName: string;
   disabled?: boolean;
@@ -16,7 +16,7 @@ type BookingPaymentPortalProps = {
 
 export function BookingPaymentPortal({
   amount,
-  playerCount,
+  bookingLabel,
   hours,
   venueName,
   disabled,
@@ -40,7 +40,7 @@ export function BookingPaymentPortal({
           {amount.toLocaleString()}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {hours} hour{hours === 1 ? "" : "s"} · {playerCount} player{playerCount === 1 ? "" : "s"}
+          {hours} hour{hours === 1 ? "" : "s"} · {bookingLabel}
         </p>
       </div>
 

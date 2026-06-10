@@ -73,6 +73,20 @@ export function calculateBookingTotal(ctx: PricingContext): number {
   return subtotal;
 }
 
+export const INDIVIDUAL_BOOKING_SURCHARGE = 0.15;
+
+/** Charge for individual spot (1 player + 15%) or full turf (entire slot total). */
+export function computeBookingCharge(slotTotal: number, maxPlayers: number, playerCount: number) {
+  const max = Math.max(1, maxPlayers);
+  const perPersonBase = slotTotal > 0 ? Math.ceil(slotTotal / max) : 0;
+  const isFullTurf = playerCount >= max;
+  if (isFullTurf) {
+    return { charge: slotTotal, perPersonBase, isFullTurf: true as const };
+  }
+  const charge = Math.ceil(perPersonBase * (1 + INDIVIDUAL_BOOKING_SURCHARGE));
+  return { charge, perPersonBase, isFullTurf: false as const };
+}
+
 export async function loadVenuePricing(venueId: string) {
   const [peak, day, date, duration] = await Promise.all([
     supabaseAdmin.from("venue_peak_pricing").select("*").eq("venue_id", venueId),

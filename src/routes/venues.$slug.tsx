@@ -7,7 +7,6 @@ import { MapPin, Star, Clock, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import { getVenue, getSlots, createBooking } from "@/lib/booking.functions";
 import { SlotPicker } from "@/components/SlotPicker";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveVenueImage } from "@/lib/images";
 import { VenueReviews } from "@/components/VenueReviews";
@@ -18,6 +17,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { buildPageMeta, breadcrumbJsonLd, sportsActivityVenueJsonLd } from "@/lib/seo";
 import { resolveMediaUrlAbsolute } from "@/lib/media/urls";
 import { withVenueExtras, resolveMinBookingMinutes } from "@/lib/venue-extras";
+import { computeBookingCharge, INDIVIDUAL_BOOKING_SURCHARGE } from "@/lib/pricing";
 import {
   formatMinBookingDuration,
   isContiguousSlots,
@@ -25,6 +25,8 @@ import {
   slotPriceTotal,
   slotStepMinutes,
 } from "@/lib/slot-time";
+
+type BookingMode = "individual" | "full";
 
 const venueQO = (slug: string) =>
   queryOptions({ queryKey: ["venue", slug], queryFn: () => getVenue({ data: { slug } }) });
@@ -74,9 +76,7 @@ function VenuePage() {
 
   const [date, setDate] = useState(todayISO());
   const [selected, setSelected] = useState<number[]>([]);
-  const [playerCount, setPlayerCount] = useState(1);
-  const [playerNames, setPlayerNames] = useState<string[]>([""]);
-  const [isOpenLobby, setIsOpenLobby] = useState(false);
+  const [bookingMode, setBookingMode] = useState<BookingMode>("individual");
   const [submitting, setSubmitting] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState<{
     bookingId: string;
@@ -85,9 +85,13 @@ function VenuePage() {
     customerName: string;
   } | null>(null);
 
+  const maxPlayersAllowed = Math.max(1, Number(rawVenue?.max_players_allowed ?? 1));
+  const playerCount = bookingMode === "full" ? maxPlayersAllowed : 1;
+
   const slotsQuery = useQuery({
-    queryKey: ["slots", venue!.id, date, playerCount],
-    queryFn: () => getSlots({ data: { venueId: venue!.id, date, playerCount } }),
+    queryKey: ["slots", rawVenue?.id, date, playerCount],
+    queryFn: () => getSlots({ data: { venueId: rawVenue!.id, date, playerCount } }),
+    enabled: Boolean(rawVenue?.id),
     refetchInterval: 5000,
   });
 
@@ -107,37 +111,32 @@ function VenuePage() {
   const isContiguous = isContiguousSlots(selected, stepMinutes);
   const total = slotPriceTotal(venue.price_per_hour, selected.length, stepMinutes);
   const selectedHours = slotDurationHours(selected.length, stepMinutes);
-  const maxPlayersAllowed = Math.max(1, Number(venue.max_players_allowed ?? 1));
+  const showBookingModeChoice = maxPlayersAllowed > 1;
   const slotByMinute = new Map((slotsQuery.data ?? []).map((s) => [s.startMinute, s]));
   const minRemainingOnSelection = sortedSel.length
     ? Math.min(...sortedSel.map((m) => slotByMinute.get(m)?.remaining_capacity ?? maxPlayersAllowed))
     : maxPlayersAllowed;
-  const maxSelectablePlayers = Math.max(1, Math.min(maxPlayersAllowed, minRemainingOnSelection));
   const alreadyBookedOnSelection = sortedSel.length
     ? Math.max(...sortedSel.map((m) => slotByMinute.get(m)?.booked_players ?? 0))
     : 0;
-  const perPersonPrice = total > 0 ? Math.ceil(total / maxPlayersAllowed) : 0;
-  const selectedSplitPrice = total > 0 ? Math.ceil(total / playerCount) : 0;
-  const payableForSelectedPlayers = perPersonPrice * playerCount;
+  const { charge: payableAmount, perPersonBase, isFullTurf } = computeBookingCharge(
+    total,
+    maxPlayersAllowed,
+    playerCount,
+  );
   const capacityAfterBooking = alreadyBookedOnSelection + playerCount;
   const capacityPercent = Math.round((capacityAfterBooking / maxPlayersAllowed) * 100);
+  const canBookFullTurf = minRemainingOnSelection >= maxPlayersAllowed;
   const emptySpotsNow = (slotsQuery.data ?? []).reduce(
     (sum, slot) => sum + Math.max(0, Number(slot.remaining_capacity ?? 0)),
     0,
   );
 
   useEffect(() => {
-    setPlayerNames((prev) => {
-      const next = Array.from({ length: playerCount }, (_, i) => prev[i] ?? "");
-      return next;
-    });
-  }, [playerCount]);
-
-  useEffect(() => {
-    if (playerCount > maxSelectablePlayers) {
-      setPlayerCount(maxSelectablePlayers);
+    if (bookingMode === "full" && !canBookFullTurf) {
+      setBookingMode("individual");
     }
-  }, [maxSelectablePlayers, playerCount]);
+  }, [canBookFullTurf, bookingMode]);
 
   useEffect(() => {
     const availableSet = new Set((slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.startMinute));
@@ -182,14 +181,8 @@ function VenuePage() {
       toast.error(`Minimum booking is ${formatMinBookingDuration(minBookingMinutes)}`);
       return;
     }
-    const trimmedNames = playerNames.map((name) => name.trim());
-    if (trimmedNames.some((name) => !name)) {
-      toast.error("Please enter all player names");
-      return;
-    }
-    const uniqueNames = new Set(trimmedNames.map((name) => name.toLowerCase()));
-    if (uniqueNames.size !== trimmedNames.length) {
-      toast.error("Each player name should be unique");
+    if (bookingMode === "full" && !canBookFullTurf) {
+      toast.error("Full turf booking requires an empty slot");
       return;
     }
     setSubmitting(true);
@@ -201,17 +194,19 @@ function VenuePage() {
           startMinute: sortedSel[0],
           endMinute: sortedSel[sortedSel.length - 1] + stepMinutes,
           playerCount,
-          playerNames: trimmedNames,
-          isOpenLobby: isOpenLobby && playerCount < maxPlayersAllowed,
         },
       });
 
       if (res.requiresPayment && res.razorpayOrderId && res.amountPaise >= 100) {
+        const customerName =
+          session?.user?.user_metadata?.full_name ??
+          session?.user?.email?.split("@")[0] ??
+          "Player";
         setPendingCheckout({
           bookingId: res.bookingId,
           orderId: res.razorpayOrderId,
           amountPaise: res.amountPaise,
-          customerName: trimmedNames[0],
+          customerName,
         });
         await qc.invalidateQueries({ queryKey: ["slots", venue!.id, date] });
         toast.message("Slot reserved", {
@@ -316,66 +311,93 @@ function VenuePage() {
             />
           </div>
           <div className="rounded-2xl border border-border/60 bg-card p-6">
-            <label className="text-sm font-semibold">Players in this booking</label>
-            <select
-              value={playerCount}
-              onChange={(e) => setPlayerCount(Number(e.target.value))}
-              className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
-            >
-              {Array.from({ length: maxSelectablePlayers }, (_, i) => i + 1).map((count) => (
-                <option key={count} value={count}>
-                  {count} player{count === 1 ? "" : "s"}
-                </option>
-              ))}
-            </select>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Max allowed on this turf: {maxPlayersAllowed}
+            <label className="text-sm font-semibold">Booking type</label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Book one spot for yourself, or reserve the entire turf. Each player must book their own
+              individual spot — one booking cannot cover multiple players.
+            </p>
+            {showBookingModeChoice ? (
+              <div className="mt-3 grid gap-2">
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    bookingMode === "individual" ? "border-primary bg-primary/5" : "border-border/60"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="bookingMode"
+                    checked={bookingMode === "individual"}
+                    onChange={() => setBookingMode("individual")}
+                    className="mt-1"
+                  />
+                  <span className="text-sm">
+                    <span className="font-semibold">Individual spot</span>
+                    <span className="mt-0.5 block text-muted-foreground">
+                      One spot for you only · includes {Math.round(INDIVIDUAL_BOOKING_SURCHARGE * 100)}% service fee
+                      {selected.length > 0 && (
+                        <>
+                          {" "}
+                          ·{" "}
+                          <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                          {payableAmount.toLocaleString()}
+                        </>
+                      )}
+                    </span>
+                  </span>
+                </label>
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                    bookingMode === "full" ? "border-primary bg-primary/5" : "border-border/60"
+                  } ${!canBookFullTurf && sortedSel.length > 0 ? "opacity-60" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    name="bookingMode"
+                    checked={bookingMode === "full"}
+                    onChange={() => setBookingMode("full")}
+                    disabled={sortedSel.length > 0 && !canBookFullTurf}
+                    className="mt-1"
+                  />
+                  <span className="text-sm">
+                    <span className="font-semibold">Full turf</span>
+                    <span className="mt-0.5 block text-muted-foreground">
+                      Private group booking
+                      {selected.length > 0 && (
+                        <>
+                          {" "}
+                          ·{" "}
+                          <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                          {total.toLocaleString()}
+                        </>
+                      )}
+                    </span>
+                    {sortedSel.length > 0 && !canBookFullTurf && (
+                      <span className="mt-1 block text-xs text-destructive">
+                        Selected slot is not fully empty — choose another slot or book individual spots.
+                      </span>
+                    )}
+                  </span>
+                </label>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                This turf holds one player per slot.
+              </p>
+            )}
+            <p className="mt-3 text-xs text-muted-foreground">
+              Turf capacity: {maxPlayersAllowed} player{maxPlayersAllowed === 1 ? "" : "s"}
               {sortedSel.length > 0 && ` · ${minRemainingOnSelection} spot${minRemainingOnSelection === 1 ? "" : "s"} left on selected slot`}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {sortedSel.length > 0
-                ? `Capacity on selected slot: ${alreadyBookedOnSelection} booked + ${playerCount} yours = ${capacityAfterBooking}/${maxPlayersAllowed}`
-                : `Select a time slot to see live capacity`}
-            </p>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full bg-primary" style={{ width: `${capacityPercent}%` }} />
-            </div>
-            {playerCount < maxPlayersAllowed && (
-              <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 p-3">
-                <Checkbox
-                  checked={isOpenLobby}
-                  onCheckedChange={(v) => setIsOpenLobby(v === true)}
-                  className="mt-0.5"
-                />
-                <span className="text-sm">
-                  <span className="font-semibold">Open this match to the public</span>
-                  <span className="mt-0.5 block text-muted-foreground">
-                    Let other players request to fill remaining spots on your slot.
-                  </span>
-                </span>
-              </label>
+            {sortedSel.length > 0 && (
+              <>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {alreadyBookedOnSelection} booked + {playerCount} yours = {capacityAfterBooking}/{maxPlayersAllowed}
+                </p>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-full bg-primary" style={{ width: `${capacityPercent}%` }} />
+                </div>
+              </>
             )}
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-card p-6">
-            <label className="text-sm font-semibold">Player names</label>
-            <div className="mt-3 grid gap-2">
-              {playerNames.map((name, idx) => (
-                <input
-                  key={idx}
-                  value={name}
-                  placeholder={`Player ${idx + 1} name`}
-                  onChange={(e) =>
-                    setPlayerNames((prev) => {
-                      const next = [...prev];
-                      next[idx] = e.target.value;
-                      return next;
-                    })
-                  }
-                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                />
-              ))}
-            </div>
           </div>
 
           <div>
@@ -398,7 +420,7 @@ function VenuePage() {
           </div>
 
           {isOwnVenue ? (
-            <div className="sticky bottom-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
               <p className="font-semibold text-foreground">This is your turf</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Partners cannot book their own venue. Manage slots and bookings from{" "}
@@ -411,27 +433,29 @@ function VenuePage() {
               </p>
             </div>
           ) : (
-            <motion.div layout className="sticky bottom-4 space-y-3">
+            <div className="space-y-3">
               <BookingPaymentPortal
-                amount={payableForSelectedPlayers}
-                playerCount={playerCount}
+                amount={payableAmount}
+                bookingLabel={isFullTurf ? "Full turf" : "Individual spot"}
                 hours={selectedHours}
                 venueName={venue.name}
                 disabled={selected.length === 0}
                 loading={submitting || paying}
-                requiresPayment={payableForSelectedPlayers >= 1}
+                requiresPayment={payableAmount >= 1}
                 awaitingCheckout={Boolean(pendingCheckout)}
                 onPay={handleBook}
                 onOpenCheckout={handleOpenPayment}
               />
-              <div className="rounded-xl border border-border/50 bg-card/80 px-4 py-3 text-xs text-muted-foreground">
-                <p>
-                  Full turf total: <IndianRupee className="mb-0.5 inline h-3 w-3" />
-                  {total.toLocaleString()} · Per person ({playerCount} selected):{" "}
-                  <IndianRupee className="mb-0.5 inline h-3 w-3" />
-                  {selectedSplitPrice.toLocaleString()}
-                </p>
-              </div>
+              {selected.length > 0 && showBookingModeChoice && (
+                <div className="rounded-xl border border-border/50 bg-card/80 px-4 py-3 text-xs text-muted-foreground">
+                  <p>
+                    Full turf: <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                    {total.toLocaleString()} · Individual base share:{" "}
+                    <IndianRupee className="mb-0.5 inline h-3 w-3" />
+                    {perPersonBase.toLocaleString()} + {Math.round(INDIVIDUAL_BOOKING_SURCHARGE * 100)}% fee
+                  </p>
+                </div>
+              )}
               {selected.length > 0 && !isContiguous && (
                 <p className="text-xs text-destructive">Pick consecutive slots to book a continuous window.</p>
               )}
@@ -440,7 +464,7 @@ function VenuePage() {
                   Select at least {formatMinBookingDuration(minBookingMinutes)} ({minSlotCount} slots).
                 </p>
               )}
-            </motion.div>
+            </div>
           )}
         </div>
       </div>

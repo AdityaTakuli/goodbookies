@@ -43,6 +43,17 @@ export function isContiguousSlots(selected: number[], stepMinutes: number) {
   return sorted.every((m, i) => i === 0 || m === sorted[i - 1] + stepMinutes);
 }
 
+export function selectionEndFromSlots(slotStarts: number[], stepMinutes: number) {
+  if (slotStarts.length === 0) return null;
+  return slotStarts[slotStarts.length - 1] + stepMinutes;
+}
+
+/** Highlight tiles for a confirmed booking (includes end-time tile). */
+export function visualHighlightForSlots(slotStarts: number[], stepMinutes: number) {
+  if (slotStarts.length === 0) return [];
+  return visualTilesFromAnchors(slotStarts[0], selectionEndFromSlots(slotStarts, stepMinutes)!, stepMinutes);
+}
+
 /** All tile start times to highlight: start tap, end tap, and every tile between (inclusive). */
 export function visualTilesFromAnchors(anchorA: number, anchorB: number, stepMinutes: number) {
   const lo = Math.min(anchorA, anchorB);

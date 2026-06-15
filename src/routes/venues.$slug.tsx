@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Star, Clock, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
@@ -19,11 +19,12 @@ import { resolveMediaUrlAbsolute } from "@/lib/media/urls";
 import { withVenueExtras, resolveMinBookingMinutes } from "@/lib/venue-extras";
 import { computeBookingCharge, INDIVIDUAL_BOOKING_SURCHARGE, resolvePayableAmount, type FullTurfPaymentPlan } from "@/lib/pricing";
 import {
+  bookingDurationHours,
   formatMinBookingDuration,
   isContiguousSlots,
+  selectionEndFromSlots,
   slotPriceTotal,
   slotStepMinutes,
-  bookingDurationHours,
 } from "@/lib/slot-time";
 
 type BookingMode = "individual" | "full";
@@ -94,8 +95,16 @@ function VenuePage() {
     queryKey: ["slots", rawVenue?.id, date, playerCount],
     queryFn: () => getSlots({ data: { venueId: rawVenue!.id, date, playerCount } }),
     enabled: Boolean(rawVenue?.id),
-    refetchInterval: 5000,
+    refetchInterval: 15000,
   });
+
+  const slotAvailabilityKey = useMemo(
+    () =>
+      (slotsQuery.data ?? [])
+        .map((s) => `${s.startMinute}:${s.available ? 1 : 0}`)
+        .join(","),
+    [slotsQuery.data],
+  );
 
   if (!venue) return null;
 
@@ -151,12 +160,15 @@ function VenuePage() {
   }, [bookingMode]);
 
   useEffect(() => {
-    const availableSet = new Set((slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.startMinute));
+    const availableSet = new Set(
+      (slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.startMinute),
+    );
     setSelected((prev) => {
+      if (prev.length === 0) return prev;
       const next = prev.filter((m) => availableSet.has(m));
       return next.length === prev.length ? prev : next;
     });
-  }, [slotsQuery.data]);
+  }, [slotAvailabilityKey, slotsQuery.data]);
 
   async function handleOpenPayment() {
     if (!pendingCheckout || !venue) return;
@@ -188,10 +200,6 @@ function VenuePage() {
       toast.error("Please select consecutive slots only");
       return;
     }
-    if (sortedSel.length < minSlotCount) {
-      toast.error(`Minimum booking is ${formatMinBookingDuration(minBookingMinutes)}`);
-      return;
-    }
     if (selectedDurationMinutes < minBookingMinutes) {
       toast.error(`Minimum booking is ${formatMinBookingDuration(minBookingMinutes)}`);
       return;
@@ -211,7 +219,7 @@ function VenuePage() {
           venueId: venue!.id,
           date,
           startMinute: sortedSel[0],
-          endMinute: sortedSel[sortedSel.length - 1] + stepMinutes,
+          endMinute: selectionEndFromSlots(sortedSel, stepMinutes) ?? sortedSel[0] + stepMinutes,
           playerCount,
           paymentPlan: isFullTurf ? paymentPlan : "full",
         },
@@ -490,9 +498,9 @@ function VenuePage() {
               {selected.length > 0 && !isContiguous && (
                 <p className="text-xs text-destructive">Pick consecutive slots to book a continuous window.</p>
               )}
-              {selected.length > 0 && isContiguous && sortedSel.length < minSlotCount && (
+              {selected.length > 0 && isContiguous && selectedDurationMinutes < minBookingMinutes && (
                 <p className="text-xs text-destructive">
-                  Select at least {formatMinBookingDuration(minBookingMinutes)} ({minSlotCount} slots).
+                  Select at least {formatMinBookingDuration(minBookingMinutes)}.
                 </p>
               )}
             </div>

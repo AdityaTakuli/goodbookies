@@ -1,1 +1,0 @@
-import{J as t}from"./index-C79qHUeS.js";function o({data:n}){const s=JSON.stringify(n);return t.jsx("script",{type:"application/ld+json",suppressHydrationWarning:!0,dangerouslySetInnerHTML:{__html:s}})}export{o as J};

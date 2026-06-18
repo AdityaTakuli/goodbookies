@@ -1,11 +1,13 @@
 import { c as createClient } from "./index-BlRNeFf7.js";
 function readPublicRazorpayKeyId() {
-  return "rzp_live_Sz6jsnFmuvs7bE";
+  const runtime = typeof window !== "undefined" ? window.__GB_PUBLIC_ENV__ : void 0;
+  return runtime?.VITE_RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
 }
 function readPublicSupabaseEnv() {
+  const runtime = typeof window !== "undefined" ? window.__GB_PUBLIC_ENV__ : void 0;
   return {
-    VITE_SUPABASE_URL: "https://gbjsdtzcawmfiqwbmmip.supabase.co",
-    VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_x_FcK3mvOmsyHiGRWP2yfg_0DAK9omE"
+    VITE_SUPABASE_URL: runtime?.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
+    VITE_SUPABASE_PUBLISHABLE_KEY: runtime?.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY
   };
 }
 function getPublicEnvInlineScript() {
@@ -24,6 +26,15 @@ function getPublicEnvInlineScript() {
 }
 function createSupabaseClient() {
   const { VITE_SUPABASE_URL: SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY: SUPABASE_PUBLISHABLE_KEY } = readPublicSupabaseEnv();
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    const missing = [
+      ...!SUPABASE_URL ? ["SUPABASE_URL"] : [],
+      ...!SUPABASE_PUBLISHABLE_KEY ? ["SUPABASE_PUBLISHABLE_KEY"] : []
+    ];
+    const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Connect Supabase in Lovable Cloud.`;
+    console.error(`[Supabase] ${message}`);
+    throw new Error(message);
+  }
   return createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== "undefined" ? localStorage : void 0,

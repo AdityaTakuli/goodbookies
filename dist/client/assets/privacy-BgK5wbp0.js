@@ -1,1 +1,0 @@
-import{a1 as t,f as o}from"./index-B-TmKZTq.js";import{L as a}from"./LegalPageLayout-yKuDD1if.js";const i=()=>t.jsx(a,{title:"Privacy Policy",intro:"Your privacy matters to us. This policy explains what data we collect and how we use it.",sections:o});export{i as component};

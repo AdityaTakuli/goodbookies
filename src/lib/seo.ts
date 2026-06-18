@@ -100,8 +100,12 @@ export function organizationJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: SITE_NAME,
+    name: LEGAL_ENTITY.brandName,
     legalName: LEGAL_ENTITY.legalName,
+    founder: LEGAL_ENTITY.ownersAndPartners.map((name) => ({
+      "@type": "Person",
+      name,
+    })),
     url,
     logo: absoluteUrl("/apple-touch-icon.png"),
     description: DEFAULT_DESCRIPTION,

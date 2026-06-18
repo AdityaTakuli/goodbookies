@@ -1,1 +1,0 @@
-import{a1 as o,A as t}from"./index-Bz5ZV9Ls.js";import{L as s}from"./LegalPageLayout-BlIZ_wgp.js";const n=()=>o.jsx(s,{title:"About Us",intro:"Good Bookies makes it easy to find and book sports venues near you.",sections:t});export{n as component};

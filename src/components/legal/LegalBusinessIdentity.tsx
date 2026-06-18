@@ -1,4 +1,4 @@
-import { LEGAL_ENTITY, PARTNERS_DISPLAY } from "@/lib/legal-content";
+import { LEGAL_ENTITY, OWNERS_AND_PARTNERS_DISPLAY } from "@/lib/legal-content";
 
 type LegalBusinessIdentityProps = {
   compact?: boolean;
@@ -9,11 +9,9 @@ export function LegalBusinessIdentity({ compact, className = "" }: LegalBusiness
   if (compact) {
     return (
       <p className={`text-xs leading-relaxed text-muted-foreground ${className}`}>
-        <span className="font-semibold text-foreground">{LEGAL_ENTITY.legalName}</span>
+        <span className="font-semibold text-foreground">{LEGAL_ENTITY.brandName}</span>
         {" · "}
-        {PARTNERS_DISPLAY}
-        {" · "}
-        {LEGAL_ENTITY.tradeName}
+        {OWNERS_AND_PARTNERS_DISPLAY}
         {" · "}
         {LEGAL_ENTITY.fullAddress}
       </p>
@@ -24,24 +22,17 @@ export function LegalBusinessIdentity({ compact, className = "" }: LegalBusiness
     <div className={`space-y-2 text-sm text-muted-foreground ${className}`}>
       <p>
         <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">
-          Legal name
+          Brand name
         </span>
         <br />
-        <span className="font-semibold text-foreground">{LEGAL_ENTITY.legalName}</span>
+        <span className="font-semibold text-foreground">{LEGAL_ENTITY.brandName}</span>
       </p>
       <p>
         <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">
-          Partners
+          Owners and partners
         </span>
         <br />
-        {PARTNERS_DISPLAY}
-      </p>
-      <p>
-        <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">
-          Trade name
-        </span>
-        <br />
-        {LEGAL_ENTITY.tradeName}
+        {OWNERS_AND_PARTNERS_DISPLAY}
       </p>
       <p>
         <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">

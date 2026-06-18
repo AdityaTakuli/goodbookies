@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { LegalBusinessIdentity } from "@/components/legal/LegalBusinessIdentity";
 import { LegalPolicyLinks } from "@/components/legal/LegalPolicyLinks";
-import { LEGAL_ENTITY, PARTNERS_DISPLAY } from "@/lib/legal-content";
+import { LEGAL_ENTITY, OWNERS_AND_PARTNERS_DISPLAY } from "@/lib/legal-content";
 
 export function Footer() {
   return (
@@ -81,7 +81,7 @@ export function Footer() {
         <div className="container mx-auto grid gap-8 px-4 py-8 md:grid-cols-2">
           <LegalBusinessIdentity />
           <div className="text-sm text-muted-foreground md:text-right">
-            <p className="font-semibold text-foreground">Good Bookies</p>
+            <p className="font-semibold text-foreground">{LEGAL_ENTITY.brandName}</p>
             <p className="mt-1">Online sports turf booking platform</p>
             <p className="mt-3 text-xs">
               Payments processed securely via PayU. Prices shown in INR (₹).
@@ -95,10 +95,8 @@ export function Footer() {
           <LegalPolicyLinks inline />
         </div>
         <p className="container mx-auto mt-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Good Bookies · Operated by{" "}
-          <span className="font-medium text-foreground">{LEGAL_ENTITY.legalName}</span>
-          {", "}
-          <span className="font-medium text-foreground">{PARTNERS_DISPLAY}</span>
+          © {new Date().getFullYear()} {LEGAL_ENTITY.brandName} · Owners and partners:{" "}
+          <span className="font-medium text-foreground">{OWNERS_AND_PARTNERS_DISPLAY}</span>
         </p>
       </div>
     </footer>

@@ -6,10 +6,15 @@ import {
 import { FULL_TURF_TOKEN_PERCENT, INDIVIDUAL_BOOKING_SURCHARGE } from "@/lib/pricing";
 
 export const LEGAL_ENTITY = {
-  tradeName: "Good Bookies",
+  brandName: "GOOD BOOKIES",
+  tradeName: "GOOD BOOKIES",
   legalName: "ADITYA PRATAP SINGH TAKULI",
-  proprietor: "Aditya Pratap Singh Takuli",
-  partners: ["NIVESH LOSHALI", "AKSHAY GURURANI", "AYUSH TRIPATHI"] as const,
+  ownersAndPartners: [
+    "ADITYA PRATAP SINGH TAKULI",
+    "NIVESH LOSHALI",
+    "AKSHAY GURURANI",
+    "AYUSH TRIPATHI",
+  ] as const,
   email: "contact@goodbookies.co.in",
   phone: "8791327956",
   addressLine1: "Shantiputi Number 2",
@@ -22,7 +27,7 @@ export const LEGAL_ENTITY = {
   paymentPartner: "PayU",
 } as const;
 
-export const PARTNERS_DISPLAY = LEGAL_ENTITY.partners.join(", ");
+export const OWNERS_AND_PARTNERS_DISPLAY = LEGAL_ENTITY.ownersAndPartners.join(", ");
 
 export type LegalQa = { question: string; answer: string };
 
@@ -32,17 +37,17 @@ const tokenPercent = Math.round(FULL_TURF_TOKEN_PERCENT * 100);
 export const TERMS_SECTIONS: LegalQa[] = [
   {
     question: "Who operates this website?",
-    answer: `This website is operated by ${LEGAL_ENTITY.tradeName} (trade name), a proprietorship of ${LEGAL_ENTITY.legalName}, in partnership with ${PARTNERS_DISPLAY}. Our registered and operating address is ${LEGAL_ENTITY.fullAddress}.`,
+    answer: `This website is operated by ${LEGAL_ENTITY.brandName} (brand name). Owners and partners: ${OWNERS_AND_PARTNERS_DISPLAY}. Our registered and operating address is ${LEGAL_ENTITY.fullAddress}.`,
   },
   {
-    question: "What does Good Bookies do?",
+    question: "What does GOOD BOOKIES do?",
     answer:
-      "Good Bookies is an online sports venue booking platform that connects users with turf owners and sports facility operators. We currently operate in Haldwani, Uttarakhand, and are expanding to other cities.",
+      "GOOD BOOKIES is an online sports venue booking platform that connects users with turf owners and sports facility operators. We currently operate in Haldwani, Uttarakhand, and are expanding to other cities.",
   },
   {
-    question: "Is Good Bookies the turf owner?",
+    question: "Is GOOD BOOKIES the turf owner?",
     answer:
-      "No. Good Bookies is a third-party booking platform. Turf owners and venue operators are independent businesses listed on our platform. Good Bookies facilitates bookings on their behalf.",
+      "No. GOOD BOOKIES is a third-party booking platform. Turf owners and venue operators are independent businesses listed on our platform. GOOD BOOKIES facilitates bookings on their behalf.",
   },
   {
     question: "What services and pricing do we offer?",
@@ -51,14 +56,14 @@ export const TERMS_SECTIONS: LegalQa[] = [
   {
     question: "What are the rules for using the platform?",
     answer:
-      "Users must be 18 years or older. You agree to provide accurate personal details at the time of booking. Bookings are subject to slot availability. Good Bookies reserves the right to remove any user or listing that violates our policies.",
+      "Users must be 18 years or older. You agree to provide accurate personal details at the time of booking. Bookings are subject to slot availability. GOOD BOOKIES reserves the right to remove any user or listing that violates our policies.",
   },
   {
     question: "How are payments processed?",
     answer: `Online payments are processed securely through ${LEGAL_ENTITY.paymentPartner}, our authorised payment partner. Card, UPI, net banking, and wallet options available through PayU are subject to PayU's terms.`,
   },
   {
-    question: "Can Good Bookies change these terms?",
+    question: "Can GOOD BOOKIES change these terms?",
     answer:
       "Yes. We may update these Terms & Conditions at any time. Continued use of the website after changes constitutes your acceptance.",
   },
@@ -152,13 +157,13 @@ export const CANCELLATION_SECTIONS: LegalQa[] = [
 
 export const ABOUT_SECTIONS: LegalQa[] = [
   {
-    question: "Who is behind Good Bookies?",
-    answer: `Good Bookies is founded and operated by ${LEGAL_ENTITY.legalName} (proprietor), ${PARTNERS_DISPLAY}.`,
+    question: "Who is behind GOOD BOOKIES?",
+    answer: `GOOD BOOKIES is founded and operated by its owners and partners: ${OWNERS_AND_PARTNERS_DISPLAY}.`,
   },
   {
-    question: "What is Good Bookies?",
+    question: "What is GOOD BOOKIES?",
     answer:
-      "Good Bookies is Haldwani's online sports turf booking platform — built for players, by players. Discover, compare, and book football turfs, cricket nets, and indoor courts with real-time slot availability and instant confirmation.",
+      "GOOD BOOKIES is Haldwani's online sports turf booking platform — built for players, by players. Discover, compare, and book football turfs, cricket nets, and indoor courts with real-time slot availability and instant confirmation.",
   },
   {
     question: "Where do you operate?",
@@ -171,11 +176,11 @@ export const ABOUT_SECTIONS: LegalQa[] = [
       "No. We are a technology platform partnering with turf owners and sports facility operators. We help them manage bookings digitally and help players find the right venue.",
   },
   {
-    question: "Who can list on Good Bookies?",
+    question: "Who can list on GOOD BOOKIES?",
     answer: `Any sports venue owner — turf, cricket net, badminton court, basketball court — can apply at ${LEGAL_ENTITY.website}/owner/register.`,
   },
   {
     question: "How do I reach you?",
-    answer: `Email: ${LEGAL_ENTITY.email} | Phone/WhatsApp: +91 ${LEGAL_ENTITY.phone}\nLegal name: ${LEGAL_ENTITY.legalName}\nPartners: ${PARTNERS_DISPLAY}\nTrade name: ${LEGAL_ENTITY.tradeName}\nRegistered address: ${LEGAL_ENTITY.fullAddress}`,
+    answer: `Email: ${LEGAL_ENTITY.email} | Phone/WhatsApp: +91 ${LEGAL_ENTITY.phone}\nBrand name: ${LEGAL_ENTITY.brandName}\nOwners and partners: ${OWNERS_AND_PARTNERS_DISPLAY}\nRegistered address: ${LEGAL_ENTITY.fullAddress}`,
   },
 ];

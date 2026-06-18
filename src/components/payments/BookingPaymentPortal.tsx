@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FULL_TURF_TOKEN_PERCENT, computeFullTurfTokenAmount, type FullTurfPaymentPlan } from "@/lib/pricing";
 import { CANCELLATION_POLICY_SHORT } from "@/lib/cancellation-policy";
-import { LEGAL_ENTITY, PARTNERS_DISPLAY } from "@/lib/legal-content";
+import { LEGAL_ENTITY, OWNERS_AND_PARTNERS_DISPLAY } from "@/lib/legal-content";
 
 type BookingPaymentPortalProps = {
   amount: number;
@@ -154,9 +154,8 @@ export function BookingPaymentPortal({
               : "No payment required. Your booking will be confirmed immediately."}
           </p>
           <p>
-            Operated by <span className="font-medium text-foreground">{LEGAL_ENTITY.legalName}</span>
-            {", "}
-            {PARTNERS_DISPLAY} ({LEGAL_ENTITY.tradeName}), {LEGAL_ENTITY.fullAddress}.
+            <span className="font-medium text-foreground">{LEGAL_ENTITY.brandName}</span> · Owners and
+            partners: {OWNERS_AND_PARTNERS_DISPLAY}. {LEGAL_ENTITY.fullAddress}.
           </p>
           <p className="flex flex-wrap gap-x-2 gap-y-1">
             <Link to="/terms" className="text-primary hover:underline">

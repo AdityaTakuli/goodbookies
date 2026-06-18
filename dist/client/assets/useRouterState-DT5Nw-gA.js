@@ -1,1 +1,0 @@
-import{aD as a,ad as s,aE as c,ag as i}from"./index-D3kmpHTb.js";function f(r){const n=a({warn:r?.router===void 0}),t=r?.router||n,u=s.useRef(void 0);return c(t.stores.__store,e=>{if(r?.select){if(r.structuralSharing??t.options.defaultStructuralSharing){const o=i(u.current,r.select(e));return u.current=o,o}return r.select(e)}return e})}export{f as u};

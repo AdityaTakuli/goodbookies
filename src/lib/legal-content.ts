@@ -61,7 +61,7 @@ export const TERMS_SECTIONS: LegalQa[] = [
   {
     question: "What are the rules for using the platform?",
     answer:
-      "Users must be 18 years or older. You agree to provide accurate personal details at the time of booking. Bookings are subject to slot availability. GOOD BOOKIES reserves the right to remove any user or listing that violates our policies.",
+      "Player age depends on the allowed age by turf. You agree to provide accurate personal details at the time of booking. Bookings are subject to slot availability. GOOD BOOKIES reserves the right to remove any user or listing that violates our policies.",
   },
   {
     question: "How are payments processed?",

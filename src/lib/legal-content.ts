@@ -8,8 +8,7 @@ import { FULL_TURF_TOKEN_PERCENT, INDIVIDUAL_BOOKING_SURCHARGE } from "@/lib/pri
 export const LEGAL_ENTITY = {
   brandName: "GOOD BOOKIES",
   tradeName: "GOOD BOOKIES",
-  legalName: "ADITYA PRATAP SINGH TAKULI",
-  ownersAndPartners: [
+  legalNames: [
     "ADITYA PRATAP SINGH TAKULI",
     "NIVESH LOSHALI",
     "AKSHAY GURURANI",
@@ -27,7 +26,13 @@ export const LEGAL_ENTITY = {
   paymentPartner: "PayU",
 } as const;
 
-export const OWNERS_AND_PARTNERS_DISPLAY = LEGAL_ENTITY.ownersAndPartners.join(", ");
+export const LEGAL_NAMES_INLINE = LEGAL_ENTITY.legalNames.join(", ");
+
+export const LEGAL_NAMES_MULTILINE = LEGAL_ENTITY.legalNames
+  .map((name, index) =>
+    index < LEGAL_ENTITY.legalNames.length - 1 ? `${name},` : name,
+  )
+  .join("\n");
 
 export type LegalQa = { question: string; answer: string };
 
@@ -37,7 +42,7 @@ const tokenPercent = Math.round(FULL_TURF_TOKEN_PERCENT * 100);
 export const TERMS_SECTIONS: LegalQa[] = [
   {
     question: "Who operates this website?",
-    answer: `This website is operated by ${LEGAL_ENTITY.brandName} (brand name). Owners and partners: ${OWNERS_AND_PARTNERS_DISPLAY}. Our registered and operating address is ${LEGAL_ENTITY.fullAddress}.`,
+    answer: `This website is operated by ${LEGAL_ENTITY.brandName} (brand name).\nLegal names:\n${LEGAL_NAMES_MULTILINE}\n\nRegistered and operating address: ${LEGAL_ENTITY.fullAddress}.`,
   },
   {
     question: "What does GOOD BOOKIES do?",
@@ -158,7 +163,7 @@ export const CANCELLATION_SECTIONS: LegalQa[] = [
 export const ABOUT_SECTIONS: LegalQa[] = [
   {
     question: "Who is behind GOOD BOOKIES?",
-    answer: `GOOD BOOKIES is founded and operated by its owners and partners: ${OWNERS_AND_PARTNERS_DISPLAY}.`,
+    answer: `GOOD BOOKIES is founded and operated by:\n${LEGAL_NAMES_MULTILINE}`,
   },
   {
     question: "What is GOOD BOOKIES?",
@@ -181,6 +186,6 @@ export const ABOUT_SECTIONS: LegalQa[] = [
   },
   {
     question: "How do I reach you?",
-    answer: `Email: ${LEGAL_ENTITY.email} | Phone/WhatsApp: +91 ${LEGAL_ENTITY.phone}\nBrand name: ${LEGAL_ENTITY.brandName}\nOwners and partners: ${OWNERS_AND_PARTNERS_DISPLAY}\nRegistered address: ${LEGAL_ENTITY.fullAddress}`,
+    answer: `Email: ${LEGAL_ENTITY.email} | Phone/WhatsApp: +91 ${LEGAL_ENTITY.phone}\nBrand name: ${LEGAL_ENTITY.brandName}\nLegal names:\n${LEGAL_NAMES_MULTILINE}\nRegistered address: ${LEGAL_ENTITY.fullAddress}`,
   },
 ];

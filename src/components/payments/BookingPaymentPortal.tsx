@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FULL_TURF_TOKEN_PERCENT, computeFullTurfTokenAmount, type FullTurfPaymentPlan } from "@/lib/pricing";
 import { CANCELLATION_POLICY_SHORT } from "@/lib/cancellation-policy";
-import { LEGAL_ENTITY, OWNERS_AND_PARTNERS_DISPLAY } from "@/lib/legal-content";
+import { LEGAL_ENTITY } from "@/lib/legal-content";
+import { LegalNamesList } from "@/components/legal/LegalNamesList";
 
 type BookingPaymentPortalProps = {
   amount: number;
@@ -153,10 +154,14 @@ export function BookingPaymentPortal({
               ? "Pay securely via PayU to confirm your slot. Your booking stays reserved until payment completes."
               : "No payment required. Your booking will be confirmed immediately."}
           </p>
-          <p>
-            <span className="font-medium text-foreground">{LEGAL_ENTITY.brandName}</span> · Owners and
-            partners: {OWNERS_AND_PARTNERS_DISPLAY}. {LEGAL_ENTITY.fullAddress}.
-          </p>
+          <div>
+            <span className="font-medium text-foreground">{LEGAL_ENTITY.brandName}</span>
+            <p className="mt-1">
+              <span className="font-medium text-foreground/90">Legal names</span>
+            </p>
+            <LegalNamesList className="mt-0.5" />
+            <p className="mt-1">{LEGAL_ENTITY.fullAddress}.</p>
+          </div>
           <p className="flex flex-wrap gap-x-2 gap-y-1">
             <Link to="/terms" className="text-primary hover:underline">
               Terms

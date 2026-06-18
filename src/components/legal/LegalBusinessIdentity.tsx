@@ -1,4 +1,5 @@
-import { LEGAL_ENTITY, OWNERS_AND_PARTNERS_DISPLAY } from "@/lib/legal-content";
+import { LEGAL_ENTITY } from "@/lib/legal-content";
+import { LegalNamesList } from "@/components/legal/LegalNamesList";
 
 type LegalBusinessIdentityProps = {
   compact?: boolean;
@@ -11,7 +12,7 @@ export function LegalBusinessIdentity({ compact, className = "" }: LegalBusiness
       <p className={`text-xs leading-relaxed text-muted-foreground ${className}`}>
         <span className="font-semibold text-foreground">{LEGAL_ENTITY.brandName}</span>
         {" · "}
-        {OWNERS_AND_PARTNERS_DISPLAY}
+        <LegalNamesList inline />
         {" · "}
         {LEGAL_ENTITY.fullAddress}
       </p>
@@ -29,10 +30,9 @@ export function LegalBusinessIdentity({ compact, className = "" }: LegalBusiness
       </p>
       <p>
         <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">
-          Owners and partners
+          Legal names
         </span>
-        <br />
-        {OWNERS_AND_PARTNERS_DISPLAY}
+        <LegalNamesList className="mt-1" />
       </p>
       <p>
         <span className="text-xs font-semibold uppercase tracking-wide text-foreground/80">

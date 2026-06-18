@@ -101,8 +101,8 @@ export function organizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: LEGAL_ENTITY.brandName,
-    legalName: LEGAL_ENTITY.legalName,
-    founder: LEGAL_ENTITY.ownersAndPartners.map((name) => ({
+    legalName: LEGAL_ENTITY.legalNames[0],
+    founder: LEGAL_ENTITY.legalNames.map((name) => ({
       "@type": "Person",
       name,
     })),

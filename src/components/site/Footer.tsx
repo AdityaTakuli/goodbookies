@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { LegalBusinessIdentity } from "@/components/legal/LegalBusinessIdentity";
 import { LegalPolicyLinks } from "@/components/legal/LegalPolicyLinks";
-import { LEGAL_ENTITY, OWNERS_AND_PARTNERS_DISPLAY } from "@/lib/legal-content";
+import { LEGAL_ENTITY } from "@/lib/legal-content";
+import { LegalNamesList } from "@/components/legal/LegalNamesList";
 
 export function Footer() {
   return (
@@ -95,8 +96,13 @@ export function Footer() {
           <LegalPolicyLinks inline />
         </div>
         <p className="container mx-auto mt-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} {LEGAL_ENTITY.brandName} · Owners and partners:{" "}
-          <span className="font-medium text-foreground">{OWNERS_AND_PARTNERS_DISPLAY}</span>
+          <span>
+            © {new Date().getFullYear()} {LEGAL_ENTITY.brandName}
+          </span>
+          <span className="mt-2 block text-[11px] uppercase tracking-wide text-foreground/70">
+            Legal names
+          </span>
+          <LegalNamesList className="mt-1 text-center" />
         </p>
       </div>
     </footer>

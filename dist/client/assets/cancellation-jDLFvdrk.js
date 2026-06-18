@@ -1,0 +1,1 @@
+import{a1 as o,a as n}from"./index-D6otqzg7.js";import{L as t}from"./LegalPageLayout-D1baMoa6.js";const s=()=>o.jsx(t,{title:"Cancellation Policy",intro:"Understand when you can cancel and what refund you receive.",sections:n});export{s as component};

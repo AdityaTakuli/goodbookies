@@ -9,17 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SportsRouteImport } from './routes/sports'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ScoringRouteImport } from './routes/scoring'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RefundRouteImport } from './routes/refund'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LobbiesRouteImport } from './routes/lobbies'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CancellationRouteImport } from './routes/cancellation'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ScoringIndexRouteImport } from './routes/scoring.index'
 import { Route as OwnerIndexRouteImport } from './routes/owner.index'
@@ -56,6 +61,11 @@ import { Route as AccountPaymentsRouteImport } from './routes/account.payments'
 import { Route as AccountNotificationsRouteImport } from './routes/account.notifications'
 import { Route as AccountCardRouteImport } from './routes/account.card'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SportsRoute = SportsRouteImport.update({
   id: '/sports',
   path: '/sports',
@@ -74,6 +84,16 @@ const ScoringRoute = ScoringRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundRoute = RefundRouteImport.update({
+  id: '/refund',
+  path: '/refund',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OwnerRoute = OwnerRouteImport.update({
@@ -101,6 +121,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CancellationRoute = CancellationRouteImport.update({
+  id: '/cancellation',
+  path: '/cancellation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -109,6 +134,11 @@ const AdminRoute = AdminRouteImport.update({
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -289,17 +319,22 @@ const AccountCardRoute = AccountCardRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
+  '/cancellation': typeof CancellationRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/lobbies': typeof LobbiesRoute
   '/login': typeof LoginRoute
   '/owner': typeof OwnerRouteWithChildren
+  '/privacy': typeof PrivacyRoute
+  '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scoring': typeof ScoringRouteWithChildren
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/terms': typeof TermsRoute
   '/account/card': typeof AccountCardRoute
   '/account/notifications': typeof AccountNotificationsRoute
   '/account/payments': typeof AccountPaymentsRoute
@@ -337,13 +372,18 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/cancellation': typeof CancellationRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/lobbies': typeof LobbiesRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/terms': typeof TermsRoute
   '/account/card': typeof AccountCardRoute
   '/account/notifications': typeof AccountNotificationsRoute
   '/account/payments': typeof AccountPaymentsRoute
@@ -382,17 +422,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
+  '/cancellation': typeof CancellationRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/lobbies': typeof LobbiesRoute
   '/login': typeof LoginRoute
   '/owner': typeof OwnerRouteWithChildren
+  '/privacy': typeof PrivacyRoute
+  '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/scoring': typeof ScoringRouteWithChildren
   '/signup': typeof SignupRoute
   '/sports': typeof SportsRoute
+  '/terms': typeof TermsRoute
   '/account/card': typeof AccountCardRoute
   '/account/notifications': typeof AccountNotificationsRoute
   '/account/payments': typeof AccountPaymentsRoute
@@ -432,17 +477,22 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/account'
     | '/admin'
+    | '/cancellation'
     | '/dashboard'
     | '/forgot-password'
     | '/lobbies'
     | '/login'
     | '/owner'
+    | '/privacy'
+    | '/refund'
     | '/reset-password'
     | '/scoring'
     | '/signup'
     | '/sports'
+    | '/terms'
     | '/account/card'
     | '/account/notifications'
     | '/account/payments'
@@ -480,13 +530,18 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
+    | '/cancellation'
     | '/dashboard'
     | '/forgot-password'
     | '/lobbies'
     | '/login'
+    | '/privacy'
+    | '/refund'
     | '/reset-password'
     | '/signup'
     | '/sports'
+    | '/terms'
     | '/account/card'
     | '/account/notifications'
     | '/account/payments'
@@ -524,17 +579,22 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/account'
     | '/admin'
+    | '/cancellation'
     | '/dashboard'
     | '/forgot-password'
     | '/lobbies'
     | '/login'
     | '/owner'
+    | '/privacy'
+    | '/refund'
     | '/reset-password'
     | '/scoring'
     | '/signup'
     | '/sports'
+    | '/terms'
     | '/account/card'
     | '/account/notifications'
     | '/account/payments'
@@ -573,17 +633,22 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
+  CancellationRoute: typeof CancellationRoute
   DashboardRoute: typeof DashboardRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LobbiesRoute: typeof LobbiesRoute
   LoginRoute: typeof LoginRoute
   OwnerRoute: typeof OwnerRouteWithChildren
+  PrivacyRoute: typeof PrivacyRoute
+  RefundRoute: typeof RefundRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ScoringRoute: typeof ScoringRouteWithChildren
   SignupRoute: typeof SignupRoute
   SportsRoute: typeof SportsRoute
+  TermsRoute: typeof TermsRoute
   BookingSuccessRoute: typeof BookingSuccessRoute
   PlayersUsernameRoute: typeof PlayersUsernameRoute
   VenuesSlugRoute: typeof VenuesSlugRoute
@@ -591,6 +656,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sports': {
       id: '/sports'
       path: '/sports'
@@ -617,6 +689,20 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund': {
+      id: '/refund'
+      path: '/refund'
+      fullPath: '/refund'
+      preLoaderRoute: typeof RefundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/owner': {
@@ -654,6 +740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cancellation': {
+      id: '/cancellation'
+      path: '/cancellation'
+      fullPath: '/cancellation'
+      preLoaderRoute: typeof CancellationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -666,6 +759,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -1014,17 +1114,22 @@ const ScoringRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AccountRoute: AccountRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
+  CancellationRoute: CancellationRoute,
   DashboardRoute: DashboardRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LobbiesRoute: LobbiesRoute,
   LoginRoute: LoginRoute,
   OwnerRoute: OwnerRouteWithChildren,
+  PrivacyRoute: PrivacyRoute,
+  RefundRoute: RefundRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ScoringRoute: ScoringRouteWithChildren,
   SignupRoute: SignupRoute,
   SportsRoute: SportsRoute,
+  TermsRoute: TermsRoute,
   BookingSuccessRoute: BookingSuccessRoute,
   PlayersUsernameRoute: PlayersUsernameRoute,
   VenuesSlugRoute: VenuesSlugRoute,

@@ -2,6 +2,7 @@ import { CreditCard, IndianRupee, Info, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FULL_TURF_TOKEN_PERCENT, computeFullTurfTokenAmount, type FullTurfPaymentPlan } from "@/lib/pricing";
+import { CANCELLATION_POLICY_SHORT } from "@/lib/cancellation-policy";
 
 type BookingPaymentPortalProps = {
   amount: number;
@@ -126,7 +127,7 @@ export function BookingPaymentPortal({
                 If the turf does not fill up with other players, you may be required to pay the full
                 turf fee for your slot.
               </p>
-              <p>You can cancel your booking free of charge up to 1 hour before your slot starts.</p>
+              <p>Cancellation &amp; refunds: {CANCELLATION_POLICY_SHORT}</p>
             </div>
           </div>
           <label className="flex cursor-pointer items-start gap-3">
@@ -146,7 +147,7 @@ export function BookingPaymentPortal({
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
         <p>
           {requiresPayment
-            ? "Pay securely via Razorpay to confirm your slot. Your booking stays reserved until payment completes."
+            ? "Pay securely via PayU to confirm your slot. Your booking stays reserved until payment completes."
             : "No payment required. Your booking will be confirmed immediately."}
         </p>
       </div>
@@ -154,7 +155,7 @@ export function BookingPaymentPortal({
       {awaitingCheckout ? (
         <>
           <p className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">
-            Slot reserved. Open Razorpay checkout to complete payment.
+            Slot reserved. Open PayU checkout to complete payment.
           </p>
           <Button
             size="lg"
@@ -162,7 +163,7 @@ export function BookingPaymentPortal({
             disabled={loading}
             onClick={onOpenCheckout}
           >
-            {loading ? "Opening…" : `Open Razorpay · Pay ₹${amount.toLocaleString()}`}
+            {loading ? "Opening…" : `Open PayU · Pay ₹${amount.toLocaleString()}`}
           </Button>
         </>
       ) : (

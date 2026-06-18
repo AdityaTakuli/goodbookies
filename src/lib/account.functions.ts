@@ -3,6 +3,13 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { assertPhoneAvailable } from "@/lib/phone.server";
+import {
+  CANCEL_PARTIAL_REFUND_HOURS,
+  cancellationRefundPercent,
+  hoursUntilSlot,
+} from "@/lib/cancellation-policy";
+import { bookingStartMinute } from "@/lib/slot-time";
+import { refundRazorpayPayment } from "@/lib/services/razorpay";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -45,23 +52,20 @@ export const cancelMyBooking = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { data: booking, error: fErr } = await context.supabase
       .from("bookings")
-      .select("id, status, booking_date, start_hour")
+      .select("id, status, booking_date, start_hour, start_minute, payment_id")
       .eq("id", data.id)
       .eq("user_id", context.userId)
       .maybeSingle();
     if (fErr || !booking) throw new Error("Booking not found");
     if (booking.status === "cancelled") throw new Error("Already cancelled");
 
-    const { data: setting } = await supabaseAdmin
-      .from("site_settings")
-      .select("value")
-      .eq("key", "cancellation_hours")
-      .maybeSingle();
-    const cancelHours = Number(setting?.value ?? 24);
-    const slotStart = new Date(`${booking.booking_date}T${String(booking.start_hour).padStart(2, "0")}:00:00`);
-    const hoursUntil = (slotStart.getTime() - Date.now()) / (1000 * 60 * 60);
-    if (hoursUntil < cancelHours) {
-      throw new Error(`Cancellation must be at least ${cancelHours} hours before your slot`);
+    const startMinute = bookingStartMinute(booking);
+    const hoursUntil = hoursUntilSlot(booking.booking_date, startMinute);
+    const refundPercent = cancellationRefundPercent(hoursUntil);
+    if (refundPercent === null) {
+      throw new Error(
+        `Cancellation is not allowed within ${CANCEL_PARTIAL_REFUND_HOURS} hours of your slot`,
+      );
     }
 
     const { error } = await context.supabase
@@ -70,13 +74,36 @@ export const cancelMyBooking = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
+    if (booking.payment_id && refundPercent > 0) {
+      const { data: pay } = await supabaseAdmin
+        .from("payments")
+        .select("razorpay_payment_id, amount, status")
+        .eq("id", booking.payment_id)
+        .maybeSingle();
+      if (pay?.razorpay_payment_id && pay.status === "paid") {
+        const refundPaise = Math.round(pay.amount * 100 * (refundPercent / 100));
+        if (refundPaise > 0) {
+          await refundRazorpayPayment(pay.razorpay_payment_id, refundPaise);
+        }
+        await supabaseAdmin
+          .from("payments")
+          .update({ status: refundPercent === 100 ? "refunded" : "partially_refunded" })
+          .eq("id", booking.payment_id);
+      }
+    }
+
+    const refundNote =
+      refundPercent === 100
+        ? "A full refund will be processed within 5–7 business days."
+        : `A ${refundPercent}% refund will be processed within 5–7 business days.`;
+
     await supabaseAdmin.from("notifications").insert({
       user_id: context.userId,
       title: "Booking cancelled",
-      message: `Your booking was cancelled. Refunds (if eligible) are processed within 5–7 business days.`,
+      message: `Your booking was cancelled. ${refundNote}`,
       type: "cancellation",
     });
-    return { ok: true };
+    return { ok: true, refundPercent };
   });
 
 export const listMyNotifications = createServerFn({ method: "GET" })

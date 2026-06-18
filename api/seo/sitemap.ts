@@ -51,6 +51,11 @@ export default async function handler(
     { loc: `${base}/`, changefreq: "weekly", priority: "1.0" },
     { loc: `${base}/sports`, changefreq: "daily", priority: "0.9" },
     { loc: `${base}/lobbies`, changefreq: "hourly", priority: "0.8" },
+    { loc: `${base}/about`, changefreq: "monthly", priority: "0.5" },
+    { loc: `${base}/terms`, changefreq: "monthly", priority: "0.4" },
+    { loc: `${base}/privacy`, changefreq: "monthly", priority: "0.4" },
+    { loc: `${base}/refund`, changefreq: "monthly", priority: "0.4" },
+    { loc: `${base}/cancellation`, changefreq: "monthly", priority: "0.4" },
     { loc: `${base}/owner/register`, changefreq: "monthly", priority: "0.6" },
   ];
 

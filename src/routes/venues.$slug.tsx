@@ -238,7 +238,7 @@ function VenuePage() {
         });
         await qc.invalidateQueries({ queryKey: ["slots", venue!.id, date] });
         toast.message("Slot reserved", {
-          description: "Click Open Razorpay below to pay and confirm.",
+          description: "Click Open PayU below to pay and confirm.",
         });
         return;
       }

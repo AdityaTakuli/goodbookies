@@ -13,7 +13,7 @@ const FIELDS = [
   { key: "contact_email", label: "Contact email" },
   { key: "support_phone", label: "Support phone" },
   { key: "peak_hour_surcharge_percent", label: "Peak hour surcharge (%)" },
-  { key: "cancellation_hours", label: "Cancellation window (hours before slot)" },
+  { key: "cancellation_hours", label: "Legacy cancellation hours (unused — tiered policy: 3h / 2h)" },
   { key: "platform_commission_rate", label: "Platform commission (%)" },
 ] as const;
 

@@ -1,5 +1,7 @@
 /** Site-wide SEO constants and helpers. */
 
+import { LEGAL_ENTITY } from "@/lib/legal-content";
+
 export const SITE_NAME = "Good Bookies";
 export const SITE_TAGLINE = "Book sports turfs online in India";
 export const DEFAULT_DESCRIPTION =
@@ -99,9 +101,20 @@ export function organizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: SITE_NAME,
+    legalName: LEGAL_ENTITY.legalName,
     url,
     logo: absoluteUrl("/apple-touch-icon.png"),
     description: DEFAULT_DESCRIPTION,
+    email: LEGAL_ENTITY.email,
+    telephone: `+91${LEGAL_ENTITY.phone}`,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: LEGAL_ENTITY.addressLine1,
+      addressLocality: LEGAL_ENTITY.city,
+      postalCode: LEGAL_ENTITY.pincode,
+      addressRegion: LEGAL_ENTITY.state,
+      addressCountry: LEGAL_ENTITY.country,
+    },
     sameAs: [] as string[],
   };
 }

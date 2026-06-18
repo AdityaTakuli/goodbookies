@@ -1,4 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { LegalBusinessIdentity } from "@/components/legal/LegalBusinessIdentity";
+import { LegalPolicyLinks } from "@/components/legal/LegalPolicyLinks";
+import { LEGAL_ENTITY, PARTNERS_DISPLAY } from "@/lib/legal-content";
 
 export function Footer() {
   return (
@@ -69,38 +72,34 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <h4 className="text-sm font-semibold">Legal</h4>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li>
-              <Link to="/about" className="transition-colors hover:text-primary">
-                About us
-              </Link>
-            </li>
-            <li>
-              <Link to="/terms" className="transition-colors hover:text-primary">
-                Terms &amp; conditions
-              </Link>
-            </li>
-            <li>
-              <Link to="/privacy" className="transition-colors hover:text-primary">
-                Privacy policy
-              </Link>
-            </li>
-            <li>
-              <Link to="/refund" className="transition-colors hover:text-primary">
-                Refund policy
-              </Link>
-            </li>
-            <li>
-              <Link to="/cancellation" className="transition-colors hover:text-primary">
-                Cancellation policy
-              </Link>
-            </li>
-          </ul>
+          <h4 className="text-sm font-semibold">Policies</h4>
+          <LegalPolicyLinks className="mt-3" />
         </div>
       </div>
-      <div className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Good Bookies. All rights reserved.
+
+      <div className="border-t border-border/60 bg-card/30">
+        <div className="container mx-auto grid gap-8 px-4 py-8 md:grid-cols-2">
+          <LegalBusinessIdentity />
+          <div className="text-sm text-muted-foreground md:text-right">
+            <p className="font-semibold text-foreground">Good Bookies</p>
+            <p className="mt-1">Online sports turf booking platform</p>
+            <p className="mt-3 text-xs">
+              Payments processed securely via PayU. Prices shown in INR (₹).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-border/60 px-4 py-6">
+        <div className="container mx-auto flex justify-center">
+          <LegalPolicyLinks inline />
+        </div>
+        <p className="container mx-auto mt-4 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} Good Bookies · Operated by{" "}
+          <span className="font-medium text-foreground">{LEGAL_ENTITY.legalName}</span>
+          {", "}
+          <span className="font-medium text-foreground">{PARTNERS_DISPLAY}</span>
+        </p>
       </div>
     </footer>
   );

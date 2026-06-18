@@ -7,13 +7,22 @@ import { FULL_TURF_TOKEN_PERCENT, INDIVIDUAL_BOOKING_SURCHARGE } from "@/lib/pri
 
 export const LEGAL_ENTITY = {
   tradeName: "Good Bookies",
+  legalName: "ADITYA PRATAP SINGH TAKULI",
   proprietor: "Aditya Pratap Singh Takuli",
+  partners: ["NIVESH LOSHALI", "AKSHAY GURURANI", "AYUSH TRIPATHI"] as const,
   email: "contact@goodbookies.co.in",
   phone: "8791327956",
-  address: "Shantiputi Number 2, Kiccha – 263148, Uttarakhand, India",
+  addressLine1: "Shantiputi Number 2",
+  city: "Kiccha",
+  pincode: "263148",
+  state: "Uttarakhand",
+  country: "India",
+  fullAddress: "Shantiputi Number 2, Kiccha – 263148, Uttarakhand, India",
   website: "goodbookies.co.in",
   paymentPartner: "PayU",
 } as const;
+
+export const PARTNERS_DISPLAY = LEGAL_ENTITY.partners.join(", ");
 
 export type LegalQa = { question: string; answer: string };
 
@@ -23,7 +32,7 @@ const tokenPercent = Math.round(FULL_TURF_TOKEN_PERCENT * 100);
 export const TERMS_SECTIONS: LegalQa[] = [
   {
     question: "Who operates this website?",
-    answer: `This website is operated by ${LEGAL_ENTITY.tradeName} (trade name), a proprietorship of ${LEGAL_ENTITY.proprietor}. Our registered address is ${LEGAL_ENTITY.address}.`,
+    answer: `This website is operated by ${LEGAL_ENTITY.tradeName} (trade name), a proprietorship of ${LEGAL_ENTITY.legalName}, in partnership with ${PARTNERS_DISPLAY}. Our registered and operating address is ${LEGAL_ENTITY.fullAddress}.`,
   },
   {
     question: "What does Good Bookies do?",
@@ -143,6 +152,10 @@ export const CANCELLATION_SECTIONS: LegalQa[] = [
 
 export const ABOUT_SECTIONS: LegalQa[] = [
   {
+    question: "Who is behind Good Bookies?",
+    answer: `Good Bookies is founded and operated by ${LEGAL_ENTITY.legalName} (proprietor), ${PARTNERS_DISPLAY}.`,
+  },
+  {
     question: "What is Good Bookies?",
     answer:
       "Good Bookies is Haldwani's online sports turf booking platform — built for players, by players. Discover, compare, and book football turfs, cricket nets, and indoor courts with real-time slot availability and instant confirmation.",
@@ -163,6 +176,6 @@ export const ABOUT_SECTIONS: LegalQa[] = [
   },
   {
     question: "How do I reach you?",
-    answer: `Email: ${LEGAL_ENTITY.email} | Phone/WhatsApp: ${LEGAL_ENTITY.phone}\nRegistered address: ${LEGAL_ENTITY.address}`,
+    answer: `Email: ${LEGAL_ENTITY.email} | Phone/WhatsApp: +91 ${LEGAL_ENTITY.phone}\nLegal name: ${LEGAL_ENTITY.legalName}\nPartners: ${PARTNERS_DISPLAY}\nTrade name: ${LEGAL_ENTITY.tradeName}\nRegistered address: ${LEGAL_ENTITY.fullAddress}`,
   },
 ];

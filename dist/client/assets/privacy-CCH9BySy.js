@@ -1,1 +1,0 @@
-import{J as t}from"./index-BPcByzL_.js";import{L as o,P as i}from"./legal-content-DnnK5_nG.js";import"./pricing-CGbldGlr.js";import"./client.server-BZyfkbJG.js";const p=()=>t.jsx(o,{title:"Privacy Policy",intro:"Your privacy matters to us. This policy explains what data we collect and how we use it.",sections:i});export{p as component};

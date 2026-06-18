@@ -1,8 +1,10 @@
 import { CreditCard, IndianRupee, Info, ShieldCheck } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FULL_TURF_TOKEN_PERCENT, computeFullTurfTokenAmount, type FullTurfPaymentPlan } from "@/lib/pricing";
 import { CANCELLATION_POLICY_SHORT } from "@/lib/cancellation-policy";
+import { LEGAL_ENTITY, PARTNERS_DISPLAY } from "@/lib/legal-content";
 
 type BookingPaymentPortalProps = {
   amount: number;
@@ -145,11 +147,35 @@ export function BookingPaymentPortal({
 
       <div className="flex items-start gap-2 rounded-xl border border-[#1E3A27] bg-[#0B130E]/60 p-3 text-xs text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-        <p>
-          {requiresPayment
-            ? "Pay securely via PayU to confirm your slot. Your booking stays reserved until payment completes."
-            : "No payment required. Your booking will be confirmed immediately."}
-        </p>
+        <div className="space-y-2">
+          <p>
+            {requiresPayment
+              ? "Pay securely via PayU to confirm your slot. Your booking stays reserved until payment completes."
+              : "No payment required. Your booking will be confirmed immediately."}
+          </p>
+          <p>
+            Operated by <span className="font-medium text-foreground">{LEGAL_ENTITY.legalName}</span>
+            {", "}
+            {PARTNERS_DISPLAY} ({LEGAL_ENTITY.tradeName}), {LEGAL_ENTITY.fullAddress}.
+          </p>
+          <p className="flex flex-wrap gap-x-2 gap-y-1">
+            <Link to="/terms" className="text-primary hover:underline">
+              Terms
+            </Link>
+            <span aria-hidden>·</span>
+            <Link to="/privacy" className="text-primary hover:underline">
+              Privacy
+            </Link>
+            <span aria-hidden>·</span>
+            <Link to="/refund" className="text-primary hover:underline">
+              Return &amp; Refund
+            </Link>
+            <span aria-hidden>·</span>
+            <Link to="/cancellation" className="text-primary hover:underline">
+              Cancellation
+            </Link>
+          </p>
+        </div>
       </div>
 
       {awaitingCheckout ? (

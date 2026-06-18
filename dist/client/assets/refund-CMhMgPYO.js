@@ -1,1 +1,0 @@
-import{J as o}from"./index-BPcByzL_.js";import{L as e,R as t}from"./legal-content-DnnK5_nG.js";import"./pricing-CGbldGlr.js";import"./client.server-BZyfkbJG.js";const a=()=>o.jsx(e,{title:"Return & Refund Policy",intro:"Refunds are processed according to the schedule below when you cancel a booking.",sections:t});export{a as component};

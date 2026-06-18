@@ -85,10 +85,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "gb-build", content: CLIENT_BUILD_ID },
     ],
     links: [
-      { rel: "icon", href: "/favicon.svg?v=6", type: "image/svg+xml" },
-      { rel: "icon", href: "/favicon.ico?v=6", sizes: "any" },
-      { rel: "icon", href: "/favicon.png?v=6", type: "image/png", sizes: "32x32" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=6", sizes: "180x180" },
+      { rel: "icon", href: "/favicon.png?v=7", type: "image/png", sizes: "32x32" },
+      { rel: "icon", href: "/favicon.ico?v=7", sizes: "any" },
+      { rel: "icon", href: "/favicon.svg?v=7", type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=7", sizes: "180x180" },
       {
         rel: "stylesheet",
         href: appCss,

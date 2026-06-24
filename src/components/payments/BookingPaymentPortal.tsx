@@ -151,7 +151,7 @@ export function BookingPaymentPortal({
         <div className="space-y-2">
           <p>
             {requiresPayment
-              ? "Pay securely via PayU to confirm your slot. Your booking stays reserved until payment completes."
+              ? "Pay securely via Razorpay to confirm your slot. Your booking stays reserved until payment completes."
               : "No payment required. Your booking will be confirmed immediately."}
           </p>
           <div>
@@ -185,7 +185,7 @@ export function BookingPaymentPortal({
       {awaitingCheckout ? (
         <>
           <p className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">
-            Slot reserved. Open PayU checkout to complete payment.
+            Slot reserved. Open Razorpay checkout to complete payment.
           </p>
           <Button
             size="lg"
@@ -193,7 +193,7 @@ export function BookingPaymentPortal({
             disabled={loading}
             onClick={onOpenCheckout}
           >
-            {loading ? "Opening…" : `Open PayU · Pay ₹${amount.toLocaleString()}`}
+            {loading ? "Opening…" : `Open Razorpay · Pay ₹${amount.toLocaleString()}`}
           </Button>
         </>
       ) : (

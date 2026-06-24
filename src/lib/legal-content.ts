@@ -23,7 +23,7 @@ export const LEGAL_ENTITY = {
   country: "India",
   fullAddress: "Shantiputi Number 2, Kiccha – 263148, Uttarakhand, India",
   website: "goodbookies.co.in",
-  paymentPartner: "PayU",
+  paymentPartner: "Razorpay",
 } as const;
 
 export const LEGAL_NAMES_INLINE = LEGAL_ENTITY.legalNames.join(", ");
@@ -65,7 +65,7 @@ export const TERMS_SECTIONS: LegalQa[] = [
   },
   {
     question: "How are payments processed?",
-    answer: `Online payments are processed securely through ${LEGAL_ENTITY.paymentPartner}, our authorised payment partner. Card, UPI, net banking, and wallet options available through PayU are subject to PayU's terms.`,
+    answer: `Online payments are processed securely through ${LEGAL_ENTITY.paymentPartner}, our authorised payment partner. Card, UPI, net banking, and wallet options available through Razorpay are subject to Razorpay's terms.`,
   },
   {
     question: "Can GOOD BOOKIES change these terms?",
@@ -113,7 +113,7 @@ export const REFUND_SECTIONS: LegalQa[] = [
   {
     question: "How will the refund be processed?",
     answer:
-      "Refunds are credited to the original payment method (UPI, debit/credit card, net banking, or wallet) used at booking, via our payment partner PayU.",
+      "Refunds are credited to the original payment method (UPI, debit/credit card, net banking, or wallet) used at booking, via our payment partner Razorpay.",
   },
   {
     question: "How long does a refund take?",

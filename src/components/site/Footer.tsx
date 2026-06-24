@@ -85,7 +85,7 @@ export function Footer() {
             <p className="font-semibold text-foreground">{LEGAL_ENTITY.brandName}</p>
             <p className="mt-1">Online sports turf booking platform</p>
             <p className="mt-3 text-xs">
-              Payments processed securely via PayU. Prices shown in INR (₹).
+              Payments processed securely via Razorpay. Prices shown in INR (₹).
             </p>
           </div>
         </div>

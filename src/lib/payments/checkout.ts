@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { syncGroupSlotPostsForBooking } from "@/lib/group-slot-posts";
 import {
   createRazorpayOrder,
   isRazorpayConfigured,
@@ -154,6 +155,8 @@ export async function confirmBookingAfterPayment(input: {
       type: "booking",
     });
   }
+
+  await syncGroupSlotPostsForBooking(booking.id);
 
   return { bookingId: booking.id, status: "confirmed" as const };
 }

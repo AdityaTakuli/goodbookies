@@ -16,6 +16,8 @@ import {
   venueCloseMinutes,
   venueOpenMinutes,
 } from "@/lib/slot-time";
+import { syncGroupSlotPostsForBooking } from "@/lib/group-slot-posts";
+import { buildVenueDaySessions, type VenueDaySession } from "@/lib/slot-schedule";
 import { resolveMinBookingMinutes } from "@/lib/venue-extras";
 
 let reviewCountColumnReady: boolean | null = null;
@@ -37,12 +39,20 @@ const VENUE_DETAIL_FIELDS_EXTENDED =
 
 let venueDetailFieldsReady: boolean | null = null;
 let bookingMinuteColumnsReady: boolean | null = null;
+let shareToGroupColumnReady: boolean | null = null;
 
 async function venueHasBookingMinuteColumns() {
   if (bookingMinuteColumnsReady != null) return bookingMinuteColumnsReady;
   const { error } = await supabaseAdmin.from("bookings").select("start_minute, end_minute").limit(1);
   bookingMinuteColumnsReady = !error?.message?.includes("start_minute");
   return bookingMinuteColumnsReady;
+}
+
+async function venueHasShareToGroupColumn() {
+  if (shareToGroupColumnReady != null) return shareToGroupColumnReady;
+  const { error } = await supabaseAdmin.from("bookings").select("share_to_group").limit(1);
+  shareToGroupColumnReady = !error?.message?.includes("share_to_group");
+  return shareToGroupColumnReady;
 }
 
 async function venueDetailSelectFields() {
@@ -226,9 +236,46 @@ export const getSlots = createServerFn({ method: "GET" })
     return slots;
   });
 
+export const getVenueDaySchedule = createServerFn({ method: "GET" })
+  .inputValidator((input: { venueId: string; date: string }) =>
+    z.object({
+      venueId: z.string().uuid(),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }).parse(input),
+  )
+  .handler(async ({ data }): Promise<VenueDaySession[]> => {
+    const { data: venue } = await supabaseAdmin
+      .from("venues")
+      .select("max_players_allowed, slot_duration_minutes, operating_days, holiday_dates")
+      .eq("id", data.venueId)
+      .maybeSingle();
+    if (!venue) return [];
+
+    const dow = new Date(data.date + "T12:00:00").getDay();
+    const holidays: string[] = (venue.holiday_dates as string[]) ?? [];
+    if (holidays.includes(data.date)) return [];
+    const opDays: number[] = (venue.operating_days as number[]) ?? [0, 1, 2, 3, 4, 5, 6];
+    if (!opDays.includes(dow)) return [];
+
+    const bookingFields = (await venueHasBookingMinuteColumns())
+      ? "id, start_hour, end_hour, start_minute, end_minute, status, player_count, is_open_lobby"
+      : "id, start_hour, end_hour, status, player_count, is_open_lobby";
+
+    const { data: bookings } = await supabaseAdmin
+      .from("bookings")
+      .select(bookingFields)
+      .eq("venue_id", data.venueId)
+      .eq("booking_date", data.date)
+      .in("status", ["confirmed", "pending"]);
+
+    const stepMinutes = slotStepMinutes(venue.slot_duration_minutes);
+    const totalCapacity = Math.max(1, Number(venue.max_players_allowed ?? 1));
+    return buildVenueDaySessions(bookings ?? [], totalCapacity, stepMinutes);
+  });
+
 export const createBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { venueId: string; date: string; startMinute: number; endMinute: number; playerCount?: number; playerNames?: string[]; isOpenLobby?: boolean; couponCode?: string; paymentPlan?: FullTurfPaymentPlan }) =>
+  .inputValidator((input: { venueId: string; date: string; startMinute: number; endMinute: number; playerCount?: number; playerNames?: string[]; isOpenLobby?: boolean; shareToGroup?: boolean; couponCode?: string; paymentPlan?: FullTurfPaymentPlan }) =>
     z.object({
       venueId: z.string().uuid(),
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -237,6 +284,7 @@ export const createBooking = createServerFn({ method: "POST" })
       playerCount: z.number().int().min(1).max(100).default(1),
       playerNames: z.array(z.string().trim().min(1).max(60)).optional(),
       isOpenLobby: z.boolean().default(false),
+      shareToGroup: z.boolean().default(true),
       couponCode: z.string().optional(),
       paymentPlan: z.enum(["full", "token"]).default("full"),
     })
@@ -330,7 +378,9 @@ export const createBooking = createServerFn({ method: "POST" })
       coupon: coupon ? { discount_type: coupon.discount_type, discount_value: coupon.discount_value } : null,
     });
 
-    const openLobby = false;
+    const isIndividual = data.playerCount < maxCap;
+    const shareToGroup = data.shareToGroup !== false;
+    const openLobby = isIndividual && shareToGroup;
     const pricingResult = resolvePayableAmount(total, maxCap, data.playerCount, data.paymentPlan);
     if (!pricingResult.isFullTurf && data.paymentPlan === "token") {
       throw new Error("Token payment is only available for full turf bookings");
@@ -376,6 +426,9 @@ export const createBooking = createServerFn({ method: "POST" })
       bookingInsert.start_hour = data.startMinute;
       bookingInsert.end_hour = data.endMinute;
     }
+    if (await venueHasShareToGroupColumn()) {
+      bookingInsert.share_to_group = shareToGroup;
+    }
 
     const { data: booking, error } = await context.supabase
       .from("bookings")
@@ -406,6 +459,8 @@ export const createBooking = createServerFn({ method: "POST" })
           type: "booking",
         });
       }
+
+      await syncGroupSlotPostsForBooking(booking.id);
     }
 
     return {

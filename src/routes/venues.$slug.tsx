@@ -5,8 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Star, Clock, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
-import { getVenue, getSlots, createBooking } from "@/lib/booking.functions";
+import { getVenue, getSlots, getVenueDaySchedule, createBooking } from "@/lib/booking.functions";
 import { SlotPicker } from "@/components/SlotPicker";
+import { VenueSlotSchedule } from "@/components/VenueSlotSchedule";
+import { BookingConflictSuggestions } from "@/components/BookingConflictSuggestions";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveVenueImage } from "@/lib/images";
 import { VenueReviews } from "@/components/VenueReviews";
@@ -26,6 +28,11 @@ import {
   slotPriceTotal,
   slotStepMinutes,
 } from "@/lib/slot-time";
+import {
+  suggestBookingAlternatives,
+  slotStartsForSession,
+  type BookingSuggestion,
+} from "@/lib/slot-schedule";
 
 type BookingMode = "individual" | "full";
 
@@ -80,6 +87,7 @@ function VenuePage() {
   const [bookingMode, setBookingMode] = useState<BookingMode>("individual");
   const [paymentPlan, setPaymentPlan] = useState<FullTurfPaymentPlan>("full");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [shareToGroup, setShareToGroup] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState<{
     bookingId: string;
@@ -94,6 +102,13 @@ function VenuePage() {
   const slotsQuery = useQuery({
     queryKey: ["slots", rawVenue?.id, date, playerCount],
     queryFn: () => getSlots({ data: { venueId: rawVenue!.id, date, playerCount } }),
+    enabled: Boolean(rawVenue?.id),
+    refetchInterval: 15000,
+  });
+
+  const scheduleQuery = useQuery({
+    queryKey: ["venue-schedule", rawVenue?.id, date],
+    queryFn: () => getVenueDaySchedule({ data: { venueId: rawVenue!.id, date } }),
     enabled: Boolean(rawVenue?.id),
     refetchInterval: 15000,
   });
@@ -148,6 +163,46 @@ function VenuePage() {
     0,
   );
 
+  const selectionEndMinute =
+    sortedSel.length > 0
+      ? selectionEndFromSlots(sortedSel, stepMinutes) ?? sortedSel[0] + stepMinutes
+      : null;
+
+  const bookingSuggestions =
+    sortedSel.length === 0 || !scheduleQuery.data || selectionEndMinute == null
+      ? []
+      : suggestBookingAlternatives(
+          sortedSel[0],
+          selectionEndMinute,
+          playerCount,
+          scheduleQuery.data,
+          stepMinutes,
+        );
+
+  const hasOverlapConflict = bookingSuggestions.length > 0;
+  const willHaveOpenCapacity =
+    bookingMode === "individual" && capacityAfterBooking < maxPlayersAllowed;
+
+  function applyBookingSuggestion(suggestion: BookingSuggestion) {
+    const slots = slotStartsForSession(suggestion.startMinute, suggestion.endMinute, stepMinutes);
+    const availableSet = new Set(
+      (slotsQuery.data ?? []).filter((s) => s.available).map((s) => s.startMinute),
+    );
+    if (!slots.every((m) => availableSet.has(m))) {
+      toast.error("Those slots are no longer available. Please pick again.");
+      return;
+    }
+    if (suggestion.type === "join") {
+      setBookingMode("individual");
+    }
+    setSelected(slots);
+    toast.success(
+      suggestion.type === "join"
+        ? "Switched to join the existing game window"
+        : "Updated to the nearest open start time",
+    );
+  }
+
   useEffect(() => {
     if (bookingMode === "full" && !canBookFullTurf) {
       setBookingMode("individual");
@@ -185,6 +240,7 @@ function VenuePage() {
       const bookingId = pendingCheckout.bookingId;
       setPendingCheckout(null);
       await qc.invalidateQueries({ queryKey: ["slots", venue.id, date] });
+      await qc.invalidateQueries({ queryKey: ["venue-schedule", venue.id, date] });
       navigate({ to: "/booking/success", search: { id: bookingId } });
     }
   }
@@ -221,6 +277,7 @@ function VenuePage() {
           startMinute: sortedSel[0],
           endMinute: selectionEndFromSlots(sortedSel, stepMinutes) ?? sortedSel[0] + stepMinutes,
           playerCount,
+          shareToGroup: isFullTurf ? false : shareToGroup,
           paymentPlan: isFullTurf ? paymentPlan : "full",
         },
       });
@@ -237,6 +294,7 @@ function VenuePage() {
           customerName,
         });
         await qc.invalidateQueries({ queryKey: ["slots", venue!.id, date] });
+        await qc.invalidateQueries({ queryKey: ["venue-schedule", venue!.id, date] });
         toast.message("Slot reserved", {
           description: "Click Open Razorpay below to pay and confirm.",
         });
@@ -244,6 +302,7 @@ function VenuePage() {
       }
 
       await qc.invalidateQueries({ queryKey: ["slots", venue!.id, date] });
+      await qc.invalidateQueries({ queryKey: ["venue-schedule", venue!.id, date] });
       navigate({ to: "/booking/success", search: { id: res.bookingId } });
     } catch (e: any) {
       toast.error(e.message ?? "Booking failed");
@@ -450,6 +509,18 @@ function VenuePage() {
             )}
           </div>
 
+          <VenueSlotSchedule
+            sessions={scheduleQuery.data ?? []}
+            loading={scheduleQuery.isLoading}
+          />
+
+          {hasOverlapConflict && sortedSel.length > 0 && (
+            <BookingConflictSuggestions
+              suggestions={bookingSuggestions}
+              onApply={applyBookingSuggestion}
+            />
+          )}
+
           {isOwnVenue ? (
             <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
               <p className="font-semibold text-foreground">This is your turf</p>
@@ -465,6 +536,23 @@ function VenuePage() {
             </div>
           ) : (
             <div className="space-y-3">
+              {!isFullTurf && willHaveOpenCapacity && (
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-card/80 px-4 py-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={shareToGroup}
+                    onChange={(e) => setShareToGroup(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="font-semibold">Share open spots in our community group</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      On by default. We post this slot with remaining capacity so others can join.
+                      Uncheck if you do not want it shared.
+                    </span>
+                  </span>
+                </label>
+              )}
               <BookingPaymentPortal
                 amount={displayPayable}
                 fullAmount={payableAmount}

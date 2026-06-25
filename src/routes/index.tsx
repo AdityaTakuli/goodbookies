@@ -70,7 +70,7 @@ function Index() {
           decoding="sync"
           className="absolute inset-0 -z-10 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/40 via-background/75 to-[oklch(0.10_0.03_155)]" />
         <div className="container mx-auto px-4 py-16 md:py-36">
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -92,12 +92,32 @@ function Index() {
             </div>
           </div>
         </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10" aria-hidden="true">
+          <svg
+            viewBox="0 0 1440 96"
+            preserveAspectRatio="none"
+            className="block h-16 w-full md:h-20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Sage fill — continues into the sports section below */}
+            <path
+              d="M0,32 C200,36 420,92 760,86 C1020,82 1240,48 1440,40 L1440,96 L0,96 Z"
+              fill="#C7E9C0"
+            />
+            {/* Darker green accent strip along the curve edge */}
+            <path
+              d="M0,32 C200,36 420,92 760,86 C1020,82 1240,48 1440,40 L1440,28 C1240,36 1020,70 760,74 C420,80 200,24 0,20 Z"
+              fill="#6A9B4A"
+            />
+          </svg>
+        </div>
       </section>
 
-      <section className="container mx-auto px-4 py-16 md:py-20">
+      <section className="bg-[#E5F5E0] text-[oklch(0.18_0.04_155)]">
+        <div className="container mx-auto px-4 pb-16 pt-2 md:pb-20 md:pt-4">
         <div>
           <h2 className="font-display text-3xl font-bold md:text-4xl">Pick your sport</h2>
-          <p className="mt-2 text-muted-foreground">Tap a sport to see venues near you.</p>
+          <p className="mt-2 text-[oklch(0.28_0.04_155)]">Tap a sport to see venues near you.</p>
         </div>
         <div className="mt-10 grid min-h-[280px] grid-cols-2 gap-4 sm:grid-cols-3 md:min-h-0 md:grid-cols-5">
           {sports.map((s) => {
@@ -124,6 +144,7 @@ function Index() {
             </Link>
             );
           })}
+        </div>
         </div>
       </section>
 

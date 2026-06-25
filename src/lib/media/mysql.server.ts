@@ -165,9 +165,25 @@ export async function getMediaAssetById(id: string, scope?: MediaDbScope | "auto
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
 
   if (scope === "user" || scope === "venue") {
-    if (scope === "user" && !hasUserMediaConfig()) return null;
-    if (scope === "venue" && !hasVenueMediaConfig()) return null;
-    return fetchRow(poolForScope(scope), id);
+    if (scope === "user") {
+      if (hasUserMediaConfig()) {
+        const row = await fetchRow(getUserMediaPool(), id);
+        if (row) return row;
+      }
+      if (hasVenueMediaConfig()) {
+        return fetchRow(getVenueMediaPool(), id);
+      }
+      return null;
+    }
+
+    if (hasVenueMediaConfig()) {
+      const row = await fetchRow(getVenueMediaPool(), id);
+      if (row) return row;
+    }
+    if (hasUserMediaConfig()) {
+      return fetchRow(getUserMediaPool(), id);
+    }
+    return null;
   }
 
   if (hasUserMediaConfig()) {
@@ -214,5 +230,34 @@ export function assertAllowedSize(category: MediaCategory, size: number) {
   if (size > max) {
     const mb = Math.round(max / (1024 * 1024));
     throw new Error(`File too large (max ${mb} MB)`);
+  }
+}
+
+export async function listVenueMediaBySlug(venueSlug: string): Promise<
+  { asset_id: string; media_type: "image" | "video"; sort_order: number; url: string }[]
+> {
+  if (!venueSlug || !hasVenueMediaConfig()) return [];
+
+  try {
+    const db = getVenueMediaPool();
+    const [rows] = await db.execute<mysql.RowDataPacket[]>(
+      `SELECT vmm.asset_id, vmm.media_type, vmm.sort_order
+       FROM venue_media_map vmm
+       JOIN media_assets ma ON ma.id = vmm.asset_id
+       WHERE vmm.venue_slug = ? AND vmm.is_active = 1
+       ORDER BY vmm.sort_order ASC`,
+      [venueSlug],
+    );
+
+    return rows.map((row) => ({
+      asset_id: String(row.asset_id),
+      media_type: row.media_type === "video" ? "video" : "image",
+      sort_order: Number(row.sort_order ?? 0),
+      url: getMediaPublicPath("venue", String(row.asset_id)),
+    }));
+  } catch (error) {
+    // Keep venue pages working even if mapping table isn't present yet.
+    console.warn("[media/mysql] listVenueMediaBySlug failed:", error);
+    return [];
   }
 }

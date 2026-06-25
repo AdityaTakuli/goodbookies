@@ -17,6 +17,7 @@ import {
   venueOpenMinutes,
 } from "@/lib/slot-time";
 import { syncGroupSlotPostsForBooking } from "@/lib/group-slot-posts";
+import { listVenueMediaBySlug } from "@/lib/media/mysql.server";
 import { buildVenueDaySessions, type VenueDaySession } from "@/lib/slot-schedule";
 import { resolveMinBookingMinutes } from "@/lib/venue-extras";
 
@@ -141,7 +142,18 @@ export const getVenue = createServerFn({ method: "GET" })
       .eq("approval_status", "approved")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return venue ? withReviewCount(venue as Record<string, unknown>) : null;
+    if (!venue) return null;
+
+    const mappedMedia = await listVenueMediaBySlug(data.slug);
+    const normalized = withReviewCount(venue as Record<string, unknown>) as Record<string, unknown>;
+    if (mappedMedia.length > 0) {
+      normalized.media_gallery = mappedMedia.map((item) => ({
+        type: item.media_type,
+        url: item.url,
+      }));
+    }
+
+    return normalized;
   });
 
 export const getSlots = createServerFn({ method: "GET" })

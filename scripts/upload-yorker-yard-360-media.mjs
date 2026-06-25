@@ -7,7 +7,7 @@
  * MySQL: uses VENUE_MEDIA_* env vars. On Hostinger server use 127.0.0.1.
  * From your laptop use the remote MySQL hostname from hPanel (not 127.0.0.1).
  *
- * Fallback: if MySQL is unreachable, files are copied to public/venues/yorker-yard-oval-360/
+ * Fallback: if MySQL is unreachable, files are copied to public/venues/yorker-yard-360/.
  */
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -92,7 +92,7 @@ async function saveToMysql(pool, ownerId, asset, buffer) {
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [id, ownerId, asset.category, asset.mime, asset.publicName, buffer.length, buffer],
   );
-  return `/api/media/venue/${id}`;
+  return { id, url: `/api/media/venue/${id}` };
 }
 
 function saveToPublic(asset, buffer) {
@@ -100,6 +100,17 @@ function saveToPublic(asset, buffer) {
   const dest = path.join(PUBLIC_DIR, asset.publicName);
   fs.writeFileSync(dest, buffer);
   return `/venues/yorker-yard-360/${asset.publicName}`;
+}
+
+async function upsertVenueMediaMap(pool, items) {
+  await pool.execute(`DELETE FROM venue_media_map WHERE venue_slug = ?`, [VENUE_SLUG]);
+  for (const item of items) {
+    await pool.execute(
+      `INSERT INTO venue_media_map (id, venue_slug, asset_id, media_type, sort_order, is_active)
+       VALUES (?, ?, ?, ?, ?, 1)`,
+      [crypto.randomUUID(), VENUE_SLUG, item.assetId, item.type, item.sortOrder],
+    );
+  }
 }
 
 async function main() {
@@ -141,14 +152,18 @@ async function main() {
   }
 
   const gallery = [];
-  for (const asset of ASSETS) {
+  const mapRows = [];
+  for (const [idx, asset] of ASSETS.entries()) {
     const filePath = path.join(ROOT, asset.source);
     if (!fs.existsSync(filePath)) throw new Error(`Missing file: ${filePath}`);
     const buffer = fs.readFileSync(filePath);
     let url;
+    let assetId = null;
     if (mysqlOk && pool) {
       try {
-        url = await saveToMysql(pool, ownerId, asset, buffer);
+        const saved = await saveToMysql(pool, ownerId, asset, buffer);
+        assetId = saved.id;
+        url = saved.url;
         console.log("MySQL:", asset.publicName, "→", url);
       } catch (err) {
         console.warn(`MySQL insert failed for ${asset.publicName}, using public:`, err.message);
@@ -158,22 +173,29 @@ async function main() {
       url = saveToPublic(asset, buffer);
       console.log("Public:", asset.publicName, "→", url);
     }
+
+    if (assetId) {
+      mapRows.push({ assetId, type: asset.type, sortOrder: idx + 1 });
+    }
+
     gallery.push({ type: asset.type, url, label: asset.label });
+  }
+
+  if (mysqlOk && pool) {
+    try {
+      await upsertVenueMediaMap(pool, mapRows);
+      console.log(`Mapped ${mapRows.length} media rows into venue_media_map for ${VENUE_SLUG}`);
+    } catch (err) {
+      console.warn("Could not update venue_media_map:", err.message);
+    }
   }
 
   if (pool) await pool.end();
 
   const image_url = gallery.find((g) => g.type === "image")?.url ?? gallery[0]?.url;
 
-  const patch = { image_url, media_gallery: gallery };
-  const { error: updateErr } = await admin.from("venues").update(patch).eq("id", venue.id);
-  if (updateErr?.message?.includes("media_gallery")) {
-    console.warn("media_gallery column missing — run migration 20260625130000_venue_media_gallery.sql");
-    const { error: imgErr } = await admin.from("venues").update({ image_url }).eq("id", venue.id);
-    if (imgErr) throw new Error(imgErr.message);
-  } else if (updateErr) {
-    throw new Error(updateErr.message);
-  }
+  const { error: updateErr } = await admin.from("venues").update({ image_url }).eq("id", venue.id);
+  if (updateErr) throw new Error(updateErr.message);
 
   console.log("\nDone — Yorker Yard 360 media linked:");
   console.log("  image_url:", image_url);
@@ -181,6 +203,8 @@ async function main() {
   console.log("\nView: https://goodbookies.co.in/venues/" + VENUE_SLUG);
   if (!mysqlOk) {
     console.log("\nTip: Set VENUE_MEDIA_HOST to your Hostinger MySQL hostname and re-run to store blobs in MySQL.");
+  } else {
+    console.log("\nMedia is now in MySQL + ordered in venue_media_map.");
   }
 }
 

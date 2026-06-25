@@ -1,0 +1,1 @@
+import{a2 as o,T as e}from"./index-Bz__DH4j.js";import{L as t}from"./LegalPageLayout-a9CyaNsv.js";const r=()=>o.jsx(t,{title:"Terms & Conditions",intro:"Please read these terms carefully before booking on Good Bookies.",sections:e});export{r as component};

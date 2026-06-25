@@ -1,1 +1,0 @@
-import{aE as a,ae as s,aF as c,ah as i}from"./index-BB726-y8.js";function f(e){const n=a({warn:e?.router===void 0}),t=e?.router||n,u=s.useRef(void 0);return c(t.stores.__store,r=>{if(e?.select){if(e.structuralSharing??t.options.defaultStructuralSharing){const o=i(u.current,e.select(r));return u.current=o,o}return e.select(r)}return r})}export{f as u};

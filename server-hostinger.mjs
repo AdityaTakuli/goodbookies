@@ -311,6 +311,14 @@ async function handleInventory(pathname, req, nodeRes) {
   return true;
 }
 
+let mediaServeCorePromise;
+function getMediaServeCore() {
+  if (!mediaServeCorePromise) {
+    mediaServeCorePromise = import("./api/media/serve-core.mjs");
+  }
+  return mediaServeCorePromise;
+}
+
 async function handleMediaAsset(pathname, req, nodeRes) {
   const isMediaServe =
     pathname.startsWith("/api/media/user/") ||
@@ -318,14 +326,7 @@ async function handleMediaAsset(pathname, req, nodeRes) {
     pathname.startsWith("/api/media/asset/");
   if (!isMediaServe) return false;
 
-  await ensureTsx();
-  const mod = await import("./api/media/serve.ts");
-  const handler = mod.default;
-  if (typeof handler !== "function") {
-    nodeRes.writeHead(500).end("Media serve handler missing");
-    return true;
-  }
-
+  const { serveMediaAsset } = await getMediaServeCore();
   const res = {
     status(code) {
       nodeRes.statusCode = code;
@@ -341,7 +342,7 @@ async function handleMediaAsset(pathname, req, nodeRes) {
     },
   };
 
-  await handler({ method: req.method, url: pathname }, res);
+  await serveMediaAsset({ method: req.method, url: pathname }, res);
   return true;
 }
 

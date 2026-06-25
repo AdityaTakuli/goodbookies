@@ -37,7 +37,7 @@ const VENUE_DETAIL_FIELDS =
 const VENUE_DETAIL_FIELDS_EXTENDED =
   `${VENUE_DETAIL_FIELDS}, map_url, area_sq_ft, water_available`;
 
-let venueDetailFieldsReady: boolean | null = null;
+let venueDetailExtrasReady: boolean | null = null;
 let bookingMinuteColumnsReady: boolean | null = null;
 let shareToGroupColumnReady: boolean | null = null;
 
@@ -56,12 +56,15 @@ async function venueHasShareToGroupColumn() {
 }
 
 async function venueDetailSelectFields() {
-  if (venueDetailFieldsReady != null) {
-    return venueDetailFieldsReady ? VENUE_DETAIL_FIELDS_EXTENDED : VENUE_DETAIL_FIELDS;
-  }
+  const hasExtras = await venueHasDetailExtrasColumns();
+  return hasExtras ? VENUE_DETAIL_FIELDS_EXTENDED : VENUE_DETAIL_FIELDS;
+}
+
+async function venueHasDetailExtrasColumns() {
+  if (venueDetailExtrasReady != null) return venueDetailExtrasReady;
   const { error } = await supabaseAdmin.from("venues").select("map_url, area_sq_ft, water_available").limit(1);
-  venueDetailFieldsReady = !error?.message?.includes("map_url");
-  return venueDetailFieldsReady ? VENUE_DETAIL_FIELDS_EXTENDED : VENUE_DETAIL_FIELDS;
+  venueDetailExtrasReady = !error?.message?.includes("map_url");
+  return venueDetailExtrasReady;
 }
 
 function withReviewCount<T extends Record<string, unknown>>(row: T) {

@@ -20,7 +20,7 @@ const TURFS = [
   },
   {
     name: "Yorker Yard OVAL 360",
-    slug: "yorker-yard-oval-360",
+    slug: "yorker-yard-360",
     price_per_hour: 700,
     venue_type: "circular",
     max_players_allowed: 20,

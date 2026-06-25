@@ -7,10 +7,11 @@ import { MapPin, Star, Clock, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 import { getVenue, getSlots, getVenueDaySchedule, createBooking } from "@/lib/booking.functions";
 import { SlotPicker } from "@/components/SlotPicker";
+import { VenueMediaGallery } from "@/components/VenueMediaGallery";
 import { VenueSlotSchedule } from "@/components/VenueSlotSchedule";
 import { BookingConflictSuggestions } from "@/components/BookingConflictSuggestions";
+import { resolveVenueGalleryItems } from "@/lib/venue-media";
 import { useAuth } from "@/hooks/useAuth";
-import { resolveVenueImage } from "@/lib/images";
 import { VenueReviews } from "@/components/VenueReviews";
 import { VenueDetailSpecs, isOpen24Hours } from "@/components/VenueDetailSpecs";
 import { BookingPaymentPortal } from "@/components/payments/BookingPaymentPortal";
@@ -161,6 +162,11 @@ function VenuePage() {
   const emptySpotsNow = (slotsQuery.data ?? []).reduce(
     (sum, slot) => sum + Math.max(0, Number(slot.remaining_capacity ?? 0)),
     0,
+  );
+
+  const galleryItems = resolveVenueGalleryItems(
+    (venue as { media_gallery?: unknown }).media_gallery,
+    venue.image_url,
   );
 
   const selectionEndMinute =
@@ -328,15 +334,7 @@ function VenuePage() {
       />
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="overflow-hidden rounded-2xl border border-border/60">
-            <img
-              src={resolveVenueImage(venue.image_url)}
-              alt={venue.name}
-              width={1280}
-              height={800}
-              className="aspect-[16/10] w-full object-cover"
-            />
-          </div>
+          <VenueMediaGallery items={galleryItems} alt={venue.name} />
           <div className="mt-6">
             <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary">
               {venue.sport?.icon} {venue.sport?.name}

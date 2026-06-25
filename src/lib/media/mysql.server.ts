@@ -161,37 +161,42 @@ async function fetchRow(db: mysql.Pool, id: string): Promise<MediaAssetRow | nul
   };
 }
 
+async function safeFetchRow(db: mysql.Pool, id: string, scope: MediaDbScope): Promise<MediaAssetRow | null> {
+  try {
+    return await fetchRow(db, id);
+  } catch (error) {
+    console.warn(`[media/mysql] fetch failed for ${scope}:`, error);
+    return null;
+  }
+}
+
 export async function getMediaAssetById(id: string, scope?: MediaDbScope | "auto"): Promise<MediaAssetRow | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
 
   if (scope === "user" || scope === "venue") {
-    if (scope === "user") {
-      if (hasUserMediaConfig()) {
-        const row = await fetchRow(getUserMediaPool(), id);
-        if (row) return row;
-      }
-      if (hasVenueMediaConfig()) {
-        return fetchRow(getVenueMediaPool(), id);
-      }
-      return null;
+    if (scope === "user" && hasUserMediaConfig()) {
+      return safeFetchRow(getUserMediaPool(), id, "user");
+    }
+    if (scope === "venue" && hasVenueMediaConfig()) {
+      return safeFetchRow(getVenueMediaPool(), id, "venue");
     }
 
-    if (hasVenueMediaConfig()) {
-      const row = await fetchRow(getVenueMediaPool(), id);
-      if (row) return row;
+    // Fallback only when the requested scope is not configured.
+    if (scope === "user" && hasVenueMediaConfig()) {
+      return safeFetchRow(getVenueMediaPool(), id, "venue");
     }
-    if (hasUserMediaConfig()) {
-      return fetchRow(getUserMediaPool(), id);
+    if (scope === "venue" && hasUserMediaConfig()) {
+      return safeFetchRow(getUserMediaPool(), id, "user");
     }
     return null;
   }
 
   if (hasUserMediaConfig()) {
-    const userRow = await fetchRow(getUserMediaPool(), id);
+    const userRow = await safeFetchRow(getUserMediaPool(), id, "user");
     if (userRow) return userRow;
   }
   if (hasVenueMediaConfig()) {
-    return fetchRow(getVenueMediaPool(), id);
+    return safeFetchRow(getVenueMediaPool(), id, "venue");
   }
   return null;
 }

@@ -1,0 +1,1 @@
+import{aE as s,ae as i,a0 as o}from"./index-Z26xAe3W.js";function c(e){const r=s();return i.useCallback(async(...a)=>{try{const t=await e(...a);if(o(t))throw t;return t}catch(t){if(o(t))return t.options._fromLocation=r.stores.location.get(),r.navigate(r.resolveRedirect(t).options);throw t}},[r,e])}export{c as u};

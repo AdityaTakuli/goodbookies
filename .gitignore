@@ -21,6 +21,8 @@ dist-ssr
 *.local
 .env
 .env.*
+PRD.md
+scripts/generate-prd.py
 
 # Wrangler / Cloudflare
 .wrangler/

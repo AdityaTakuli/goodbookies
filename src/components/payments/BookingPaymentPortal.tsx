@@ -127,8 +127,9 @@ export function BookingPaymentPortal({
             <div className="space-y-2">
               <p className="font-semibold text-foreground">Individual booking terms</p>
               <p>
-                If the turf does not fill up with other players, you may be required to pay the full
-                turf fee for your slot.
+                For an individual spot you only pay your share: (hours booked × hourly turf price) ÷
+                total players for that turf, plus the convenience fee shown at checkout. You are not
+                required to pay the full turf fee unless you book the full turf.
               </p>
               <p>Cancellation &amp; refunds: {CANCELLATION_POLICY_SHORT}</p>
             </div>

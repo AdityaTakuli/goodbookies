@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { verifyBookingPayment } from "@/lib/payment.functions";
+import { cancelPendingBooking } from "@/lib/booking.functions";
 import { readPublicRazorpayKeyId } from "@/lib/public-env";
 
 type RazorpayHandlerResponse = {
@@ -56,7 +57,19 @@ function loadRazorpayScript(): Promise<boolean> {
 
 export function useRazorpayCheckout() {
   const verifyFn = useServerFn(verifyBookingPayment);
+  const cancelPendingFn = useServerFn(cancelPendingBooking);
   const [paying, setPaying] = useState(false);
+
+  const releasePending = useCallback(
+    async (bookingId: string) => {
+      try {
+        await cancelPendingFn({ data: { bookingId } });
+      } catch {
+        // Best-effort: stale pending also expires server-side after 15 minutes.
+      }
+    },
+    [cancelPendingFn],
+  );
 
   const openCheckout = useCallback(
     async (input: {
@@ -72,12 +85,14 @@ export function useRazorpayCheckout() {
       const keyId = readPublicRazorpayKeyId();
       if (!keyId) {
         toast.error("Payment gateway is not configured");
+        await releasePending(input.bookingId);
         return false;
       }
 
       const loaded = await loadRazorpayScript();
       if (!loaded || !window.Razorpay) {
         toast.error("Could not load Razorpay checkout");
+        await releasePending(input.bookingId);
         return false;
       }
 
@@ -110,6 +125,7 @@ export function useRazorpayCheckout() {
               resolve(true);
             } catch (error) {
               toast.error(error instanceof Error ? error.message : "Payment verification failed");
+              await releasePending(input.bookingId);
               resolve(false);
             } finally {
               setPaying(false);
@@ -117,9 +133,9 @@ export function useRazorpayCheckout() {
           },
           modal: {
             ondismiss: () => {
-              toast.info("Payment cancelled");
+              toast.info("Payment cancelled — slot released");
               setPaying(false);
-              resolve(false);
+              void releasePending(input.bookingId).then(() => resolve(false));
             },
           },
         });
@@ -127,13 +143,13 @@ export function useRazorpayCheckout() {
         rzp.on("payment.failed", (response) => {
           toast.error(response.error?.description ?? "Payment failed");
           setPaying(false);
-          resolve(false);
+          void releasePending(input.bookingId).then(() => resolve(false));
         });
 
         rzp.open();
       });
     },
-    [verifyFn],
+    [verifyFn, releasePending],
   );
 
   return { openCheckout, paying };

@@ -21,6 +21,34 @@ import { listVenueMediaBySlug } from "@/lib/media/mysql.server";
 import { buildVenueDaySessions, type VenueDaySession } from "@/lib/slot-schedule";
 import { resolveMinBookingMinutes } from "@/lib/venue-extras";
 
+/** Pending payment holds expire so canceled checkouts don't block the turf forever. */
+const PENDING_HOLD_MINUTES = 15;
+
+function isActiveHoldBooking(b: { status?: string | null; created_at?: string | null }) {
+  if (b.status === "confirmed") return true;
+  if (b.status !== "pending") return false;
+  if (!b.created_at) return true;
+  const ageMs = Date.now() - new Date(b.created_at).getTime();
+  return ageMs < PENDING_HOLD_MINUTES * 60 * 1000;
+}
+
+async function expireStalePendingBookings(venueId: string, date: string) {
+  const cutoff = new Date(Date.now() - PENDING_HOLD_MINUTES * 60 * 1000).toISOString();
+  const { data: stale } = await supabaseAdmin
+    .from("bookings")
+    .select("id, payment_id")
+    .eq("venue_id", venueId)
+    .eq("booking_date", date)
+    .eq("status", "pending")
+    .lt("created_at", cutoff);
+  if (!stale?.length) return;
+  const ids = stale.map((b) => b.id);
+  await supabaseAdmin.from("bookings").update({ status: "cancelled" }).in("id", ids);
+  const paymentIds = stale.map((b) => b.payment_id).filter(Boolean) as string[];
+  if (paymentIds.length) {
+    await supabaseAdmin.from("payments").update({ status: "cancelled" }).in("id", paymentIds);
+  }
+}
 let reviewCountColumnReady: boolean | null = null;
 
 async function venueHasReviewCountColumn() {
@@ -184,8 +212,10 @@ export const getSlots = createServerFn({ method: "GET" })
     if (!opDays.includes(dow)) return [];
 
     const bookingFields = (await venueHasBookingMinuteColumns())
-      ? "id, start_hour, end_hour, start_minute, end_minute, status, player_count, is_open_lobby"
-      : "id, start_hour, end_hour, status, player_count, is_open_lobby";
+      ? "id, start_hour, end_hour, start_minute, end_minute, status, player_count, is_open_lobby, created_at"
+      : "id, start_hour, end_hour, status, player_count, is_open_lobby, created_at";
+
+    await expireStalePendingBookings(data.venueId, data.date);
 
     const [{ data: bookings }, { data: blocks }] = await Promise.all([
       supabaseAdmin
@@ -197,8 +227,10 @@ export const getSlots = createServerFn({ method: "GET" })
       supabaseAdmin.from("slot_blocks").select("*").eq("venue_id", data.venueId),
     ]);
 
+    const activeBookings = (bookings ?? []).filter(isActiveHoldBooking);
+
     const bookedPlayersByMinute = new Map<number, number>();
-    bookings?.forEach((b) => {
+    activeBookings.forEach((b) => {
       const bStart = bookingStartMinute(b);
       const bEnd = bookingEndMinute(b);
       iterateBookingMinutes(bStart, bEnd, stepMinutes, (m) => {
@@ -209,7 +241,7 @@ export const getSlots = createServerFn({ method: "GET" })
     const totalCapacity = Math.max(1, Number(venue.max_players_allowed ?? 1));
 
     const openLobbyByMinute = new Map<number, { bookingId: string; isOpen: boolean }>();
-    bookings?.forEach((b) => {
+    activeBookings.forEach((b) => {
       if (!b.is_open_lobby) return;
       const bStart = bookingStartMinute(b);
       const bEnd = bookingEndMinute(b);
@@ -273,8 +305,10 @@ export const getVenueDaySchedule = createServerFn({ method: "GET" })
     if (!opDays.includes(dow)) return [];
 
     const bookingFields = (await venueHasBookingMinuteColumns())
-      ? "id, start_hour, end_hour, start_minute, end_minute, status, player_count, is_open_lobby"
-      : "id, start_hour, end_hour, status, player_count, is_open_lobby";
+      ? "id, start_hour, end_hour, start_minute, end_minute, status, player_count, is_open_lobby, created_at"
+      : "id, start_hour, end_hour, status, player_count, is_open_lobby, created_at";
+
+    await expireStalePendingBookings(data.venueId, data.date);
 
     const { data: bookings } = await supabaseAdmin
       .from("bookings")
@@ -285,7 +319,11 @@ export const getVenueDaySchedule = createServerFn({ method: "GET" })
 
     const stepMinutes = slotStepMinutes(venue.slot_duration_minutes);
     const totalCapacity = Math.max(1, Number(venue.max_players_allowed ?? 1));
-    return buildVenueDaySessions(bookings ?? [], totalCapacity, stepMinutes);
+    return buildVenueDaySessions(
+      (bookings ?? []).filter(isActiveHoldBooking),
+      totalCapacity,
+      stepMinutes,
+    );
   });
 
 export const createBooking = createServerFn({ method: "POST" })
@@ -344,20 +382,22 @@ export const createBooking = createServerFn({ method: "POST" })
         profile?.full_name?.trim() || profile?.email?.split("@")[0] || "Player";
       normalizedNames = [bookerName];
     }
+    await expireStalePendingBookings(data.venueId, data.date);
     const { data: overlaps, error: overlapErr } = await supabaseAdmin
       .from("bookings")
       .select(
         (await venueHasBookingMinuteColumns())
-          ? "start_hour, end_hour, start_minute, end_minute, player_count"
-          : "start_hour, end_hour, player_count",
+          ? "start_hour, end_hour, start_minute, end_minute, player_count, status, created_at"
+          : "start_hour, end_hour, player_count, status, created_at",
       )
       .eq("venue_id", data.venueId)
       .eq("booking_date", data.date)
       .in("status", ["confirmed", "pending"]);
     if (overlapErr) throw new Error(overlapErr.message);
     const maxCapacity = Math.max(1, Number(venue.max_players_allowed ?? 1));
+    const activeOverlaps = (overlaps ?? []).filter(isActiveHoldBooking);
     iterateBookingMinutes(data.startMinute, data.endMinute, stepMinutes, (m) => {
-      const used = (overlaps ?? []).reduce((sum, b) => {
+      const used = activeOverlaps.reduce((sum, b) => {
         const bStart = bookingStartMinute(b);
         const bEnd = bookingEndMinute(b);
         if (m >= bStart && m < bEnd) return sum + (b.player_count ?? 1);
@@ -502,4 +542,110 @@ export const listMyBookings = createServerFn({ method: "GET" })
       .order("booking_date", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+/** Cancel a pending (unpaid) booking when Razorpay is dismissed or fails. */
+export const cancelPendingBooking = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookingId: string }) =>
+    z.object({ bookingId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: booking, error } = await supabaseAdmin
+      .from("bookings")
+      .select("id, status, payment_id, user_id")
+      .eq("id", data.bookingId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!booking) throw new Error("Booking not found");
+    if (booking.status !== "pending") {
+      return { ok: true, cancelled: false, status: booking.status };
+    }
+
+    const { error: cancelErr } = await supabaseAdmin
+      .from("bookings")
+      .update({ status: "cancelled" })
+      .eq("id", booking.id);
+    if (cancelErr) throw new Error(cancelErr.message);
+
+    if (booking.payment_id) {
+      await supabaseAdmin.from("payments").update({ status: "cancelled" }).eq("id", booking.payment_id);
+    }
+
+    return { ok: true, cancelled: true, status: "cancelled" };
+  });
+
+/** Live price quote matching createBooking (peak/day/date/duration rules). */
+export const previewBookingTotal = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: {
+      venueId: string;
+      date: string;
+      startMinute: number;
+      endMinute: number;
+      playerCount?: number;
+      couponCode?: string;
+      paymentPlan?: FullTurfPaymentPlan;
+    }) =>
+      z
+        .object({
+          venueId: z.string().uuid(),
+          date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          startMinute: z.number().int().min(0).max(1410),
+          endMinute: z.number().int().min(30).max(1440),
+          playerCount: z.number().int().min(1).max(100).default(1),
+          couponCode: z.string().optional(),
+          paymentPlan: z.enum(["full", "token"]).default("full"),
+        })
+        .refine((v) => v.endMinute > v.startMinute, { message: "endMinute must be > startMinute" })
+        .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { data: venue, error } = await supabaseAdmin
+      .from("venues")
+      .select("price_per_hour, max_players_allowed, slot_duration_minutes")
+      .eq("id", data.venueId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (error || !venue) throw new Error("Venue not found");
+
+    const stepMinutes = slotStepMinutes(venue.slot_duration_minutes);
+    const pricing = await loadVenuePricing(data.venueId);
+    let coupon = null;
+    if (data.couponCode) {
+      const { data: c } = await supabaseAdmin
+        .from("coupons")
+        .select("*")
+        .eq("code", data.couponCode.toUpperCase())
+        .eq("is_active", true)
+        .maybeSingle();
+      if (c && (!c.venue_id || c.venue_id === data.venueId)) coupon = c;
+    }
+
+    const total = calculateBookingTotal({
+      basePricePerHour: venue.price_per_hour,
+      bookingDate: data.date,
+      startMinute: data.startMinute,
+      endMinute: data.endMinute,
+      slotStepMinutes: stepMinutes,
+      dayPricing: pricing.dayPricing,
+      datePricing: pricing.datePricing,
+      peakRules: pricing.peakRules,
+      durationDiscounts: pricing.durationDiscounts,
+      coupon: coupon
+        ? { discount_type: coupon.discount_type, discount_value: coupon.discount_value }
+        : null,
+    });
+
+    const maxCap = Math.max(1, Number(venue.max_players_allowed ?? 1));
+    const quote = resolvePayableAmount(total, maxCap, data.playerCount, data.paymentPlan);
+    return {
+      total,
+      payable: quote.payable,
+      fullCharge: quote.fullCharge,
+      balanceDue: quote.balanceDue,
+      isFullTurf: quote.isFullTurf,
+      paymentPlan: quote.paymentPlan,
+      maxPlayers: maxCap,
+    };
   });

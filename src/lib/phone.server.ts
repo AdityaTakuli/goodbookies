@@ -1,9 +1,36 @@
 import { normalizeIndianPhone } from "@/lib/phone";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-/** Throws if phone is taken by another profile or owner account. */
+/** Free phone held by an unconfirmed (or orphan) auth user so retries can succeed. */
+async function releaseUnconfirmedPhoneHolders(normalized: string, excludeUserId?: string) {
+  const { data: holders, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .eq("phone_normalized", normalized);
+  if (error) throw new Error(error.message);
+
+  for (const holder of holders ?? []) {
+    if (excludeUserId && holder.id === excludeUserId) continue;
+
+    const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.getUserById(holder.id);
+    if (authErr || !authData.user) {
+      await supabaseAdmin.from("profiles").update({ phone: null }).eq("id", holder.id);
+      continue;
+    }
+
+    if (authData.user.email_confirmed_at) continue;
+
+    // Unconfirmed signup never finished — release phone and delete auth row.
+    await supabaseAdmin.from("profiles").update({ phone: null }).eq("id", holder.id);
+    await supabaseAdmin.auth.admin.deleteUser(holder.id);
+  }
+}
+
+/** Throws if phone is taken by another confirmed account. */
 export async function assertPhoneAvailable(phone: string, excludeUserId?: string): Promise<string> {
   const normalized = normalizeIndianPhone(phone);
+
+  await releaseUnconfirmedPhoneHolders(normalized, excludeUserId);
 
   let profileQuery = supabaseAdmin.from("profiles").select("id").eq("phone_normalized", normalized);
   if (excludeUserId) profileQuery = profileQuery.neq("id", excludeUserId);

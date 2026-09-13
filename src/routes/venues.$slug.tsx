@@ -2,10 +2,9 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { queryOptions, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { MapPin, Star, Clock, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
-import { getVenue, getSlots, getVenueDaySchedule, createBooking } from "@/lib/booking.functions";
+import { getVenue, getSlots, getVenueDaySchedule, createBooking, previewBookingTotal } from "@/lib/booking.functions";
 import { SlotPicker } from "@/components/SlotPicker";
 import { VenueMediaGallery } from "@/components/VenueMediaGallery";
 import { VenueSlotSchedule } from "@/components/VenueSlotSchedule";
@@ -20,13 +19,12 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { buildPageMeta, breadcrumbJsonLd, sportsActivityVenueJsonLd } from "@/lib/seo";
 import { resolveMediaUrlAbsolute } from "@/lib/media/urls";
 import { withVenueExtras, resolveMinBookingMinutes } from "@/lib/venue-extras";
-import { computeBookingCharge, INDIVIDUAL_BOOKING_SURCHARGE, resolvePayableAmount, type FullTurfPaymentPlan } from "@/lib/pricing";
+import { computeBookingCharge, INDIVIDUAL_BOOKING_SURCHARGE, type FullTurfPaymentPlan } from "@/lib/pricing";
 import {
   bookingDurationHours,
   formatMinBookingDuration,
   isContiguousSlots,
   selectionEndFromSlots,
-  slotPriceTotal,
   slotStepMinutes,
 } from "@/lib/slot-time";
 import {
@@ -122,6 +120,49 @@ function VenuePage() {
     [slotsQuery.data],
   );
 
+  const stepMinutes = slotStepMinutes(rawVenue?.slot_duration_minutes);
+  const minBookingMinutes = rawVenue ? resolveMinBookingMinutes(rawVenue) : 60;
+  const sortedSel = [...selected].sort((a, b) => a - b);
+  const isContiguous = isContiguousSlots(selected, stepMinutes);
+  const selectedDurationMinutes = sortedSel.length
+    ? sortedSel[sortedSel.length - 1] + stepMinutes - sortedSel[0]
+    : 0;
+  const selectionEndMinute =
+    sortedSel.length > 0
+      ? selectionEndFromSlots(sortedSel, stepMinutes) ?? sortedSel[0] + stepMinutes
+      : null;
+
+  const pricePreviewQuery = useQuery({
+    queryKey: [
+      "booking-price-preview",
+      rawVenue?.id,
+      date,
+      sortedSel[0] ?? null,
+      selectionEndMinute,
+      playerCount,
+      paymentPlan,
+      bookingMode,
+    ],
+    queryFn: () =>
+      previewBookingTotal({
+        data: {
+          venueId: rawVenue!.id,
+          date,
+          startMinute: sortedSel[0],
+          endMinute: selectionEndMinute!,
+          playerCount,
+          paymentPlan: bookingMode === "full" ? paymentPlan : "full",
+        },
+      }),
+    enabled: Boolean(
+      rawVenue?.id &&
+        sortedSel.length > 0 &&
+        selectionEndMinute != null &&
+        isContiguous &&
+        selectedDurationMinutes >= minBookingMinutes,
+    ),
+  });
+
   if (!venue) return null;
 
   const open24 = isOpen24Hours(venue.opening_hour, venue.closing_hour);
@@ -131,16 +172,9 @@ function VenuePage() {
 
   const isOwnVenue = Boolean(user && venue.owner_id && user.id === venue.owner_id);
 
-  const stepMinutes = slotStepMinutes(venue.slot_duration_minutes);
-  const minBookingMinutes = resolveMinBookingMinutes(venue);
   const minSlotCount = Math.max(1, Math.ceil(minBookingMinutes / stepMinutes));
-  const sortedSel = [...selected].sort((a, b) => a - b);
-  const isContiguous = isContiguousSlots(selected, stepMinutes);
-  const total = slotPriceTotal(venue.price_per_hour, selected.length, stepMinutes);
-  const selectedDurationMinutes = sortedSel.length
-    ? sortedSel[sortedSel.length - 1] + stepMinutes - sortedSel[0]
-    : 0;
   const selectedHours = bookingDurationHours(selectedDurationMinutes);
+  const total = pricePreviewQuery.data?.total ?? 0;
   const showBookingModeChoice = maxPlayersAllowed > 1;
   const slotByMinute = new Map((slotsQuery.data ?? []).map((s) => [s.startMinute, s]));
   const minRemainingOnSelection = sortedSel.length
@@ -154,8 +188,9 @@ function VenuePage() {
     maxPlayersAllowed,
     playerCount,
   );
-  const paymentQuote = resolvePayableAmount(total, maxPlayersAllowed, playerCount, paymentPlan);
-  const displayPayable = paymentQuote.payable;
+  const displayPayable = pendingCheckout
+    ? Math.round(pendingCheckout.amountPaise / 100)
+    : (pricePreviewQuery.data?.payable ?? payableAmount);
   const capacityAfterBooking = alreadyBookedOnSelection + playerCount;
   const capacityPercent = Math.round((capacityAfterBooking / maxPlayersAllowed) * 100);
   const canBookFullTurf = minRemainingOnSelection >= maxPlayersAllowed;
@@ -168,11 +203,6 @@ function VenuePage() {
     (venue as { media_gallery?: unknown }).media_gallery,
     venue.image_url,
   );
-
-  const selectionEndMinute =
-    sortedSel.length > 0
-      ? selectionEndFromSlots(sortedSel, stepMinutes) ?? sortedSel[0] + stepMinutes
-      : null;
 
   const bookingSuggestions =
     sortedSel.length === 0 || !scheduleQuery.data || selectionEndMinute == null
@@ -226,10 +256,12 @@ function VenuePage() {
     );
     setSelected((prev) => {
       if (prev.length === 0) return prev;
+      // Don't trim selection while a payment hold is open — that would look like an empty turf.
+      if (pendingCheckout) return prev;
       const next = prev.filter((m) => availableSet.has(m));
       return next.length === prev.length ? prev : next;
     });
-  }, [slotAvailabilityKey, slotsQuery.data]);
+  }, [slotAvailabilityKey, slotsQuery.data, pendingCheckout]);
 
   async function handleOpenPayment() {
     if (!pendingCheckout || !venue) return;
@@ -248,7 +280,11 @@ function VenuePage() {
       await qc.invalidateQueries({ queryKey: ["slots", venue.id, date] });
       await qc.invalidateQueries({ queryKey: ["venue-schedule", venue.id, date] });
       navigate({ to: "/booking/success", search: { id: bookingId } });
+      return;
     }
+    setPendingCheckout(null);
+    await qc.invalidateQueries({ queryKey: ["slots", venue.id, date] });
+    await qc.invalidateQueries({ queryKey: ["venue-schedule", venue.id, date] });
   }
 
   async function handleBook() {
@@ -299,8 +335,6 @@ function VenuePage() {
           amountPaise: res.amountPaise,
           customerName,
         });
-        await qc.invalidateQueries({ queryKey: ["slots", venue!.id, date] });
-        await qc.invalidateQueries({ queryKey: ["venue-schedule", venue!.id, date] });
         toast.message("Slot reserved", {
           description: "Click Open Razorpay below to pay and confirm.",
         });
@@ -333,13 +367,13 @@ function VenuePage() {
         ]}
       />
       <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="animate-rise">
           <VenueMediaGallery items={galleryItems} alt={venue.name} />
           <div className="mt-6">
             <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary">
               {venue.sport?.icon} {venue.sport?.name}
             </span>
-            <h1 className="mt-3 font-display text-4xl font-bold">{venue.name}</h1>
+            <h1 className="mt-3 font-display text-3xl font-bold leading-tight md:text-4xl">{venue.name}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MapPin className="h-4 w-4 shrink-0" />
@@ -382,7 +416,7 @@ function VenuePage() {
               ))}
             </div>
           </div>
-        </motion.div>
+        </div>
 
         <div className="space-y-6">
           <div className="rounded-2xl border border-border/60 bg-card p-6">
@@ -554,7 +588,7 @@ function VenuePage() {
               <BookingPaymentPortal
                 amount={displayPayable}
                 fullAmount={payableAmount}
-                balanceDue={paymentQuote.balanceDue}
+                balanceDue={pricePreviewQuery.data?.balanceDue ?? 0}
                 bookingLabel={isFullTurf ? "Full turf" : "Individual spot"}
                 hours={selectedHours}
                 venueName={venue.name}

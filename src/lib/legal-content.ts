@@ -2,6 +2,7 @@ import {
   CANCEL_FULL_REFUND_HOURS,
   CANCEL_PARTIAL_REFUND_HOURS,
   CANCEL_PARTIAL_REFUND_PERCENT,
+  CANCEL_CONVENIENCE_FEE_PERCENT,
 } from "@/lib/cancellation-policy";
 import { FULL_TURF_TOKEN_PERCENT, INDIVIDUAL_BOOKING_SURCHARGE } from "@/lib/pricing";
 
@@ -56,7 +57,7 @@ export const TERMS_SECTIONS: LegalQa[] = [
   },
   {
     question: "What services and pricing do we offer?",
-    answer: `Bookings are priced in INR per slot at each venue's listed rate. Individual spot bookings include a ${individualFeePercent}% platform/service fee on your per-player share (not on the full turf price). Full-turf bookings may be paid in full at checkout or with a ${tokenPercent}% token upfront, with the balance due before your slot. Final amounts are shown before you pay.`,
+    answer: `Bookings are priced in INR per slot at each venue's listed rate. For an individual spot, you pay your share only: (total booking hours × hourly turf price) ÷ max players for that turf, plus a ${individualFeePercent}% convenience fee on your share. You are not required to pay the full turf fee for an individual booking. Full-turf bookings may be paid in full at checkout or with a ${tokenPercent}% token upfront, with the balance due before your slot. Final amounts are shown before you pay.`,
   },
   {
     question: "What are the rules for using the platform?",
@@ -108,7 +109,7 @@ export const PRIVACY_SECTIONS: LegalQa[] = [
 export const REFUND_SECTIONS: LegalQa[] = [
   {
     question: "Can I get a refund after booking a turf?",
-    answer: `Yes, refunds depend on when you cancel:\n• More than ${CANCEL_FULL_REFUND_HOURS} hours before your slot — 100% refund\n• ${CANCEL_PARTIAL_REFUND_HOURS}–${CANCEL_FULL_REFUND_HOURS} hours before your slot — ${CANCEL_PARTIAL_REFUND_PERCENT}% refund\n• Less than ${CANCEL_PARTIAL_REFUND_HOURS} hours before your slot — no refund`,
+    answer: `Yes, refunds depend on when you cancel:\n• More than ${CANCEL_FULL_REFUND_HOURS} hours before your slot — 100% refund\n• ${CANCEL_PARTIAL_REFUND_HOURS}–${CANCEL_FULL_REFUND_HOURS} hours before your slot — ${CANCEL_PARTIAL_REFUND_PERCENT}% refund (minus a ${CANCEL_CONVENIENCE_FEE_PERCENT}% convenience fee)\n• Less than ${CANCEL_PARTIAL_REFUND_HOURS} hours before your slot — no refund`,
   },
   {
     question: "How will the refund be processed?",
@@ -131,7 +132,7 @@ export const REFUND_SECTIONS: LegalQa[] = [
   },
   {
     question: "Are there any non-refundable charges?",
-    answer: `The ${individualFeePercent}% platform/service fee included in individual spot bookings is non-refundable once the booking is confirmed, except where a full refund applies under our cancellation policy or where we cancel on your behalf.`,
+    answer: `The ${individualFeePercent}% convenience fee on individual spot bookings is non-refundable once the booking is confirmed, except where a full refund applies under our cancellation policy (more than ${CANCEL_FULL_REFUND_HOURS} hours before the slot) or where we cancel on your behalf. On partial refunds, an additional ${CANCEL_CONVENIENCE_FEE_PERCENT}% convenience fee may be deducted from the refunded amount.`,
   },
 ];
 
@@ -143,7 +144,7 @@ export const CANCELLATION_SECTIONS: LegalQa[] = [
   },
   {
     question: "What is the cancellation window?",
-    answer: `• More than ${CANCEL_FULL_REFUND_HOURS} hours before your slot — free cancellation (100% refund)\n• ${CANCEL_PARTIAL_REFUND_HOURS}–${CANCEL_FULL_REFUND_HOURS} hours before — ${CANCEL_PARTIAL_REFUND_PERCENT}% refund\n• Less than ${CANCEL_PARTIAL_REFUND_HOURS} hours before — cancellation not allowed; no refund`,
+    answer: `• More than ${CANCEL_FULL_REFUND_HOURS} hours before your slot — free cancellation (100% refund)\n• ${CANCEL_PARTIAL_REFUND_HOURS}–${CANCEL_FULL_REFUND_HOURS} hours before — ${CANCEL_PARTIAL_REFUND_PERCENT}% refund (minus ${CANCEL_CONVENIENCE_FEE_PERCENT}% convenience fee)\n• Less than ${CANCEL_PARTIAL_REFUND_HOURS} hours before — cancellation not allowed; no refund`,
   },
   {
     question: "How do I cancel a booking?",

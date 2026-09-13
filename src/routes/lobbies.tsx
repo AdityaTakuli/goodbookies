@@ -1,8 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { listOpenLobbies, submitLobbyQuery } from "@/lib/lobby.functions";
 import { listSports } from "@/lib/booking.functions";
@@ -47,6 +46,13 @@ function LobbiesPage() {
     refetchInterval: 5000,
   });
 
+  useEffect(() => {
+    if (!joinId) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setJoinId(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [joinId]);
+
   const active = joinId ? (lobbies ?? []).find((l: any) => l.id === joinId) : null;
   const maxJoin = active ? Math.min(active.spots_open, 20) : 1;
 
@@ -85,19 +91,21 @@ function LobbiesPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="container mx-auto px-4 py-10 md:py-14">
       <div className="max-w-3xl">
-        <h1 className="font-display text-4xl font-bold">Open matches</h1>
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Play with others</p>
+        <h1 className="mt-2 font-display text-4xl font-bold md:text-5xl">Open matches</h1>
         <p className="mt-2 text-muted-foreground">
           Join games that still need players. Pay your share only after the host accepts.
         </p>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-4">
+      <div className="mt-8 flex flex-wrap gap-3">
         <select
           value={sport}
           onChange={(e) => setSport(e.target.value)}
-          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+          aria-label="Filter by sport"
+          className="h-11 flex-1 rounded-lg border border-input bg-card px-3 text-sm sm:flex-none"
         >
           <option value="">All sports</option>
           {(sports ?? []).map((s) => (
@@ -109,16 +117,26 @@ function LobbiesPage() {
           value={date}
           min={todayISO()}
           onChange={(e) => setDate(e.target.value)}
-          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+          aria-label="Match date"
+          className="h-11 flex-1 rounded-lg border border-input bg-card px-3 text-sm sm:flex-none"
         />
       </div>
 
-      {isLoading && <p className="mt-10 text-muted-foreground">Loading open matches…</p>}
+      {isLoading && (
+        <div className="mt-8 grid gap-4 md:grid-cols-2" aria-busy="true" aria-label="Loading open matches">
+          {[0, 1, 2, 3].map((k) => (
+            <div key={k} className="h-56 animate-pulse rounded-2xl border border-border/60 bg-card" />
+          ))}
+        </div>
+      )}
 
       {!isLoading && !(lobbies?.length) && (
-        <div className="mt-10 rounded-2xl border border-border/60 bg-card p-12 text-center">
-          <p className="text-muted-foreground">No open matches right now.</p>
-          <Link to="/sports"><Button className="mt-4">Book a turf and open your match</Button></Link>
+        <div className="mt-10 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-14 text-center">
+          <p className="font-display text-xl font-semibold">No open matches for this day</p>
+          <p className="mt-2 text-sm text-muted-foreground">Try another date or sport, or start your own game.</p>
+          <Button asChild className="mt-6">
+            <Link to="/sports">Book a turf and open your match</Link>
+          </Button>
         </div>
       )}
 
@@ -129,12 +147,10 @@ function LobbiesPage() {
           const pct = Math.round((filled / total) * 100);
           const hostName = lobby.host?.full_name || lobby.host?.email || "Host";
           return (
-            <motion.div
+            <div
               key={lobby.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-              className="rounded-2xl border border-border/60 bg-card p-5"
+              style={{ "--rise-delay": `${Math.min(i, 8) * 40}ms` } as React.CSSProperties}
+              className="animate-rise rounded-2xl border border-border/60 bg-card p-5 transition-colors hover:border-primary/50"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -162,15 +178,23 @@ function LobbiesPage() {
               <Button className="mt-4 w-full" onClick={() => openJoin(lobby)}>
                 Request to join match
               </Button>
-            </motion.div>
+            </div>
           );
         })}
       </div>
 
       {joinId && active && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
-            <h3 className="font-display text-xl font-bold">Join {active.venue?.name}</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center"
+          onClick={(e) => e.target === e.currentTarget && setJoinId(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="join-lobby-title"
+            className="animate-rise max-h-[90svh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl"
+          >
+            <h3 id="join-lobby-title" className="font-display text-xl font-bold">Join {active.venue?.name}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               {active.booking_date} at {active.start_hour}:00 · up to {active.spots_open} players
             </p>

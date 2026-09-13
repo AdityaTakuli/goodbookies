@@ -7,6 +7,7 @@ import {
   CANCEL_PARTIAL_REFUND_HOURS,
   cancellationRefundPercent,
   hoursUntilSlot,
+  refundPaiseForCancellation,
 } from "@/lib/cancellation-policy";
 import { bookingStartMinute } from "@/lib/slot-time";
 import { refundRazorpayPayment } from "@/lib/services/razorpay";
@@ -59,6 +60,19 @@ export const cancelMyBooking = createServerFn({ method: "POST" })
     if (fErr || !booking) throw new Error("Booking not found");
     if (booking.status === "cancelled") throw new Error("Already cancelled");
 
+    // Unpaid pending bookings can always be released (payment was never completed).
+    if (booking.status === "pending") {
+      const { error } = await context.supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+      if (booking.payment_id) {
+        await supabaseAdmin.from("payments").update({ status: "cancelled" }).eq("id", booking.payment_id);
+      }
+      return { ok: true, refundPercent: 0 };
+    }
+
     const startMinute = bookingStartMinute(booking);
     const hoursUntil = hoursUntilSlot(booking.booking_date, startMinute);
     const refundPercent = cancellationRefundPercent(hoursUntil);
@@ -81,7 +95,7 @@ export const cancelMyBooking = createServerFn({ method: "POST" })
         .eq("id", booking.payment_id)
         .maybeSingle();
       if (pay?.razorpay_payment_id && pay.status === "paid") {
-        const refundPaise = Math.round(pay.amount * 100 * (refundPercent / 100));
+        const refundPaise = refundPaiseForCancellation(pay.amount, refundPercent);
         if (refundPaise > 0) {
           await refundRazorpayPayment(pay.razorpay_payment_id, refundPaise);
         }
@@ -95,7 +109,7 @@ export const cancelMyBooking = createServerFn({ method: "POST" })
     const refundNote =
       refundPercent === 100
         ? "A full refund will be processed within 5–7 business days."
-        : `A ${refundPercent}% refund will be processed within 5–7 business days.`;
+        : `A ${refundPercent}% refund (minus 10% convenience fee) will be processed within 5–7 business days.`;
 
     await supabaseAdmin.from("notifications").insert({
       user_id: context.userId,

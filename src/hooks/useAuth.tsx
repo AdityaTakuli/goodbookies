@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { claimMyPhone } from "@/lib/auth.functions";
 
 export type AccountType = "player" | "partner" | "both";
 
@@ -59,7 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle(),
       supabase.from("owners").select("status").eq("id", uid).maybeSingle(),
       supabase.from("profiles").select("account_type").eq("id", uid).maybeSingle(),
-    ]).then(([adminRes, ownerRes, profileRes]) => {
+      claimMyPhone().catch(() => null),
+    ]).then(([adminRes, ownerRes]) => {
       setIsAdmin(!!adminRes.data);
       const approvedOwner = ownerRes.data?.status === "approved";
       setIsOwner(approvedOwner);

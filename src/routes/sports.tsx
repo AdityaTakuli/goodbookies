@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { listSports, listVenues } from "@/lib/booking.functions";
 import { VenueCard } from "@/components/VenueCard";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { buildPageMeta, breadcrumbJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -11,7 +12,10 @@ const searchSchema = z.object({ sport: z.string().optional() });
 
 const sportsQO = queryOptions({ queryKey: ["sports"], queryFn: () => listSports() });
 const venuesQO = (sport?: string) =>
-  queryOptions({ queryKey: ["venues", sport ?? "all"], queryFn: () => listVenues({ data: { sport } }) });
+  queryOptions({
+    queryKey: ["venues", sport ?? "all"],
+    queryFn: () => listVenues({ data: { sport } }),
+  });
 
 export const Route = createFileRoute("/sports")({
   validateSearch: searchSchema,
@@ -35,32 +39,48 @@ export const Route = createFileRoute("/sports")({
   component: SportsPage,
 });
 
+const pillClass = (active: boolean) =>
+  cn(
+    "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors",
+    active
+      ? "border-primary bg-primary text-primary-foreground"
+      : "border-border bg-card text-muted-foreground hover:border-primary/60 hover:text-foreground",
+  );
+
 function SportsPage() {
   const { sport } = Route.useSearch();
   const { data: sports } = useSuspenseQuery(sportsQO);
   const { data: venues } = useSuspenseQuery(venuesQO(sport));
+  const activeSport = sports.find((s) => s.slug === sport);
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-10 md:py-14">
       <JsonLd
         data={breadcrumbJsonLd([
           { name: "Home", path: "/" },
           { name: "Venues", path: "/sports" },
         ])}
       />
-      <h1 className="font-display text-4xl font-bold md:text-5xl">All venues</h1>
+      <p className="text-xs font-semibold uppercase tracking-widest text-primary">Book a venue</p>
+      <h1 className="mt-2 font-display text-4xl font-bold md:text-5xl">
+        {activeSport ? `${activeSport.name} venues` : "All venues"}
+      </h1>
       <p className="mt-2 text-muted-foreground">
-        {venues.length} venue{venues.length === 1 ? "" : "s"} available {sport ? `for ${sport}` : "across all sports"}.
+        {venues.length} venue{venues.length === 1 ? "" : "s"} available{" "}
+        {activeSport ? `for ${activeSport.name.toLowerCase()}` : "across all sports"} · live slot
+        availability
       </p>
 
-      <div className="mt-8 flex flex-wrap gap-2">
+      {/* Scrolls horizontally on phones instead of wrapping into several rows. */}
+      <nav
+        aria-label="Filter by sport"
+        className="scrollbar-none -mx-4 mt-8 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
+      >
         <Link
           to="/sports"
           search={{}}
-          className={cn(
-            "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-            !sport ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/60",
-          )}
+          className={pillClass(!sport)}
+          aria-current={!sport ? "page" : undefined}
         >
           All
         </Link>
@@ -69,25 +89,32 @@ function SportsPage() {
             key={s.id}
             to="/sports"
             search={{ sport: s.slug }}
-            className={cn(
-              "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-              sport === s.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/60",
-            )}
+            className={pillClass(sport === s.slug)}
+            aria-current={sport === s.slug ? "page" : undefined}
           >
-            {s.icon} {s.name}
+            <span aria-hidden>{s.icon}</span> {s.name}
           </Link>
         ))}
-      </div>
+      </nav>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {venues.map((v, i) => (
-          <VenueCard key={v.id} venue={v as any} index={i} />
-        ))}
-      </div>
-
-      {venues.length === 0 && (
-        <div className="mt-10 rounded-2xl border border-border/60 bg-card p-10 text-center text-muted-foreground">
-          No venues yet for this sport. Check back soon!
+      {venues.length > 0 ? (
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {venues.map((v, i) => (
+            <VenueCard key={v.id} venue={v as any} index={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-10 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-14 text-center">
+          <p className="font-display text-xl font-semibold">No venues here yet</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We're adding new {activeSport ? activeSport.name.toLowerCase() : ""} venues soon. Try
+            another sport meanwhile.
+          </p>
+          <Button asChild variant="outline" className="mt-6">
+            <Link to="/sports" search={{}}>
+              Browse all venues
+            </Link>
+          </Button>
         </div>
       )}
     </div>
